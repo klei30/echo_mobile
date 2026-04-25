@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart' as wm;
 import './logger.dart';
 import './page/layout/layout.dart';
+import './page/auth/auth_page.dart';
 import './provider/provider_manager.dart';
 import 'package:logging/logging.dart';
 import 'utils/platform.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 import 'utils/init.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
@@ -53,7 +55,7 @@ void main() async {
   }
 
   try {
-    await Future.wait([ProviderManager.init(), initDb()]);
+    await Future.wait([ProviderManager.init(), initDb(), AuthService().init()]);
 
     var app = MyApp();
 
@@ -86,7 +88,7 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(useMaterial3: true, brightness: Brightness.light, fontFamily: getPlatformFontFamily()),
           darkTheme: ThemeData(useMaterial3: true, brightness: Brightness.dark, fontFamily: getPlatformFontFamily()),
           themeMode: _getThemeMode(settings.generalSetting.theme),
-          home: LayoutPage(),
+          home: AuthService().isLoggedIn ? const LayoutPage() : AuthGate(),
           locale: Locale(settings.generalSetting.locale),
           builder: BotToastInit(), //1.调用BotToastInit
           navigatorObservers: [BotToastNavigatorObserver()], //2.注册路由观察者
@@ -112,5 +114,20 @@ class MyApp extends StatelessWidget {
       default:
         return ThemeMode.system;
     }
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthPage(
+      onAuthenticated: () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LayoutPage()),
+        );
+      },
+    );
   }
 }

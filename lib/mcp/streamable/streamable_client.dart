@@ -112,6 +112,11 @@ class StreamableClient implements McpClient {
       headers['mcp-session-id'] = _sessionId!;
     }
 
+    // Add environment variables as headers (useful for API keys)
+    serverConfig.env.forEach((key, value) {
+      headers[key] = value;
+    });
+
     // Add OAuth Bearer token if available and valid
     if (serverConfig.oauth != null && 
         serverConfig.oauth!.enabled && 

@@ -129,7 +129,14 @@ class ChatProvider extends ChangeNotifier {
     if (_activeChat == null) {
       return;
     }
-    final updatedChat = Chat(id: _activeChat!.id, title: title, createdAt: _activeChat!.createdAt, updatedAt: DateTime.now());
+    // FIX: Preserve userId when updating title
+    final updatedChat = Chat(
+      id: _activeChat!.id,
+      title: title,
+      userId: _activeChat!.userId,
+      createdAt: _activeChat!.createdAt,
+      updatedAt: DateTime.now(),
+    );
     await ChatRepositoryProvider.instance.updateChat(updatedChat);
     await loadChats();
     if (_activeChat?.id == _activeChat!.id) {

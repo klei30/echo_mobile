@@ -472,6 +472,7 @@ class CompletionRequest {
   final List<Map<String, dynamic>>? tools;
   final bool stream;
   ChatSetting? modelSetting;
+  final String? userId;
 
-  CompletionRequest({required this.model, required this.messages, this.tools, this.stream = false, this.modelSetting});
+  CompletionRequest({required this.model, required this.messages, this.tools, this.stream = false, this.modelSetting, this.userId});
 }

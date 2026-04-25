@@ -5,6 +5,7 @@ import 'mcp_server_provider.dart';
 import 'chat_provider.dart';
 import 'chat_model_provider.dart';
 import 'serve_state_provider.dart';
+import 'package:chatmcp/repository/local_chat_repository.dart';
 
 class ProviderManager {
   static List<ChangeNotifierProvider> providers = [
@@ -13,7 +14,6 @@ class ProviderManager {
     ChangeNotifierProvider<ChatProvider>(create: (_) => ChatProvider()),
     ChangeNotifierProvider<ChatModelProvider>(create: (_) => ChatModelProvider()),
     ChangeNotifierProvider<ServerStateProvider>(create: (_) => ServerStateProvider()),
-    // Add other Providers here
   ];
 
   static SettingsProvider? _settingsProvider;
@@ -53,6 +53,11 @@ class ProviderManager {
 
   static Future<void> init() async {
     await SettingsProvider().loadSettings();
+
+    // FIX: Adopt orphan chats (legacy userId=NULL) to current user before loading
+    final repo = LocalChatRepository();
+    await repo.adoptOrphanChats();
+
     await ChatProvider().loadChats();
     await McpServerProvider().init();
     await McpServerProvider().loadInMemoryServers();

@@ -29,7 +29,7 @@ Future<String> getDefaultPath([String? additionalPath]) async {
 
 Future<bool> isCommandAvailable(String command) async {
   try {
-    final String whichCommand = Platform.isWindows ? 'where' : 'which';
+    final String whichCommand = Platform.isWindows ? 'where.exe' : 'which';
     final Map<String, String> env = Map.of(Platform.environment);
     env['PATH'] = await getDefaultPath();
 

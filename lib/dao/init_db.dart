@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static const List<String> requiredTables = ['chat', 'chat_message'];
-  static const int currentVersion = 3;
+  static const int currentVersion = 4;
 
   DatabaseHelper._init();
 
@@ -229,6 +229,16 @@ class CommandScriptV3 extends CommandScript {
   }
 }
 
+/// Database migration for v4 - Add userId column to chat table
+class CommandScriptV4 extends CommandScript {
+  @override
+  Future<void> execute(Batch batch) async {
+    Logger.root.info('Applying database migration v4 - adding userId column to chat');
+    batch.execute('ALTER TABLE chat ADD COLUMN userId TEXT');
+    Logger.root.info('Database migration v4 completed successfully');
+  }
+}
+
 /// Management class to organize multiple version migration scripts
 class DatabaseSchemaManager {
   /// Map versions to corresponding CommandScript
@@ -239,6 +249,7 @@ class DatabaseSchemaManager {
     _commands[1] = CommandScriptV1();
     _commands[2] = CommandScriptV2();
     _commands[3] = CommandScriptV3();
+    _commands[4] = CommandScriptV4();
   }
 
   /// On database creation: create tables (version=1)

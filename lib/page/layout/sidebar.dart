@@ -1,6 +1,7 @@
 import 'package:chatmcp/widgets/ink_icon.dart';
 import 'package:flutter/material.dart';
 import '../setting/setting.dart';
+import '../auth/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/utils/platform.dart';
@@ -10,6 +11,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:chatmcp/components/widgets/base.dart';
 import 'package:chatmcp/page/layout/widgets/app_info.dart';
 import 'package:chatmcp/config/pagination_config.dart';
+import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/main.dart';
 import 'dart:async';
 
 class SidebarPanel extends StatefulWidget {
@@ -145,15 +148,20 @@ class ChatHistoryList extends StatefulWidget {
 class _ChatHistoryListState extends State<ChatHistoryList> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false; // 防止重复触发加载
+  String? _lastUserId;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
 
-    // Load initial data if empty
+    // FIX: Force reload when user changes, not just when empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.chatProvider.chats.isEmpty) {
+      final currentUserId = AuthService().userId;
+      if (_lastUserId != currentUserId) {
+        _lastUserId = currentUserId;
+        widget.chatProvider.loadChats(refresh: true); // force reload on user switch
+      } else if (widget.chatProvider.chats.isEmpty) {
         widget.chatProvider.loadChats();
       }
     });
@@ -539,7 +547,7 @@ class SidebarToolbar extends StatelessWidget {
           _buildSelectModeButton(context),
           if (chatProvider.isSelectMode) ...[const Gap(size: 4), _buildSelectAllButton(context), const Gap(size: 4), _buildDeleteButton(context)],
           const Spacer(),
-          const AppInfo(),
+          if (AuthService().isLoggedIn) _buildLogoutButton(context),
           const Gap(size: 4),
         ],
       ),
@@ -548,6 +556,64 @@ class SidebarToolbar extends StatelessWidget {
 
   Widget _buildSettingsButton(BuildContext context) {
     return InkIcon(icon: CupertinoIcons.settings, onTap: () => _showSettingsDialog(context), tooltip: AppLocalizations.of(context)!.settings);
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    final username = AuthService().username;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => _showLogoutDialog(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 10,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Text(
+                (username ?? 'U')[0].toUpperCase(),
+                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (username != null) ...[
+              const SizedBox(width: 4),
+              Text(username, style: const TextStyle(fontSize: 11)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Sign Out'),
+        content: Text('Sign out as ${AuthService().username ?? 'user'}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await AuthService().logout();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => AuthGate(),
+                  ),
+                  (_) => false,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSelectModeButton(BuildContext context) {

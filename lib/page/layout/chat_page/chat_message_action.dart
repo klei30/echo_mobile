@@ -3,14 +3,28 @@ import 'package:chatmcp/llm/model.dart';
 import 'package:flutter/services.dart';
 import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
+import 'package:chatmcp/echo/echo_client.dart';
 
-class MessageActions extends StatelessWidget {
+class MessageActions extends StatefulWidget {
   final List<ChatMessage> messages;
   final Function(ChatMessage) onRetry;
   final Function(String messageId) onSwitch;
   final bool isUser;
 
   const MessageActions({super.key, required this.messages, required this.onRetry, required this.onSwitch, this.isUser = false});
+
+  @override
+  State<MessageActions> createState() => _MessageActionsState();
+}
+
+class _MessageActionsState extends State<MessageActions> {
+  int _thumbState = 0; // 0=none, 1=thumbs_up, -1=thumbs_down
+
+  void _sendFeedback(String signal) {
+    final content = widget.messages.last.content ?? '';
+    if (content.isEmpty) return;
+    EchoClient().sendFeedback(assistantMessage: content, signal: signal);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,31 +34,61 @@ class MessageActions extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Copy button - available for both user and assistant messages
+          // Copy button
           IconButton(
             iconSize: 14,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
             icon: const Icon(Icons.copy_outlined),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: messages.map((m) => m.content ?? '').join('\n')));
+              Clipboard.setData(ClipboardData(text: widget.messages.map((m) => m.content ?? '').join('\n')));
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.copiedToClipboard), duration: const Duration(seconds: 2)));
             },
           ),
-          // Retry button - only for assistant messages
-          if (!isUser)
+          // Thumbs up/down — only for assistant messages, sends Echo feedback
+          if (!widget.isUser) ...[
+            IconButton(
+              iconSize: 14,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              icon: Icon(
+                _thumbState == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
+                color: _thumbState == 1 ? Colors.green : null,
+              ),
+              tooltip: 'Good response',
+              onPressed: () {
+                setState(() => _thumbState = _thumbState == 1 ? 0 : 1);
+                if (_thumbState == 1) _sendFeedback('thumbs_up');
+              },
+            ),
+            IconButton(
+              iconSize: 14,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              icon: Icon(
+                _thumbState == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
+                color: _thumbState == -1 ? Colors.red : null,
+              ),
+              tooltip: 'Bad response',
+              onPressed: () {
+                setState(() => _thumbState = _thumbState == -1 ? 0 : -1);
+                if (_thumbState == -1) _sendFeedback('thumbs_down');
+              },
+            ),
+          ],
+          // Retry button
+          if (!widget.isUser)
             IconButton(
               iconSize: 14,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
               icon: const Icon(Icons.refresh),
-              onPressed: () {
-                onRetry(messages.last);
-              },
+              onPressed: () => widget.onRetry(widget.messages.last),
               tooltip: t.retry,
             ),
-          // Branch switch - only for assistant messages
-          if (!isUser && messages.first.brotherMessageIds != null && messages.first.brotherMessageIds!.isNotEmpty) _buildBranchSwitchWidget(messages),
+          // Branch switch
+          if (!widget.isUser && widget.messages.first.brotherMessageIds != null && widget.messages.first.brotherMessageIds!.isNotEmpty)
+            _buildBranchSwitchWidget(widget.messages),
         ],
       ),
     );
@@ -65,7 +109,7 @@ class MessageActions extends StatelessWidget {
           onPressed: index == 1
               ? null
               : () {
-                  onSwitch(messages.first.brotherMessageIds![index - 2]);
+                  widget.onSwitch(messages.first.brotherMessageIds![index - 2]);
                 },
         ),
         Padding(
@@ -80,7 +124,7 @@ class MessageActions extends StatelessWidget {
           onPressed: index == length
               ? null
               : () {
-                  onSwitch(messages.first.brotherMessageIds![index]);
+                  widget.onSwitch(messages.first.brotherMessageIds![index]);
                 },
         ),
       ],

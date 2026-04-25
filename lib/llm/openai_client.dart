@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'model.dart';
 import 'package:logging/logging.dart';
 import 'package:chatmcp/utils/file_content.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 
 class OpenAIClient extends BaseLLMClient {
   final String apiKey;
@@ -27,14 +28,21 @@ class OpenAIClient extends BaseLLMClient {
       body['tools'] = request.tools!;
       body['tool_choice'] = 'auto';
     }
+    if (request.userId != null) body['user'] = request.userId!;
 
     final bodyStr = jsonEncode(body);
     Logger.root.fine('OpenAI request: $bodyStr');
 
     final endpoint = getEndpoint(baseUrl, "/chat/completions");
+    // Attach Echo JWT when calling local Echo server
+    final echoToken = AuthService().token;
+    final isEchoEndpoint = baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
+    final headers = (isEchoEndpoint && echoToken != null)
+        ? {..._headers, 'Authorization': 'Bearer $echoToken'}
+        : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
 
     try {
-      final response = await httpClient.post(Uri.parse(endpoint), headers: _headers, body: bodyStr);
+      final response = await httpClient.post(Uri.parse(endpoint), headers: headers, body: bodyStr);
 
       final responseBody = utf8.decode(response.bodyBytes);
       Logger.root.fine('OpenAI response: $responseBody');
@@ -76,14 +84,18 @@ class OpenAIClient extends BaseLLMClient {
     final body = {'model': request.model, 'messages': chatMessageToOpenAIMessage(request.messages), 'stream': true};
 
     addModelSettingsToBody(body, request.modelSetting);
+    if (request.userId != null) body['user'] = request.userId!;
 
     Logger.root.fine("debug log:openai stream body: ${jsonEncode(body)}");
 
     final endpoint = getEndpoint(baseUrl, "/chat/completions");
+    final headers = request.userId != null
+        ? {..._headers, 'x-echo-user-id': request.userId!}
+        : _headers;
 
     try {
       final httpRequest = http.Request('POST', Uri.parse(endpoint));
-      httpRequest.headers.addAll(_headers);
+      httpRequest.headers.addAll(headers);
       httpRequest.body = jsonEncode(body);
 
       final response = await httpClient.send(httpRequest);

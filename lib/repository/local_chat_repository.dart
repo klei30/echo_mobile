@@ -1,5 +1,6 @@
 import 'package:chatmcp/dao/chat.dart';
 import 'package:chatmcp/dao/chat_message.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/llm/model.dart';
 import 'package:chatmcp/repository/chat_repository.dart';
 import 'package:chatmcp/config/pagination_config.dart';
@@ -8,30 +9,42 @@ class LocalChatRepository implements ChatRepository {
   final ChatDao _chatDao = ChatDao();
   final ChatMessageDao _chatMessageDao = ChatMessageDao();
 
+  String get _uid => AuthService().userId ?? 'anonymous';
+
+  String _where(String? extra) =>
+      extra != null ? '($extra) AND userId = ?' : 'userId = ?';
+
+  List<Object?> _args(List<Object?>? extra) => [...(extra ?? []), _uid];
+
   @override
   Future<ChatListResult> getChats({
-    int page = 1, // 页码从 1 开始
+    int page = 1,
     int pageSize = PaginationConfig.defaultPageSize,
     String? searchKeyword,
   }) async {
-    // 转换为从 0 开始的 offset 计算
     final offset = (page - 1) * pageSize;
 
-    // Build where clause for search
-    String? whereClause;
-    List<Object?>? whereArgs;
+    String? extraWhere;
+    List<Object?>? extraArgs;
 
     if (searchKeyword != null && searchKeyword.isNotEmpty) {
-      whereClause = 'title LIKE ?';
-      whereArgs = ['%$searchKeyword%'];
+      extraWhere = 'title LIKE ?';
+      extraArgs = ['%$searchKeyword%'];
     }
 
-    // Get total count
+    final whereClause = _where(extraWhere);
+    final whereArgs = _args(extraArgs);
+
     final allChats = await _chatDao.query(where: whereClause, whereArgs: whereArgs);
     final total = allChats.length;
 
-    // Get paginated results
-    final chats = await _chatDao.query(where: whereClause, whereArgs: whereArgs, orderBy: 'updatedAt DESC', limit: pageSize, offset: offset);
+    final chats = await _chatDao.query(
+      where: whereClause,
+      whereArgs: whereArgs,
+      orderBy: 'updatedAt DESC',
+      limit: pageSize,
+      offset: offset,
+    );
 
     final hasMore = offset + pageSize < total;
 
@@ -40,18 +53,39 @@ class LocalChatRepository implements ChatRepository {
 
   @override
   Future<List<Chat>> getAllChats() async {
-    return await _chatDao.query(orderBy: 'updatedAt DESC');
+    return await _chatDao.query(
+      where: 'userId = ?',
+      whereArgs: [_uid],
+      orderBy: 'updatedAt DESC',
+    );
   }
 
   @override
   Future<Chat?> getChatById(int id) async {
-    return await _chatDao.queryById(id.toString());
+    final results = await _chatDao.query(
+      where: 'id = ? AND userId = ?',
+      whereArgs: [id, _uid],
+    );
+    return results.isEmpty ? null : results.first;
   }
 
   @override
   Future<Chat> createChat(Chat chat, List<ChatMessage> messages) async {
-    final chatId = await _chatDao.insert(chat);
-    final newChat = Chat(id: chatId, title: chat.title, createdAt: chat.createdAt, updatedAt: chat.updatedAt);
+    final uid = _uid;
+    final stamped = Chat(
+      title: chat.title,
+      userId: uid,
+      createdAt: chat.createdAt,
+      updatedAt: chat.updatedAt,
+    );
+    final chatId = await _chatDao.insert(stamped);
+    final newChat = Chat(
+      id: chatId,
+      title: chat.title,
+      userId: uid,
+      createdAt: chat.createdAt,
+      updatedAt: chat.updatedAt,
+    );
 
     if (messages.isNotEmpty) {
       await addChatMessage(chatId, messages);
@@ -89,7 +123,18 @@ class LocalChatRepository implements ChatRepository {
 
   @override
   Future<List<ChatMessage>> getChatMessages(int chatId) async {
-    final chatMessages = await _chatMessageDao.query(where: 'chatId = ?', whereArgs: [chatId], orderBy: 'createdAt ASC');
+    final chatMessages = await _chatMessageDao.query(
+      where: 'chatId = ?',
+      whereArgs: [chatId],
+      orderBy: 'createdAt ASC',
+    );
     return chatMessages.map((e) => ChatMessage.fromDb(e)).toList();
+  }
+
+  /// Claims all chats with no userId for the currently logged-in user.
+  /// Called once on login/startup so legacy chats aren't lost.
+  Future<void> adoptOrphanChats() async {
+    final db = await _chatDao.database;
+    await db.rawUpdate('UPDATE chat SET userId = ? WHERE userId IS NULL', [_uid]);
   }
 }

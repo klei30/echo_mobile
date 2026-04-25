@@ -22,6 +22,8 @@ import 'package:chatmcp/generated/app_localizations.dart';
 import 'dart:convert';
 import 'package:chatmcp/mcp/models/json_rpc_message.dart';
 import 'dart:async';
+import 'package:chatmcp/echo/echo_client.dart';
+import 'package:chatmcp/llm/openai_client.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -40,6 +42,11 @@ class _ChatPageState extends State<ChatPage> {
   String _parentMessageId = ''; // Parent message ID
   bool _isCancelled = false; // Indicates if the current operation has been cancelled by the user
   bool _isWaiting = false; // Indicates if the system is waiting for a response from the LLM
+
+  // Echo sidecar — tracks last exchange for feedback signals
+  String _lastUserMessage = '';
+  String _lastAssistantMessage = '';
+  String _lastModelUsed = '';
 
   // GlobalKey for InputArea to access focus methods
   final GlobalKey<InputAreaState> _inputAreaKey = GlobalKey<InputAreaState>();
@@ -759,22 +766,52 @@ class _ChatPageState extends State<ChatPage> {
 
     final systemPrompt = await _getSystemPrompt();
 
+    // Echo /context: enrich system prompt with memory + get routing hint (~100ms, silent on fail)
+    final userMsg = messageList0.lastWhere((m) => m.role == MessageRole.user, orElse: () => ChatMessage(role: MessageRole.user, content: '')).content ?? '';
+    final echoUserId = await EchoClient().userId;
+    final echoCtx = await EchoClient().fetchContext(userMsg);
+    final enrichedSystemPrompt = echoCtx != null && echoCtx.systemInjection.isNotEmpty
+        ? '${echoCtx.systemInjection}\n\n$systemPrompt'
+        : systemPrompt;
+    _lastUserMessage = userMsg;
+    _lastModelUsed = ProviderManager.chatModelProvider.currentModel.name;
+
     Logger.root.info('Start processing LLM response: $messageList0');
 
-    final stream = _llmClient!.chatStreamCompletion(
+    // Route to local model if Echo recommends it (confidence above threshold + adapter loaded)
+    final useLocalModel = echoCtx != null && echoCtx.recommendedModel == 'local' && echoCtx.loraId != null;
+    final activeLlmClient = useLocalModel
+        ? OpenAIClient(apiKey: 'local', baseUrl: EchoClient().baseUrl + '/v1')
+        : _llmClient!;
+    final activeModel = useLocalModel ? 'shadow' : ProviderManager.chatModelProvider.currentModel.name;
+    if (useLocalModel) _lastModelUsed = 'local';
+
+    final stream = activeLlmClient.chatStreamCompletion(
       CompletionRequest(
-        model: ProviderManager.chatModelProvider.currentModel.name,
+        model: activeModel,
         messages: [
-          ChatMessage(content: systemPrompt, role: MessageRole.system),
+          ChatMessage(content: enrichedSystemPrompt, role: MessageRole.system),
           ...messageList0,
         ],
         modelSetting: modelSetting,
+        userId: echoUserId,
       ),
     );
 
     _initializeAssistantResponse();
     await _processResponseStream(stream);
     Logger.root.info('End processing LLM response');
+
+    // Echo /save: fire-and-forget after response completes
+    _lastAssistantMessage = _currentResponse;
+    if (_lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
+      EchoClient().savePair(
+        userMessage: _lastUserMessage,
+        assistantMessage: _lastAssistantMessage,
+        modelUsed: _lastModelUsed,
+        engagementSignal: 'continue',
+      );
+    }
   }
 
   List<ChatMessage> _prepareMessageList() {
