@@ -10,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:chatmcp/widgets/ink_icon.dart';
 import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/page/layout/widgets/conv_setting.dart';
+import 'package:chatmcp/voice/voice_service.dart';
 
 class SubmitData {
   final String text;
@@ -295,12 +296,12 @@ class InputAreaState extends State<InputArea> {
               ),
             ),
           ),
-          Padding(
+Padding(
             padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 6.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (!widget.disabled)
+                if (!widget.disabled) ...[
                   Row(
                     children: [
                       FutureBuilder<int>(
@@ -326,8 +327,11 @@ class InputAreaState extends State<InputArea> {
                       ],
                       const SizedBox(width: 10),
                       const ConvSetting(),
+                      const SizedBox(width: 10),
+                      VoiceButton(),
                     ],
                   ),
+                ],
                 if (!widget.disabled) ...[
                   const Spacer(),
                   InkIcon(
