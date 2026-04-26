@@ -11,6 +11,7 @@ import 'package:chatmcp/widgets/ink_icon.dart';
 import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/page/layout/widgets/conv_setting.dart';
 import 'package:chatmcp/voice/voice_service.dart';
+import 'package:chatmcp/page/echo_tabs/voice_screen.dart';
 
 class SubmitData {
   final String text;
@@ -152,12 +153,136 @@ class InputAreaState extends State<InputArea> {
         '$extension';
   }
 
+  // ── Echo mobile input bar ────────────────────────────────────────────────
+  Widget _buildEchoMobileInput(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F0D0B),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: const Color(0xFF1E1B17)),
+              ),
+              padding: const EdgeInsets.fromLTRB(18, 10, 12, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      enabled: !widget.disabled,
+                      controller: textController,
+                      focusNode: _focusNode,
+                      onChanged: widget.onTextChanged,
+                      maxLines: 5,
+                      minLines: 1,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      style: const TextStyle(fontSize: 14, color: Color(0xFFEAE6E0)),
+                      decoration: InputDecoration(
+                        hintText: 'Keep talking...',
+                        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF3A3530)),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        fillColor: Colors.transparent,
+                      ),
+                      cursorColor: const Color(0xFFC4783A),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Mic button
+                  if (!widget.disabled)
+                    StreamBuilder<VoiceState>(
+                      stream: VoiceService().stateStream,
+                      initialData: VoiceService().state,
+                      builder: (ctx, snap) {
+                        final vs = snap.data ?? VoiceState.idle;
+                        final isActive = vs == VoiceState.listening || vs == VoiceState.speaking;
+                        final isConnecting = vs == VoiceState.connecting || vs == VoiceState.disconnecting;
+                        return GestureDetector(
+                          onTap: isConnecting ? null : () async {
+                            if (vs == VoiceState.idle) {
+                              final ok = await VoiceService().connect();
+                              if (ok && context.mounted) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const EchoVoiceScreen(),
+                                  ),
+                                );
+                              }
+                            } else {
+                              await VoiceService().disconnect();
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: isConnecting
+                                ? const SizedBox(
+                                    width: 17, height: 17,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(Color(0xFF3A3530)),
+                                    ),
+                                  )
+                                : Icon(
+                                    isActive ? Icons.mic_rounded : Icons.mic_none_rounded,
+                                    size: 17,
+                                    color: isActive ? const Color(0xFFC4783A) : const Color(0xFF3A3530),
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Send / Cancel button
+          GestureDetector(
+            onTap: widget.disabled
+                ? (widget.onCancel != null ? () => widget.onCancel!() : null)
+                : () {
+                    if (textController.text.trim().isEmpty) return;
+                    widget.onSubmitted(SubmitData(textController.text, _selectedFiles));
+                    _afterSubmitted();
+                  },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: widget.disabled
+                    ? null
+                    : const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFB86A28), Color(0xFFE8AE60)],
+                      ),
+                color: widget.disabled ? const Color(0xFF1A1815) : null,
+              ),
+              child: Icon(
+                widget.disabled ? Icons.stop_rounded : Icons.arrow_forward_rounded,
+                size: 15,
+                color: widget.disabled ? const Color(0xFF5A5550) : const Color(0xFF060504),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Mobile Echo: use slim pill input
+    if (kIsMobile) return _buildEchoMobileInput(context);
+
     final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
-        // color: Theme.of(context).cardColor,
         color: AppColors.getInputAreaBackgroundColor(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.getInputAreaBorderColor(context), width: 1),

@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_webrtc
+  livekit_client
   screen_retriever_linux
   url_launcher_linux
   window_manager

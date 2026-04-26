@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:io' as io;
 import 'package:chatmcp/utils/color.dart';
+import 'package:chatmcp/utils/platform.dart';
+import 'package:chatmcp/echo/echo_orb.dart';
 import 'chat_message_action.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
 import 'chat_loading.dart';
@@ -150,6 +152,26 @@ class ChatUIMessage extends StatelessWidget {
       );
     }
 
+    // Mobile Echo: each bubble is independent — no group container
+    if (kIsMobile) {
+      return Column(
+        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: List.generate(filteredMessages.length, (index) {
+          final pos = index == 0
+              ? BubblePosition.first
+              : index == filteredMessages.length - 1
+                  ? BubblePosition.last
+                  : BubblePosition.middle;
+          return ChatMessageContent(
+            key: ValueKey(filteredMessages[index].messageId),
+            message: filteredMessages[index],
+            onRetry: onRetry,
+            position: pos,
+          );
+        }),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(color: AppColors.getMessageBubbleBackgroundColor(context, isUser), borderRadius: BorderRadius.circular(16)),
       child: Column(
@@ -177,6 +199,29 @@ class ChatUIMessage extends StatelessWidget {
 
     final firstMsg = messages.first;
     final isUser = firstMsg.role == MessageRole.user;
+
+    // Mobile Echo layout: EchoOrb for AI, no user avatar, clean margins
+    if (kIsMobile) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isUser) ...[const EchoOrb(size: 28, rings: 1), const SizedBox(width: 8)],
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 278),
+                child: Column(
+                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [_buildMessageGroup(context, messages, isUser)],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
@@ -363,8 +408,96 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
+  BorderRadius _getEchoBorderRadius(bool isUser) {
+    if (isUser) {
+      return switch (position) {
+        BubblePosition.single => const BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(3)),
+        BubblePosition.first => const BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+        BubblePosition.middle => const BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(3),
+            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(3)),
+        BubblePosition.last => const BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(3)),
+      };
+    }
+    return switch (position) {
+      BubblePosition.single => const BorderRadius.only(
+          topLeft: Radius.circular(16), topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(3), bottomRight: Radius.circular(16)),
+      BubblePosition.first => const BorderRadius.only(
+          topLeft: Radius.circular(16), topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+      BubblePosition.middle => const BorderRadius.only(
+          topLeft: Radius.circular(3), topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(3), bottomRight: Radius.circular(16)),
+      BubblePosition.last => const BorderRadius.only(
+          topLeft: Radius.circular(16), topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(3), bottomRight: Radius.circular(16)),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isUser = message.role == MessageRole.user;
+
+    // ── Mobile Echo styling ──────────────────────────────────────────────
+    if (kIsMobile) {
+      // Loading indicator
+      if (message.role == MessageRole.loading) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF121009),
+            border: Border.all(color: const Color(0xFF1C1915)),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16), topRight: Radius.circular(16),
+              bottomLeft: Radius.circular(3), bottomRight: Radius.circular(16)),
+          ),
+          child: const ChatLoading(),
+        );
+      }
+      // Tool call/result — quiet pill
+      if ((message.toolCalls != null && message.toolCalls!.isNotEmpty) || message.role == MessageRole.tool) {
+        final label = message.role == MessageRole.tool
+            ? 'done'
+            : (message.toolCalls![0]['function']['name'] as String).replaceAll('_', ' ');
+        return Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0C0A08),
+            border: Border.all(color: const Color(0xFF181512)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(
+              message.role == MessageRole.tool ? Icons.check_circle_outline : Icons.build_outlined,
+              size: 13, color: const Color(0xFF4A4540)),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(fontSize: 11.5, color: Color(0xFF5A5550))),
+          ]),
+        );
+      }
+      if (message.content == null || message.content!.isEmpty) return const SizedBox.shrink();
+      return Container(
+        margin: _getMargin(),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: isUser ? const Color(0xFF1E1B16) : const Color(0xFF121009),
+          border: Border.all(color: isUser ? const Color(0xFF2A2720) : const Color(0xFF1C1915)),
+          borderRadius: _getEchoBorderRadius(isUser),
+        ),
+        child: Markit(data: message.content!.trim()),
+      );
+    }
+
+    // ── Desktop styling ──────────────────────────────────────────────────
     Widget child = const Text('');
     if (message.content != null) {
       if (message.role == MessageRole.user) {
@@ -394,7 +527,7 @@ class MessageBubble extends StatelessWidget {
         color: useTransparentBackground ? Colors.transparent : AppColors.getMessageBubbleBackgroundColor(context, message.role == MessageRole.user),
         borderRadius: _getBorderRadius(),
       ),
-      child: child
+      child: child,
     );
   }
 }
@@ -490,6 +623,9 @@ class ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsMobile) {
+      return isUser ? const SizedBox.shrink() : const EchoOrb(size: 28, rings: 1);
+    }
     return CircleAvatar(
       backgroundColor: AppColors.getChatAvatarBackgroundColor(),
       child: Icon(isUser ? Icons.person : Icons.android, color: AppColors.getChatAvatarIconColor()),

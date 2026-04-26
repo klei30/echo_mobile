@@ -9,8 +9,8 @@ import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:chatmcp/provider/chat_model_provider.dart';
 import 'package:chatmcp/utils/platform.dart';
 import 'package:chatmcp/utils/color.dart';
-import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:chatmcp/page/setting/setting.dart';
+import 'package:chatmcp/page/echo_mobile.dart';
 
 class LayoutPage extends StatefulWidget {
   const LayoutPage({super.key});
@@ -113,9 +113,9 @@ class _LayoutPageState extends State<LayoutPage> {
 
     return Consumer<ChatModelProvider>(
       builder: (context, chatModelProvider, child) {
-        return kIsMobile
-            ? KeyboardDismisser(gestures: [GestureType.onTap, GestureType.onPanUpdateDownDirection], child: _buildLayout())
-            : _buildLayout();
+        // Mobile gets the full Echo shell (bottom nav + dark theme)
+        if (kIsMobile) return const EchoMobilePage();
+        return _buildLayout();
       },
     );
   }

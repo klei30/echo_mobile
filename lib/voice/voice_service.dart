@@ -26,6 +26,15 @@ class VoiceService {
   final _stateController = async.StreamController<VoiceState>.broadcast();
   Stream<VoiceState> get stateStream => _stateController.stream;
 
+  // Transcript events from the voice agent: (role: "user"|"agent", text: "...")
+  final _transcriptController = async.StreamController<({String role, String text})>.broadcast();
+  Stream<({String role, String text})> get transcriptStream => _transcriptController.stream;
+
+  String _lastUserText = '';
+  String _lastEchoText = '';
+  String get lastUserText => _lastUserText;
+  String get lastEchoText => _lastEchoText;
+
   void _setState(VoiceState s) {
     _state = s;
     _stateController.add(s);
@@ -100,6 +109,29 @@ class VoiceService {
         _log.info('LiveKit disconnected');
         _room = null;
         _setState(VoiceState.idle);
+      });
+
+      _room!.events.on<DataReceivedEvent>((event) {
+        try {
+          final str = utf8.decode(Uint8List.fromList(event.data));
+          final msg = jsonDecode(str) as Map<String, dynamic>;
+          final type = msg['type'] as String?;
+          if (type == 'transcript') {
+            final role = msg['role'] as String? ?? 'user';
+            final text = msg['text'] as String? ?? '';
+            if (role == 'user') _lastUserText = text;
+            _transcriptController.add((role: role, text: text));
+          } else if (type == 'agent_state') {
+            final agentState = msg['state'] as String? ?? '';
+            if (agentState == 'speaking') {
+              _setState(VoiceState.speaking);
+            } else if (agentState == 'listening' || agentState == 'initializing') {
+              if (_state == VoiceState.speaking) _setState(VoiceState.listening);
+            }
+          }
+        } catch (e) {
+          _log.warning('DataReceivedEvent parse error: $e');
+        }
       });
 
       _log.info('Connecting to LiveKit ${tokenData.url} room=${tokenData.room}');

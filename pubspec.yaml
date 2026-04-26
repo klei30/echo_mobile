@@ -85,6 +85,7 @@ dependencies:
   mobile_scanner: ^7.0.1  # 替代qr_code_scanner的现代二维码扫描器
   dio: ^5.4.0  # HTTP客户端
   livekit_client: ^2.7.0  # Realtime voice/video
+  google_fonts: ^6.2.1    # Lora serif + Plus Jakarta Sans for Echo brand
 
 dev_dependencies:
   flutter_test:
@@ -113,6 +114,7 @@ flutter:
   assets:
     - assets/mcp_server.json
     - assets/logo.png
+    - assets/echo_logo.png
     - assets/sandbox/
     - assets/logo/
     - assets/logo_256.png

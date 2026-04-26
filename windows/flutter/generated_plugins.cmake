@@ -3,7 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  connectivity_plus
   flutter_inappwebview_windows
+  flutter_webrtc
+  livekit_client
   screen_retriever_windows
   share_plus
   url_launcher_windows

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_theme.dart';
 
 class AuthPage extends StatefulWidget {
   final VoidCallback onAuthenticated;
@@ -95,11 +96,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
+      backgroundColor: EchoColors.bg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -115,20 +113,29 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
+                      color: EchoColors.bgSurface,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: EchoColors.border),
                     ),
-                    child: const Icon(Icons.psychology_alt, color: Colors.white, size: 40),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset('assets/echo_logo.png', width: 56, height: 56),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Echo',
-                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: EchoColors.textPrimary,
+                    ),
                   ),
                   Text(
-                    'Your personal AI companion',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    'Your shadow clone',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: EchoColors.textGhost,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -136,7 +143,11 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                   // Card
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    color: EchoColors.bgCard,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: EchoColors.border),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -144,8 +155,10 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           // Tab bar
                           TabBar(
                             controller: _tabs,
+                            indicatorColor: EchoColors.amber,
+                            labelStyle: TextStyle(fontWeight: FontWeight.w600, color: EchoColors.textPrimary),
+                            unselectedLabelStyle: TextStyle(color: EchoColors.textGhost),
                             tabs: const [Tab(text: 'Sign In'), Tab(text: 'Create Account')],
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 24),
 
@@ -164,17 +177,18 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.errorContainer,
+                                color: Color(0xFF3A1A1A),
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Color(0xFF5A2A2A)),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.error_outline, size: 16, color: theme.colorScheme.onErrorContainer),
+                                  Icon(Icons.error_outline, size: 16, color: Color(0xFFE08080)),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       _error!,
-                                      style: TextStyle(color: theme.colorScheme.onErrorContainer, fontSize: 13),
+                                      style: TextStyle(color: Color(0xFFE08080), fontSize: 13),
                                     ),
                                   ),
                                 ],
@@ -189,6 +203,10 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                             width: double.infinity,
                             height: 48,
                             child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: EchoColors.amber,
+                                foregroundColor: Colors.white,
+                              ),
                               onPressed: _loading ? null : (_tabs.index == 0 ? _login : _register),
                               child: _loading
                                   ? const SizedBox(
@@ -205,8 +223,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                   const SizedBox(height: 24),
                   Text(
                     'Your data stays on your device.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: EchoColors.textGhost,
                     ),
                   ),
                 ],
@@ -290,16 +309,31 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       keyboardType: keyboardType,
       obscureText: obscure,
       onSubmitted: onSubmit,
+      style: TextStyle(color: EchoColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20),
+        labelStyle: TextStyle(color: EchoColors.textGhost),
+        prefixIcon: Icon(icon, size: 20, color: EchoColors.textMuted),
         suffixIcon: toggleObscure != null
             ? IconButton(
-                icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 20),
+                icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 20, color: EchoColors.textMuted),
                 onPressed: toggleObscure,
               )
             : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        filled: true,
+        fillColor: EchoColors.bgInput,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: EchoColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: EchoColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: EchoColors.amber),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         isDense: true,
       ),

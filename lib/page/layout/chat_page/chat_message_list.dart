@@ -2,6 +2,7 @@ import 'package:chatmcp/utils/stream.dart';
 import 'package:flutter/material.dart';
 import 'package:chatmcp/llm/model.dart';
 import 'package:flutter/rendering.dart';
+import 'package:chatmcp/utils/platform.dart';
 import 'chat_message.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
@@ -134,13 +135,40 @@ class _MessageListState extends State<MessageList> {
             ListView.builder(
               reverse: true,
               controller: _scrollController,
-              padding: const EdgeInsets.all(16.0),
+              padding: kIsMobile
+                  ? const EdgeInsets.fromLTRB(16, 8, 16, 8)
+                  : const EdgeInsets.all(16.0),
               itemCount: groupedMessages.length,
-              // physics: const ClampingScrollPhysics(), // Disable elastic effect
               itemBuilder: (context, index) {
                 final group = groupedMessages[index];
+                final isLast = index == groupedMessages.length - 1;
 
-                return ChatUIMessage(key: ValueKey(group.first.messageId), messages: group, onRetry: widget.onRetry, onSwitch: widget.onSwitch);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Day label on mobile at the very start (reversed list)
+                    if (kIsMobile && isLast)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Today',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: const Color(0xFF2A2720),
+                            letterSpacing: 0.5,
+                            fontFamily: Theme.of(context).textTheme.bodySmall?.fontFamily,
+                          ),
+                        ),
+                      ),
+                    ChatUIMessage(
+                      key: ValueKey(group.first.messageId),
+                      messages: group,
+                      onRetry: widget.onRetry,
+                      onSwitch: widget.onSwitch,
+                    ),
+                  ],
+                );
               },
             ),
             // if (!_isScrolledToBottom())
