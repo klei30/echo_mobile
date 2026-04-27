@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
+import 'package:chatmcp/provider/settings_provider.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -108,6 +109,18 @@ class AuthService {
     await prefs.setString(_tokenKey, _token!);
     await prefs.setString(_userIdKey, _userId!);
     await prefs.setString(_usernameKey, _username!);
-    _log.info('Session saved for user=${_userId} username=${_username}');
+    _log.info('Session saved for user=$_userId username=$_username');
+  }
+
+  Future<void> syncTokenToSettings() async {
+    if (_token == null || _token!.isEmpty) return;
+    final sp = SettingsProvider();
+    final apiSettings = List<LLMProviderSetting>.from(sp.apiSettings);
+    final idx = apiSettings.indexWhere((s) => s.providerId == 'echo');
+    if (idx >= 0 && apiSettings[idx].apiKey != _token) {
+      apiSettings[idx].apiKey = _token!;
+      await sp.updateApiSettings(apiSettings: apiSettings);
+      _log.info('Echo provider apiKey synced for user=$_userId');
+    }
   }
 }

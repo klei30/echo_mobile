@@ -110,13 +110,22 @@ class _EmergenceScreenState extends State<EmergenceScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(28, 14, 28, 0),
-          child: Text(
-            phaseLabel.toUpperCase(),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10, fontWeight: FontWeight.w700,
-              letterSpacing: 1.2, color: const Color(0xFF2A2520),
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                phaseLabel.toUpperCase(),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10, fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2, color: const Color(0xFF2A2520),
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(

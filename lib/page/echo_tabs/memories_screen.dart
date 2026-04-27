@@ -56,6 +56,42 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     } catch (_) {}
   }
 
+  Future<void> _deleteAll() async {
+    try {
+      final base = AuthService().baseUrl;
+      final h = AuthService().authHeaders;
+      await http
+          .delete(Uri.parse('$base/v1/user/memories'), headers: h)
+          .timeout(const Duration(seconds: 15));
+      await _load();
+    } catch (_) {}
+  }
+
+  void _confirmDeleteAll() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: EchoColors.bgCard,
+        title: Text('Forget everything?',
+            style: GoogleFonts.lora(color: EchoColors.textPrimary, fontSize: 16, fontStyle: FontStyle.italic)),
+        content: Text(
+          'This will delete all ${_memories.length} memories. Echo will start fresh.',
+          style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 13, height: 1.55),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost)),
+          ),
+          TextButton(
+            onPressed: () { Navigator.pop(context); _deleteAll(); },
+            child: Text('Forget all', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF8A3030))),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmDelete(String id, String text) {
     showDialog(
       context: context,
@@ -106,6 +142,13 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   ),
                   Text('${_memories.length} things remembered',
                       style: GoogleFonts.plusJakartaSans(fontSize: 10, color: EchoColors.textGhost)),
+                  if (_memories.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: _confirmDeleteAll,
+                      child: const Icon(Icons.delete_sweep_rounded, size: 18, color: Color(0xFF5A3030)),
+                    ),
+                  ],
                 ],
               ),
             ),

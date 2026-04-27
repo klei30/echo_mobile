@@ -23,6 +23,9 @@ class _PermanentRecordScreenState extends State<PermanentRecordScreen> {
     'research': 'Research',
     'writing': 'Writing',
     'math': 'Math',
+    'personal': 'Personal',
+    'work': 'Work',
+    'language': 'Language',
   };
 
   @override

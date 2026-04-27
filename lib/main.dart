@@ -57,6 +57,11 @@ void main() async {
   try {
     await Future.wait([ProviderManager.init(), initDb(), AuthService().init()]);
 
+    // Sync JWT into Echo provider if already logged in
+    if (AuthService().isLoggedIn) {
+      await AuthService().syncTokenToSettings();
+    }
+
     var app = MyApp();
 
     runApp(MultiProvider(providers: [...ProviderManager.providers], child: app));

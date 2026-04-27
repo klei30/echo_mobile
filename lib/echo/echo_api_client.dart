@@ -113,4 +113,43 @@ class EchoApiClient {
     }
     return [];
   }
+
+  Future<Map<String, dynamic>?> getTalent() async {
+    try {
+      final resp = await http
+          .post(Uri.parse('$_base/v1/user/talent'), headers: _h)
+          .timeout(const Duration(seconds: 45));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getTalent HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getTalent error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getNotableQuote() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/notable-quote'), headers: _h)
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getNotableQuote HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getNotableQuote error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getExperiment() async {
+    try {
+      final resp = await http
+          .post(Uri.parse('$_base/v1/user/experiment'), headers: _h)
+          .timeout(const Duration(seconds: 30));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getExperiment HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getExperiment error: $e');
+    }
+    return null;
+  }
 }

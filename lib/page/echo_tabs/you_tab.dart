@@ -13,6 +13,7 @@ import 'package:chatmcp/page/echo_tabs/anniversary_screen.dart';
 import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
 import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
+import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 
 class YouTab extends StatefulWidget {
   const YouTab({super.key});
@@ -24,6 +25,8 @@ class YouTab extends StatefulWidget {
 class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _stats;
   List<Map<String, dynamic>> _topics = [];
+  Map<String, dynamic>? _quote;
+  Map<String, dynamic>? _experiment;
   bool _loading = true;
 
   @override
@@ -37,6 +40,8 @@ class _YouTabState extends State<YouTab> {
     final results = await Future.wait([
       EchoApiClient().getUserStats(),
       EchoApiClient().getConfidence(),
+      EchoApiClient().getNotableQuote(),
+      EchoApiClient().getExperiment(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -47,6 +52,8 @@ class _YouTabState extends State<YouTab> {
             .map((t) => Map<String, dynamic>.from(t as Map))
             .toList();
       }
+      _quote = results[2];
+      _experiment = results[3];
       _loading = false;
     });
   }
@@ -58,6 +65,9 @@ class _YouTabState extends State<YouTab> {
     'research': 'Research',
     'writing': 'Writing',
     'math': 'Math',
+    'personal': 'Personal',
+    'work': 'Work',
+    'language': 'Language',
   };
 
   static const _topicColors = {
@@ -67,6 +77,9 @@ class _YouTabState extends State<YouTab> {
     'research': Color(0xFF4A5AA4),
     'writing': Color(0xFF5A9A6A),
     'math': Color(0xFF8A5AB4),
+    'personal': Color(0xFF9A5A8A),
+    'work': Color(0xFF6A8A5A),
+    'language': Color(0xFF5A8A9A),
   };
 
   String _formatLastTrained(String? iso) {
@@ -95,6 +108,34 @@ class _YouTabState extends State<YouTab> {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
     return '${months[now.month - 1]} ${now.day}';
+  }
+
+  static const _constellationSlots = [
+    [148.0, 108.0, 13.0],
+    [236.0, 88.0, 11.0],
+    [284.0, 162.0, 10.0],
+    [188.0, 202.0, 9.0],
+    [80.0, 172.0, 9.0],
+    [52.0, 262.0, 6.0],
+    [302.0, 248.0, 5.0],
+  ];
+
+  List<_NodeData> _toConstellationNodes() {
+    final shown = _topics.take(_constellationSlots.length).toList();
+    if (shown.isEmpty) return [];
+    return List.generate(shown.length, (i) {
+      final t = shown[i];
+      final key = t['topic'] as String? ?? 'general';
+      final score = (t['score'] as num?)?.toDouble() ?? 0.0;
+      final slot = _constellationSlots[i];
+      final r = (slot[2] * (0.5 + score * 0.5)).clamp(4.0, slot[2]);
+      return _NodeData(
+        x: slot[0], y: slot[1], r: r,
+        label: _topicLabels[key] ?? key,
+        isCx: score >= 0.40,
+        color: _topicColors[key] ?? EchoColors.amber,
+      );
+    });
   }
 
   @override
@@ -158,10 +199,21 @@ class _YouTabState extends State<YouTab> {
                 height: 260,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
-                  child: CustomPaint(
-                    painter: _ConstellationPainter(),
-                    child: const SizedBox.expand(),
-                  ),
+                  child: _topics.isEmpty && !_loading
+                      ? Center(
+                          child: Text(
+                            'Keep chatting —\nyour constellation is forming.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.lora(
+                              fontSize: 14, fontStyle: FontStyle.italic,
+                              color: EchoColors.textGhost, height: 1.6,
+                            ),
+                          ),
+                        )
+                      : CustomPaint(
+                          painter: _ConstellationPainter(nodes: _toConstellationNodes()),
+                          child: const SizedBox.expand(),
+                        ),
                 ),
               ),
               // ─── Quote ────────────────────────────────────────────────
@@ -192,6 +244,10 @@ class _YouTabState extends State<YouTab> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
+                child: _buildTalentCard(context, totalPairs),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
                 child: _buildMomentCard(
                   context,
                   icon: Icons.history_edu_rounded,
@@ -266,25 +322,45 @@ class _YouTabState extends State<YouTab> {
                   icon: Icons.science_outlined,
                   iconColor: const Color(0xFF6A9A7A),
                   label: 'Active Experiment',
-                  sub: weeksActive > 0
-                      ? 'Week $weeksActive · Echo is designing one for you'
-                      : 'Keep talking — experiments emerge from patterns',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ExperimentCheckinScreen(
-                        experiment: EchoExperiment(
-                          number: weeksActive > 0 ? weeksActive : 1,
-                          trigger: 'Echo noticed a pattern worth exploring.',
-                          hypothesis: 'A small change in behavior reveals something true about you.',
-                          title: 'Speak without hedging. Just once a day.',
-                          body: 'Once a day — in a meeting, a message, or a conversation — say your point **without "I think," "maybe," or "I could be wrong."**\n\nNot every time. Just once. See what happens to the room. See what happens to you.\n\n**I predict:** people will respond to you differently.',
-                          followup: 'I\'ll check in every 2 days.',
-                          durationDays: 7,
-                          currentDay: null,
-                        ),
+                  sub: _experiment != null
+                      ? (_experiment!['title'] as String? ?? 'Echo designed one for you')
+                      : weeksActive > 0
+                          ? 'Week $weeksActive · Echo is designing one for you'
+                          : 'Keep talking — experiments emerge from patterns',
+                  onTap: () {
+                    final exp = _experiment != null
+                        ? EchoExperiment(
+                            number: weeksActive > 0 ? weeksActive : 1,
+                            trigger: _experiment!['trigger'] as String? ?? 'Echo noticed a pattern worth exploring.',
+                            hypothesis: _experiment!['hypothesis'] as String? ?? 'A small change in behavior reveals something true about you.',
+                            title: _experiment!['title'] as String? ?? 'Speak without hedging. Just once a day.',
+                            body: _experiment!['body'] as String? ?? '',
+                            followup: _experiment!['followup'] as String? ?? "I'll check in every 2 days.",
+                            durationDays: (_experiment!['duration_days'] as num?)?.toInt() ?? 7,
+                            currentDay: null,
+                          )
+                        : EchoExperiment(
+                            number: weeksActive > 0 ? weeksActive : 1,
+                            trigger: 'Echo noticed a pattern worth exploring.',
+                            hypothesis: 'A small change in behavior reveals something true about you.',
+                            title: 'Speak without hedging. Just once a day.',
+                            body: 'Once a day — in a meeting, a message, or a conversation — say your point **without "I think," "maybe," or "I could be wrong."**\n\nNot every time. Just once. See what happens to the room. See what happens to you.\n\n**I predict:** people will respond to you differently.',
+                            followup: "I'll check in every 2 days.",
+                            durationDays: 7,
+                            currentDay: null,
+                          );
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ExperimentProposalScreen(
+                        experiment: exp,
+                        onAccept: () {
+                          Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (_) => ExperimentCheckinScreen(experiment: exp),
+                          ));
+                        },
+                        onSkip: () => Navigator.of(context).pop(),
                       ),
-                    ),
-                  ),
+                    ));
+                  },
                 ),
               ),
               Padding(
@@ -294,7 +370,7 @@ class _YouTabState extends State<YouTab> {
                   icon: Icons.groups_outlined,
                   iconColor: const Color(0xFF7A5A30),
                   label: 'After Meeting',
-                  sub: 'Echo was listening · product call',
+                  sub: 'What Echo noticed this week',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const AfterMeetingScreen()),
                   ),
@@ -315,6 +391,78 @@ class _YouTabState extends State<YouTab> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTalentCard(BuildContext context, int totalPairs) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const TalentScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1510),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.amber.withValues(alpha: 0.4), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: EchoColors.amber.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.psychology_rounded, color: EchoColors.amber, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Your Hidden Gift',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13.5, fontWeight: FontWeight.w600,
+                          color: EchoColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: EchoColors.amber.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'NEW',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 8.5, fontWeight: FontWeight.w700,
+                            color: EchoColors.amber, letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    totalPairs > 0
+                        ? 'Echo has found something in $totalPairs conversations'
+                        : 'Keep chatting — Echo is building your portrait',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11, color: EchoColors.amberText),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: EchoColors.amber, size: 18),
+          ],
         ),
       ),
     );
@@ -499,7 +647,7 @@ class _YouTabState extends State<YouTab> {
                   fontSize: 14, fontWeight: FontWeight.w500,
                   color: EchoColors.textSecondary)),
           const Spacer(),
-          Text('Gmail · Calendar · Reading',
+          Text('Not connected',
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 11, color: EchoColors.textGhost)),
           const SizedBox(width: 6),
@@ -511,6 +659,9 @@ class _YouTabState extends State<YouTab> {
   }
 
   Widget _buildQuote() {
+    final quoteText = _quote?['quote'] as String?;
+    final quoteDate = _quote?['date'] as String?;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
       decoration: BoxDecoration(
@@ -521,22 +672,41 @@ class _YouTabState extends State<YouTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RichText(
-            text: TextSpan(
+          if (_loading)
+            Text(
+              'Loading your most memorable line...',
               style: GoogleFonts.lora(
                 fontSize: 13, fontStyle: FontStyle.italic,
-                height: 1.65, color: EchoColors.textMuted,
+                height: 1.65, color: EchoColors.textGhost,
               ),
-              children: const [
-                TextSpan(text: '"', style: TextStyle(color: EchoColors.amber)),
-                TextSpan(text: 'You solve for elegance before you solve for speed.'),
-                TextSpan(text: '"', style: TextStyle(color: EchoColors.amber)),
-              ],
+            )
+          else if (quoteText != null)
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.lora(
+                  fontSize: 13, fontStyle: FontStyle.italic,
+                  height: 1.65, color: EchoColors.textMuted,
+                ),
+                children: [
+                  const TextSpan(text: '"', style: TextStyle(color: EchoColors.amber)),
+                  TextSpan(text: quoteText),
+                  const TextSpan(text: '"', style: TextStyle(color: EchoColors.amber)),
+                ],
+              ),
+            )
+          else
+            Text(
+              'Keep chatting — Echo is finding your most memorable line.',
+              style: GoogleFonts.lora(
+                fontSize: 13, fontStyle: FontStyle.italic,
+                height: 1.65, color: EchoColors.textGhost,
+              ),
             ),
-          ),
           const SizedBox(height: 5),
           Text(
-            '— from your conversation, ${_shortDate()}',
+            quoteDate != null
+                ? '— from your conversation, $quoteDate'
+                : '— from your conversation, ${_shortDate()}',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 10, color: EchoColors.textVeryGhost),
           ),
@@ -557,16 +727,6 @@ class _NodeData {
       required this.label, required this.isCx, required this.color});
 }
 
-const _nodes = [
-  _NodeData(x: 148, y: 108, r: 13, label: 'Systems Thinking',    isCx: true,  color: Color(0xFFC4783A)),
-  _NodeData(x: 236, y: 88,  r: 11, label: 'Pattern Recognition', isCx: true,  color: Color(0xFFC4783A)),
-  _NodeData(x: 284, y: 162, r: 10, label: 'Teaching Instinct',   isCx: false, color: Color(0xFFD48A50)),
-  _NodeData(x: 188, y: 202, r: 9,  label: 'Builder Mindset',     isCx: false, color: Color(0xFFC4783A)),
-  _NodeData(x: 80,  y: 172, r: 9,  label: 'Emotional Intel.',    isCx: false, color: Color(0xFF5A6AB4)),
-  _NodeData(x: 52,  y: 262, r: 6,  label: 'Creative Expression', isCx: false, color: Color(0xFF4A5AA4)),
-  _NodeData(x: 302, y: 248, r: 5,  label: 'Strategic Patience',  isCx: false, color: Color(0xFF3A4A94)),
-];
-
 const _edges = [
   [0, 1, 0.30], [1, 2, 0.25], [2, 3, 0.20], [0, 3, 0.20],
   [1, 4, 0.15], [3, 4, 0.12], [4, 5, 0.08], [2, 6, 0.07],
@@ -578,10 +738,14 @@ const _stars = [
 ];
 
 class _ConstellationPainter extends CustomPainter {
+  final List<_NodeData> nodes;
+  const _ConstellationPainter({required this.nodes});
+
   static const double _vw = 350, _vh = 290;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (nodes.isEmpty) return;
     final sx = size.width / _vw;
     final sy = size.height / _vh;
     final scale = (sx + sy) / 2;
@@ -593,9 +757,13 @@ class _ConstellationPainter extends CustomPainter {
       canvas.drawCircle(Offset(s[0] * sx, s[1] * sy), 1, starPaint);
     }
 
-    for (final e in _edges) {
-      final a = _nodes[e[0] as int];
-      final b = _nodes[e[1] as int];
+    final validEdges = _edges.where(
+      (e) => (e[0] as int) < nodes.length && (e[1] as int) < nodes.length,
+    ).toList();
+
+    for (final e in validEdges) {
+      final a = nodes[e[0] as int];
+      final b = nodes[e[1] as int];
       canvas.drawLine(nodeOffset(a), nodeOffset(b),
           Paint()
             ..color = Color.fromRGBO(90, 106, 170, e[2] as double)
@@ -603,19 +771,19 @@ class _ConstellationPainter extends CustomPainter {
             ..style = PaintingStyle.stroke);
     }
 
-    for (final n in _nodes) {
+    for (final n in nodes) {
       canvas.drawCircle(nodeOffset(n), (n.r + 6) * scale,
           Paint()
             ..color = n.color.withValues(alpha: 0.06)
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
     }
 
-    for (final n in _nodes) {
+    for (final n in nodes) {
       canvas.drawCircle(nodeOffset(n), n.r * scale,
           Paint()..color = n.color.withValues(alpha: n.isCx ? 1.0 : 0.7));
     }
 
-    for (final n in _nodes) {
+    for (final n in nodes) {
       final tp = TextPainter(
         text: TextSpan(
           text: n.label,
@@ -659,5 +827,5 @@ class _ConstellationPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ConstellationPainter old) => old.nodes != nodes;
 }

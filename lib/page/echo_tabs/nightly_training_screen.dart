@@ -70,13 +70,22 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(28, 14, 28, 0),
-              child: Text(
-                'OVERNIGHT · TRAINING COMPLETE',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10, fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2, color: const Color(0xFF2A2520),
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'OVERNIGHT · TRAINING COMPLETE',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10, fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2, color: const Color(0xFF2A2520),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -203,6 +212,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   }
 
   Widget _buildInsight(String pattern) {
+    if (pattern.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -260,10 +270,10 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                 ),
                 children: const [
                   TextSpan(
-                    text: '4 specialist models',
+                    text: 'Your Shadow Clone',
                     style: TextStyle(color: Color(0xFF6A6560), fontWeight: FontWeight.w500),
                   ),
-                  TextSpan(text: ' trained in parallel last night. The strongest merged into your main Echo.'),
+                  TextSpan(text: ' trained on your conversations. The new adapter merged into your personal Echo.'),
                 ],
               ),
             ),

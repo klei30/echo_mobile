@@ -187,6 +187,17 @@ class ChatSetting {
 
 final List<LLMProviderSetting> defaultApiSettings = [
   LLMProviderSetting(
+    apiKey: 'echo',
+    apiEndpoint: 'http://10.0.2.2:8002/v1',
+    apiStyle: 'openai',
+    providerId: 'echo',
+    providerName: 'Echo',
+    icon: 'ollama',
+    custom: false,
+    models: ['shadow'],
+    enabledModels: ['shadow'],
+  ),
+  LLMProviderSetting(
     apiKey: '',
     apiEndpoint: 'https://api.githubcopilot.com',
     apiStyle: 'openai',

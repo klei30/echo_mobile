@@ -62,6 +62,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     if (err != null) {
       setState(() => _error = err);
     } else {
+      await AuthService().syncTokenToSettings();
       widget.onAuthenticated();
     }
   }
@@ -90,6 +91,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
     if (err != null) {
       setState(() => _error = err);
     } else {
+      await AuthService().syncTokenToSettings();
       widget.onAuthenticated();
     }
   }

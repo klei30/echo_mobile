@@ -95,7 +95,7 @@ class ExperimentProposalScreen extends StatelessWidget {
                 Text('Experiment', style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, fontWeight: FontWeight.w600,
                     color: EchoColors.textPrimary)),
-                Text('Based on today\'s meeting', style: GoogleFonts.plusJakartaSans(
+                Text('From what Echo observed', style: GoogleFonts.plusJakartaSans(
                     fontSize: 10.5, color: EchoColors.textGhost)),
               ],
             ),
@@ -397,6 +397,11 @@ class _ExperimentCheckinScreenState extends State<ExperimentCheckinScreen> {
       ),
       child: Row(
         children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
+          ),
+          const SizedBox(width: 10),
           EchoOrb(size: 32, rings: 2),
           const SizedBox(width: 10),
           Expanded(
@@ -495,8 +500,8 @@ class _ExperimentCheckinScreenState extends State<ExperimentCheckinScreen> {
 
   Widget _buildInsightBubble() {
     final observation = widget.echoObservation ??
-        'Yesterday in your message to Lena — you wrote "I think we should move forward." Then deleted it and rewrote: **"Let\'s move forward."**';
-    final dataPoint = widget.dataPoint ?? 'She responded in 4 minutes. Fastest reply she\'s sent you in weeks.';
+        'Echo is watching how the experiment lands. Keep going — patterns take a few days to surface.';
+    final dataPoint = widget.dataPoint ?? 'Come back tomorrow and Echo will have more to show you.';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -555,34 +560,6 @@ class _ExperimentCheckinScreenState extends State<ExperimentCheckinScreen> {
                   dataPoint,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, color: const Color(0xFF7A7570), height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D0C18),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: EchoColors.indigo.withValues(alpha: 0.25)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 5, height: 5,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: EchoColors.indigo,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Lena\'s avg response: 3.2 hrs → 4 min',
-                        style: GoogleFonts.lora(
-                          fontSize: 11, fontStyle: FontStyle.italic,
-                          color: const Color(0xFF7A82C8),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],

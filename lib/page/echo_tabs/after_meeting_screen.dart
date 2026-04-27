@@ -12,7 +12,7 @@ class AfterMeetingScreen extends StatefulWidget {
 }
 
 class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
-  Map<String, dynamic>? _mirror;
+  Map<String, dynamic>? _insights;
   bool _loading = true;
   bool _error = false;
 
@@ -24,10 +24,10 @@ class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = false; });
-    final data = await EchoApiClient().getWeeklyMirror();
+    final data = await EchoApiClient().getUserInsights();
     if (!mounted) return;
     setState(() {
-      _mirror = data;
+      _insights = data;
       _loading = false;
       _error = data == null;
     });
@@ -55,7 +55,6 @@ class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
   }
 
   Widget _buildNavHeader(BuildContext context) {
-    final weekNumber = _mirror?['week_number'] as int? ?? 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 10),
       decoration: const BoxDecoration(
@@ -78,18 +77,10 @@ class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
                 Text('Echo', style: GoogleFonts.plusJakartaSans(
                     fontSize: 16, fontWeight: FontWeight.w600,
                     color: EchoColors.textPrimary, letterSpacing: -0.3)),
-                RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11, color: EchoColors.textGhost),
-                    children: [
-                      TextSpan(
-                        text: 'week $weekNumber',
-                        style: const TextStyle(color: Color(0xFF9A7048), fontWeight: FontWeight.w500),
-                      ),
-                      const TextSpan(text: ' · what I noticed'),
-                    ],
-                  ),
+                Text(
+                  'recent patterns · what I noticed',
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11, color: EchoColors.textGhost),
                 ),
               ],
             ),
@@ -137,30 +128,42 @@ class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
   }
 
   Widget _buildContent(BuildContext context) {
-    final headline = _mirror?['headline'] as String? ?? '';
-    final rawObs = (_mirror?['observations'] as List? ?? []).cast<String>();
-    final sitWith = _mirror?['sit_with_this'] as String? ?? '';
-    final experiment = _mirror?['experiment'] as String? ?? '';
+    final latestPattern = _insights?['latest_pattern'] as String? ?? '';
+    final rawObs = (_insights?['observations'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final sitWith = _insights?['sit_with_this'] as String? ?? '';
+
+    // If insights has no observations, show latest_pattern as a single observation
+    final displayObs = rawObs.isNotEmpty
+        ? rawObs
+        : (latestPattern.isNotEmpty ? [latestPattern] : <String>[]);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        _buildMeetingHeader(headline),
+        _buildMeetingHeader(latestPattern),
         const SizedBox(height: 14),
-        Text(
-          'WHAT I SAW THIS WEEK',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 9.5, fontWeight: FontWeight.w700,
-            letterSpacing: 1.0, color: EchoColors.textGhost,
+        if (displayObs.isNotEmpty) ...[
+          Text(
+            'WHAT I NOTICED',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9.5, fontWeight: FontWeight.w700,
+              letterSpacing: 1.0, color: EchoColors.textGhost,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        ...rawObs.asMap().entries.map((e) => _buildObservation(e.value, e.key)),
+          const SizedBox(height: 12),
+          ...displayObs.asMap().entries.map((e) => _buildObservation(e.value, e.key)),
+        ] else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'Keep talking — Echo is still forming patterns.',
+              style: GoogleFonts.lora(
+                fontSize: 14, fontStyle: FontStyle.italic,
+                color: EchoColors.textGhost, height: 1.6,
+              ),
+            ),
+          ),
         if (sitWith.isNotEmpty) _buildVerdict(sitWith),
-        if (experiment.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          _buildExperiment(experiment),
-        ],
         const SizedBox(height: 14),
         _buildCta(context),
       ],
@@ -277,42 +280,6 @@ class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
             style: GoogleFonts.lora(
               fontSize: 14.5, fontStyle: FontStyle.italic,
               height: 1.65, color: const Color(0xFFB8B4AE),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExperiment(String text) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF080706),
-        borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(color: EchoColors.indigo.withValues(alpha: 0.5), width: 2),
-          right: const BorderSide(color: Color(0xFF080706)),
-          top: const BorderSide(color: Color(0xFF080706)),
-          bottom: const BorderSide(color: Color(0xFF080706)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'TRY THIS WEEK',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9.5, fontWeight: FontWeight.w700,
-              letterSpacing: 1.0, color: const Color(0xFF3A4A6A),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            text,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 13, height: 1.6,
-              color: const Color(0xFF7A8AAA),
             ),
           ),
         ],
