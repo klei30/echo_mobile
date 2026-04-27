@@ -77,4 +77,40 @@ class EchoApiClient {
     }
     return null;
   }
+
+  Future<List<Map<String, dynamic>>> getMemories() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/memories'), headers: _h)
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['memories'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+      _log.warning('getMemories HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getMemories error: $e');
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getSkills() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/skills'), headers: _h)
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['skills'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+      _log.warning('getSkills HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getSkills error: $e');
+    }
+    return [];
+  }
 }

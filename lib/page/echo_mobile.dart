@@ -4,7 +4,6 @@ import 'package:keyboard_dismisser/keyboard_dismisser.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:chatmcp/echo/echo_theme.dart';
-import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/page/layout/sidebar.dart';
 import 'package:chatmcp/page/layout/chat_page/chat_page.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
@@ -315,7 +314,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
   Widget _icon(_EchoTabIcon icon, Color color) {
     switch (icon) {
       case _EchoTabIcon.echo:
-        return Icon(Icons.chat_bubble_outline_rounded, size: 21, color: color);
+        return _SonarRingsIcon(color: color);
       case _EchoTabIcon.mirror:
         return _MirrorCircleIcon(color: color);
       case _EchoTabIcon.you:
@@ -325,6 +324,48 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
 }
 
 enum _EchoTabIcon { echo, mirror, you }
+
+/// Sonar rings icon — Echo brand mark: center dot + two concentric arcs emanating outward.
+class _SonarRingsIcon extends StatelessWidget {
+  final Color color;
+  const _SonarRingsIcon({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 21,
+      height: 21,
+      child: CustomPaint(painter: _SonarRingsPainter(color: color)),
+    );
+  }
+}
+
+class _SonarRingsPainter extends CustomPainter {
+  final Color color;
+  const _SonarRingsPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+
+    // Center dot
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.09, Paint()..color = color);
+
+    final stroke = Paint()
+      ..color = color
+      ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke;
+
+    // Inner ring
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.28, stroke..color = color.withValues(alpha: 0.75));
+    // Outer ring
+    canvas.drawCircle(Offset(cx, cy), size.width * 0.46, stroke..color = color.withValues(alpha: 0.40));
+  }
+
+  @override
+  bool shouldRepaint(covariant _SonarRingsPainter old) => old.color != color;
+}
 
 /// Mirror icon: circle with 4 cardinal tick marks — matches the design's circle+crosses icon.
 class _MirrorCircleIcon extends StatelessWidget {

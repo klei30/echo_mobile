@@ -12,7 +12,8 @@ class NightlyTrainingScreen extends StatefulWidget {
 }
 
 class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
-  Map<String, dynamic>? _stats;
+  Map<String, dynamic>? _userStats;
+  Map<String, dynamic>? _insights;
   bool _loading = true;
 
   @override
@@ -22,12 +23,27 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   }
 
   Future<void> _load() async {
-    final stats = await EchoApiClient().getUserInsights();
+    setState(() => _loading = true);
+    final results = await Future.wait([
+      EchoApiClient().getUserStats(),
+      EchoApiClient().getUserInsights(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _stats = stats;
+      _userStats = results[0];
+      _insights = results[1];
       _loading = false;
     });
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      final h = dt.hour.toString().padLeft(2, '0');
+      final m = dt.minute.toString().padLeft(2, '0');
+      return '${months[dt.month - 1]} ${dt.day} · $h:$m';
+    } catch (_) { return '—'; }
   }
 
   String _nextMirrorLabel() {
@@ -40,10 +56,12 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final turnsAnalyzed = _stats?['turns_analyzed'] as int? ?? 0;
-    final newPatterns = _stats?['new_patterns'] as int? ?? 0;
-    final accuracyStr = _stats?['accuracy_delta'] as String? ?? '—';
-    final newPattern = _stats?['latest_pattern'] as String? ?? '';
+    // Use total stats for counts (insights counts only since last checkpoint = 0 post-training)
+    final turnsAnalyzed = _userStats?['total_pairs'] as int? ?? 0;
+    final newPatterns = _userStats?['patterns_found'] as int? ?? 0;
+    final lastTrained = _userStats?['last_trained'] as String?;
+    final accuracyStr = lastTrained != null ? _formatDate(lastTrained) : '—';
+    final newPattern = _insights?['latest_pattern'] as String? ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFF060504),
@@ -133,23 +151,23 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     );
   }
 
-  Widget _buildStats(int turns, int patterns, String accuracy) {
+  Widget _buildStats(int turns, int patterns, String lastTrained) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Row(
         children: [
-          _statTile('$turns', 'turns analyzed'),
+          _statTile('$turns', 'conversations'),
           const SizedBox(width: 8),
-          _statTile('$patterns', 'new patterns'),
+          _statTile('$patterns', 'topics learned'),
           const SizedBox(width: 8),
-          _statTile(accuracy, 'model accuracy',
-              valueColor: const Color(0xFF6A9A7A)),
+          _statTile(lastTrained, 'last trained',
+              valueColor: const Color(0xFF6A9A7A), smallValue: true),
         ],
       ),
     );
   }
 
-  Widget _statTile(String value, String label, {Color? valueColor}) {
+  Widget _statTile(String value, String label, {Color? valueColor, bool smallValue = false}) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -164,9 +182,11 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             Text(
               value,
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 22, fontWeight: FontWeight.w600,
-                letterSpacing: -0.5,
+                fontSize: smallValue ? 13 : 22,
+                fontWeight: FontWeight.w600,
+                letterSpacing: smallValue ? -0.2 : -0.5,
                 color: valueColor ?? EchoColors.textPrimary,
+                height: smallValue ? 1.3 : 1.0,
               ),
             ),
             const SizedBox(height: 2),

@@ -766,13 +766,10 @@ class _ChatPageState extends State<ChatPage> {
 
     final systemPrompt = await _getSystemPrompt();
 
-    // Echo /context: enrich system prompt with memory + get routing hint (~100ms, silent on fail)
+    // Fetch Echo context for routing decision only (sidecar injects memory itself on the Echo path)
     final userMsg = messageList0.lastWhere((m) => m.role == MessageRole.user, orElse: () => ChatMessage(role: MessageRole.user, content: '')).content ?? '';
     final echoUserId = await EchoClient().userId;
     final echoCtx = await EchoClient().fetchContext(userMsg);
-    final enrichedSystemPrompt = echoCtx != null && echoCtx.systemInjection.isNotEmpty
-        ? '${echoCtx.systemInjection}\n\n$systemPrompt'
-        : systemPrompt;
     _lastUserMessage = userMsg;
     _lastModelUsed = ProviderManager.chatModelProvider.currentModel.name;
 
@@ -786,11 +783,18 @@ class _ChatPageState extends State<ChatPage> {
     final activeModel = useLocalModel ? 'shadow' : ProviderManager.chatModelProvider.currentModel.name;
     if (useLocalModel) _lastModelUsed = 'local';
 
+    // Echo path: sidecar owns the full system prompt (memory + rules + "no tools" guard).
+    // Sending the UI system prompt would conflict with Echo's injection, so we send nothing.
+    // Direct LLM path: prepend Echo's memory context to the full generated system prompt.
+    final activeSystemPrompt = useLocalModel
+        ? ''
+        : (echoCtx != null && echoCtx.systemInjection.isNotEmpty ? '${echoCtx.systemInjection}\n\n$systemPrompt' : systemPrompt);
+
     final stream = activeLlmClient.chatStreamCompletion(
       CompletionRequest(
         model: activeModel,
         messages: [
-          ChatMessage(content: enrichedSystemPrompt, role: MessageRole.system),
+          ChatMessage(content: activeSystemPrompt, role: MessageRole.system),
           ...messageList0,
         ],
         modelSetting: modelSetting,
@@ -802,9 +806,9 @@ class _ChatPageState extends State<ChatPage> {
     await _processResponseStream(stream);
     Logger.root.info('End processing LLM response');
 
-    // Echo /save: fire-and-forget after response completes
+    // Echo /save: only needed when NOT routing through Echo (Echo auto-saves in its streaming handler)
     _lastAssistantMessage = _currentResponse;
-    if (_lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
+    if (!useLocalModel && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
       EchoClient().savePair(
         userMessage: _lastUserMessage,
         assistantMessage: _lastAssistantMessage,

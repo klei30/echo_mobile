@@ -2,60 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
 
-class AfterMeetingObservation {
-  final String icon;
-  final String text;
-  final bool dimmed;
-  const AfterMeetingObservation({
-    required this.icon,
-    required this.text,
-    this.dimmed = false,
-  });
+class AfterMeetingScreen extends StatefulWidget {
+  const AfterMeetingScreen({super.key});
+
+  @override
+  State<AfterMeetingScreen> createState() => _AfterMeetingScreenState();
 }
 
-class AfterMeetingScreen extends StatelessWidget {
-  final String meetingTitle;
-  final String meetingDuration;
-  final int weekNumber;
-  final List<AfterMeetingObservation> observations;
-  final String verdict;
-  final VoidCallback? onTalkAboutThis;
+class _AfterMeetingScreenState extends State<AfterMeetingScreen> {
+  Map<String, dynamic>? _mirror;
+  bool _loading = true;
+  bool _error = false;
 
-  const AfterMeetingScreen({
-    super.key,
-    this.meetingTitle = 'product call',
-    this.meetingDuration = '90 min',
-    this.weekNumber = 11,
-    this.observations = const [],
-    this.verdict = '',
-    this.onTalkAboutThis,
-  });
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
-  static const _defaultObservations = [
-    AfterMeetingObservation(
-      icon: '⟳',
-      text: 'You had the **right answer three times** and deferred to Marcus anyway. You said "I might be wrong but—" before each one.',
-    ),
-    AfterMeetingObservation(
-      icon: '⟴',
-      text: 'The one moment you spoke **without hedging**, everyone stopped talking. The room listened.',
-    ),
-    AfterMeetingObservation(
-      icon: '◌',
-      text: 'You mentioned the architecture idea twice — and dropped it both times when Marcus changed the subject.',
-      dimmed: true,
-    ),
-  ];
-
-  static const _defaultVerdict =
-      'Confidence isn\'t the thing you need to learn. You already have the answers. You\'re just still asking permission to say them.';
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = false; });
+    final data = await EchoApiClient().getWeeklyMirror();
+    if (!mounted) return;
+    setState(() {
+      _mirror = data;
+      _loading = false;
+      _error = data == null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final obs = observations.isEmpty ? _defaultObservations : observations;
-    final verd = verdict.isEmpty ? _defaultVerdict : verdict;
-
     return Scaffold(
       backgroundColor: EchoColors.bg,
       body: SafeArea(
@@ -63,25 +42,11 @@ class AfterMeetingScreen extends StatelessWidget {
           children: [
             _buildNavHeader(context),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                children: [
-                  _buildMeetingHeader(),
-                  const SizedBox(height: 14),
-                  Text(
-                    'WHAT I SAW',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5, fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0, color: EchoColors.textGhost,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...obs.map((o) => _buildObservation(o)),
-                  _buildVerdict(verd),
-                  const SizedBox(height: 14),
-                  _buildCta(context),
-                ],
-              ),
+              child: _loading
+                  ? _buildLoading()
+                  : _error
+                      ? _buildError()
+                      : _buildContent(context),
             ),
           ],
         ),
@@ -90,6 +55,7 @@ class AfterMeetingScreen extends StatelessWidget {
   }
 
   Widget _buildNavHeader(BuildContext context) {
+    final weekNumber = _mirror?['week_number'] as int? ?? 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 10),
       decoration: const BoxDecoration(
@@ -98,6 +64,11 @@ class AfterMeetingScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
+          ),
+          const SizedBox(width: 10),
           EchoOrb(size: 32, rings: 2),
           const SizedBox(width: 10),
           Expanded(
@@ -116,7 +87,7 @@ class AfterMeetingScreen extends StatelessWidget {
                         text: 'week $weekNumber',
                         style: const TextStyle(color: Color(0xFF9A7048), fontWeight: FontWeight.w500),
                       ),
-                      const TextSpan(text: ' · ambient mode'),
+                      const TextSpan(text: ' · what I noticed'),
                     ],
                   ),
                 ),
@@ -128,7 +99,75 @@ class AfterMeetingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMeetingHeader() {
+  Widget _buildLoading() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          EchoOrb(size: 36, rings: 2),
+          const SizedBox(height: 18),
+          Text(
+            'Echo is reflecting...',
+            style: GoogleFonts.lora(
+              fontSize: 15, fontStyle: FontStyle.italic,
+              color: EchoColors.textGhost,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Couldn\'t reach Echo.',
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: EchoColors.textGhost)),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _load,
+            child: Text('Tap to retry',
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.amber)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final headline = _mirror?['headline'] as String? ?? '';
+    final rawObs = (_mirror?['observations'] as List? ?? []).cast<String>();
+    final sitWith = _mirror?['sit_with_this'] as String? ?? '';
+    final experiment = _mirror?['experiment'] as String? ?? '';
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      children: [
+        _buildMeetingHeader(headline),
+        const SizedBox(height: 14),
+        Text(
+          'WHAT I SAW THIS WEEK',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 9.5, fontWeight: FontWeight.w700,
+            letterSpacing: 1.0, color: EchoColors.textGhost,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...rawObs.asMap().entries.map((e) => _buildObservation(e.value, e.key)),
+        if (sitWith.isNotEmpty) _buildVerdict(sitWith),
+        if (experiment.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _buildExperiment(experiment),
+        ],
+        const SizedBox(height: 14),
+        _buildCta(context),
+      ],
+    );
+  }
+
+  Widget _buildMeetingHeader(String headline) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
@@ -148,34 +187,33 @@ class AfterMeetingScreen extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Echo was listening',
+                'Echo was watching',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 11, fontWeight: FontWeight.w600,
                   color: const Color(0xFF7A5A30), letterSpacing: 0.3,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '$meetingDuration · $meetingTitle',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11, color: EchoColors.textGhost,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Here\'s what I noticed.',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 13, color: const Color(0xFF5A5550),
+          if (headline.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              headline,
+              style: GoogleFonts.lora(
+                fontSize: 13.5, fontStyle: FontStyle.italic,
+                height: 1.6, color: EchoColors.textMuted,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildObservation(AfterMeetingObservation obs) {
+  Widget _buildObservation(String text, int index) {
+    final icons = ['⟳', '⟴', '◌', '→'];
+    final icon = icons[index % icons.length];
+    final dimmed = index >= 2;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -184,7 +222,7 @@ class AfterMeetingScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border(
           left: BorderSide(
-            color: obs.dimmed ? const Color(0xFF1E1B17) : EchoColors.amber,
+            color: dimmed ? const Color(0xFF1E1B17) : EchoColors.amber,
             width: 2,
           ),
           right: const BorderSide(color: Color(0xFF080706)),
@@ -195,39 +233,24 @@ class AfterMeetingScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            obs.icon,
-            style: TextStyle(
-              fontSize: 16,
-              color: obs.dimmed ? const Color(0xFF2A2520) : const Color(0xFF9A9590),
-            ),
-          ),
+          Text(icon,
+              style: TextStyle(
+                fontSize: 16,
+                color: dimmed ? const Color(0xFF2A2520) : const Color(0xFF9A9590),
+              )),
           const SizedBox(width: 10),
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13, height: 1.65,
-                  color: obs.dimmed ? const Color(0xFF5A5550) : const Color(0xFF9A9590),
-                ),
-                children: _parseText(obs.text, obs.dimmed),
+            child: Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, height: 1.65,
+                color: dimmed ? const Color(0xFF5A5550) : const Color(0xFF9A9590),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  List<TextSpan> _parseText(String text, bool dimmed) {
-    final parts = text.split('**');
-    return List.generate(parts.length, (i) => TextSpan(
-      text: parts[i],
-      style: i.isOdd && !dimmed
-          ? const TextStyle(
-              color: Color(0xFFD8D4CE), fontWeight: FontWeight.w500)
-          : null,
-    ));
   }
 
   Widget _buildVerdict(String text) {
@@ -242,7 +265,7 @@ class AfterMeetingScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'MY READ',
+            'SIT WITH THIS',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 9.5, fontWeight: FontWeight.w700,
               letterSpacing: 1.0, color: const Color(0xFF5A4A38),
@@ -261,9 +284,45 @@ class AfterMeetingScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildExperiment(String text) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF080706),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          left: BorderSide(color: EchoColors.indigo.withValues(alpha: 0.5), width: 2),
+          right: const BorderSide(color: Color(0xFF080706)),
+          top: const BorderSide(color: Color(0xFF080706)),
+          bottom: const BorderSide(color: Color(0xFF080706)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TRY THIS WEEK',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9.5, fontWeight: FontWeight.w700,
+              letterSpacing: 1.0, color: const Color(0xFF3A4A6A),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13, height: 1.6,
+              color: const Color(0xFF7A8AAA),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCta(BuildContext context) {
     return GestureDetector(
-      onTap: onTalkAboutThis ?? () => Navigator.of(context).pop(),
+      onTap: () => Navigator.of(context).pop(),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(

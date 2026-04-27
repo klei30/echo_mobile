@@ -89,9 +89,11 @@ class OpenAIClient extends BaseLLMClient {
     Logger.root.fine("debug log:openai stream body: ${jsonEncode(body)}");
 
     final endpoint = getEndpoint(baseUrl, "/chat/completions");
-    final headers = request.userId != null
-        ? {..._headers, 'x-echo-user-id': request.userId!}
-        : _headers;
+    final echoToken = AuthService().token;
+    final isEchoEndpoint = baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
+    final headers = (isEchoEndpoint && echoToken != null)
+        ? {..._headers, 'Authorization': 'Bearer $echoToken'}
+        : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
 
     try {
       final httpRequest = http.Request('POST', Uri.parse(endpoint));

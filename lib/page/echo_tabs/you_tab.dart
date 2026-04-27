@@ -10,6 +10,9 @@ import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
 import 'package:chatmcp/page/echo_tabs/after_meeting_screen.dart';
 import 'package:chatmcp/page/echo_tabs/anniversary_screen.dart';
+import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
+import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
+import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
 
 class YouTab extends StatefulWidget {
   const YouTab({super.key});
@@ -191,6 +194,45 @@ class _YouTabState extends State<YouTab> {
                 padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
                 child: _buildMomentCard(
                   context,
+                  icon: Icons.history_edu_rounded,
+                  iconColor: EchoColors.amber,
+                  label: 'Permanent Record',
+                  sub: 'The report school never gave you',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PermanentRecordScreen()),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: _buildMomentCard(
+                  context,
+                  icon: Icons.memory_rounded,
+                  iconColor: EchoColors.indigo,
+                  label: 'Memories',
+                  sub: 'What Echo keeps about you',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MemoriesScreen()),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: _buildMomentCard(
+                  context,
+                  icon: Icons.rule_rounded,
+                  iconColor: const Color(0xFF9A6AB4),
+                  label: 'Your Operating System',
+                  sub: 'Rules Echo learned by watching',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const OperatingSystemScreen()),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: _buildMomentCard(
+                  context,
                   icon: Icons.auto_awesome_rounded,
                   iconColor: EchoColors.amber,
                   label: 'Emergence',
@@ -224,19 +266,21 @@ class _YouTabState extends State<YouTab> {
                   icon: Icons.science_outlined,
                   iconColor: const Color(0xFF6A9A7A),
                   label: 'Active Experiment',
-                  sub: 'Speak without hedging · Day 3 of 7',
+                  sub: weeksActive > 0
+                      ? 'Week $weeksActive · Echo is designing one for you'
+                      : 'Keep talking — experiments emerge from patterns',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => ExperimentCheckinScreen(
-                        experiment: const EchoExperiment(
-                          number: 5,
-                          trigger: 'You had the right answer **three times** today and started each with "I think" or "maybe."',
-                          hypothesis: 'You\'re not missing confidence. You\'re performing uncertainty you don\'t have.',
+                        experiment: EchoExperiment(
+                          number: weeksActive > 0 ? weeksActive : 1,
+                          trigger: 'Echo noticed a pattern worth exploring.',
+                          hypothesis: 'A small change in behavior reveals something true about you.',
                           title: 'Speak without hedging. Just once a day.',
                           body: 'Once a day — in a meeting, a message, or a conversation — say your point **without "I think," "maybe," or "I could be wrong."**\n\nNot every time. Just once. See what happens to the room. See what happens to you.\n\n**I predict:** people will respond to you differently.',
                           followup: 'I\'ll check in every 2 days.',
                           durationDays: 7,
-                          currentDay: 3,
+                          currentDay: null,
                         ),
                       ),
                     ),
@@ -386,29 +430,43 @@ class _YouTabState extends State<YouTab> {
               final score = (t['score'] as num?)?.toDouble() ?? 0.0;
               final label = _topicLabels[key] ?? key;
               final color = _topicColors[key] ?? EchoColors.amber;
+              final pct = '${(score * 100).toStringAsFixed(0)}%';
+              final desc = score >= 0.70 ? 'fluent'
+                         : score >= 0.40 ? 'forming'
+                         : score >= 0.20 ? 'developing'
+                         : 'early';
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text(label,
-                        style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11.5, color: EchoColors.textMuted)),
-                    const Spacer(),
-                    Text('${(score * 100).toStringAsFixed(0)}%',
-                        style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11, color: EchoColors.textGhost)),
-                  ]),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: score.clamp(0.0, 1.0),
-                      minHeight: 3,
-                      backgroundColor: EchoColors.border,
-                      valueColor: AlwaysStoppedAnimation(color),
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Container(width: 2, height: 32,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                            colors: [color.withValues(alpha: 0.6), Colors.transparent],
+                          ),
+                        )),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Text(label,
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12, color: EchoColors.textMuted,
+                                  fontWeight: FontWeight.w500)),
+                          const Spacer(),
+                          Text(pct,
+                              style: GoogleFonts.lora(
+                                  fontSize: 11.5, fontStyle: FontStyle.italic,
+                                  color: color.withValues(alpha: 0.85))),
+                        ]),
+                        Text(desc,
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10.5, color: EchoColors.textGhost)),
+                      ]),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               );
             }),
           const SizedBox(height: 4),

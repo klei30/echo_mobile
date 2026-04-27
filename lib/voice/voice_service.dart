@@ -173,9 +173,10 @@ class VoiceService {
     _setState(VoiceState.idle);
   }
 
-  void dispose() {
-    disconnect();
+  Future<void> dispose() async {
+    await disconnect();
     _stateController.close();
+    _transcriptController.close();
   }
 }
 

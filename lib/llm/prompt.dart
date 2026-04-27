@@ -87,13 +87,4 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
     return prompt;
   }
 
-  /// Generate system prompt
-  ///
-  /// [tools] - List of available tools
-  /// Returns a concise, action-oriented system prompt
-  String generateToolPrompt(List<Map<String, dynamic>> tools) {
-    final promptGenerator = SystemPromptGenerator();
-    var systemPrompt = promptGenerator.generatePrompt(tools: tools);
-    return systemPrompt;
-  }
 }
