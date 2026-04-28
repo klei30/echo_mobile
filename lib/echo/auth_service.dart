@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
@@ -20,8 +19,7 @@ class AuthService {
   String? _userId;
   String? _username;
 
-  String get baseUrl =>
-      Platform.isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
+  String get baseUrl => 'http://localhost:8002';
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();

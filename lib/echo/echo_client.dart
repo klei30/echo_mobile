@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:logging/logging.dart';
@@ -32,10 +31,13 @@ class EchoClient {
 
   static final _log = Logger('echo.client');
 
-  String get baseUrl => Platform.isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
+  String get baseUrl => 'http://localhost:8002';
 
   String? _lastUserMessage;
   String _lastModelUsed = '';
+
+  // Cached from last successful /context — used as fallback when the call times out
+  EchoContext? _cachedContext;
 
   /// user_id comes from the verified JWT — not generated locally anymore.
   Future<String?> get userId async => AuthService().userId;
@@ -43,9 +45,10 @@ class EchoClient {
   Map<String, String> get _headers => AuthService().authHeaders;
 
   /// Call before every LLM request. Returns enriched context or null (silent fail).
+  /// Falls back to the last cached context if the server doesn't respond in time.
   Future<EchoContext?> fetchContext(String message) async {
     _lastUserMessage = message;
-    if (!AuthService().isLoggedIn) return null;
+    if (!AuthService().isLoggedIn) return _cachedContext;
     _log.info('Echo /context msg="${message.substring(0, message.length.clamp(0, 60))}"');
     try {
       final uid = AuthService().userId!;
@@ -55,18 +58,20 @@ class EchoClient {
             headers: _headers,
             body: jsonEncode({'user_id': uid, 'message': message}),
           )
-          .timeout(const Duration(milliseconds: 2000));
+          .timeout(const Duration(milliseconds: 5000));
 
       if (resp.statusCode == 200) {
         final ctx = EchoContext.fromJson(jsonDecode(resp.body) as Map<String, dynamic>);
+        _cachedContext = ctx;
         _log.info('Echo /context OK model=${ctx.recommendedModel} confidence=${ctx.confidence.toStringAsFixed(2)}');
         return ctx;
       }
       _log.warning('Echo /context HTTP ${resp.statusCode}');
     } catch (e) {
-      _log.warning('Echo /context failed: $e');
+      _log.warning('Echo /context failed (using cache): $e');
+      return _cachedContext;
     }
-    return null;
+    return _cachedContext;
   }
 
   /// Call after every LLM response. Fire-and-forget.
