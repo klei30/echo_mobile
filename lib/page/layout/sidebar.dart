@@ -1,7 +1,6 @@
 import 'package:chatmcp/widgets/ink_icon.dart';
 import 'package:flutter/material.dart';
 import '../setting/setting.dart';
-import '../auth/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/utils/platform.dart';
@@ -9,7 +8,6 @@ import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:chatmcp/components/widgets/base.dart';
-import 'package:chatmcp/page/layout/widgets/app_info.dart';
 import 'package:chatmcp/config/pagination_config.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/main.dart';
@@ -72,13 +70,38 @@ class _SidebarPanelState extends State<SidebarPanel> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  if (kIsWindows || kIsLinux || kIsMobile || kIsBrowser) ...[
+                  // On desktop show ChatMCP branding; on mobile Echo manages the header
+                  if (kIsDesktop) ...[
                     Image.asset('assets/logo.png', width: 24, height: 24),
                     const Gap(size: 8),
                     CText(text: 'ChatMCP', size: 12, fontWeight: FontWeight.w700),
                   ],
+                  if (kIsMobile) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        'Conversations',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   InkIcon(icon: CupertinoIcons.search, onTap: toggleSearchVisibility, tooltip: AppLocalizations.of(context)!.search),
+                  if (kIsMobile) ...[
+                    const Gap(size: 4),
+                    InkIcon(
+                      icon: CupertinoIcons.square_pencil,
+                      onTap: () {
+                        chatProvider.startNewChat();
+                        Navigator.pop(context);
+                      },
+                      tooltip: 'New chat',
+                    ),
+                  ],
                   if (kIsDesktop) ...[
                     const Gap(size: 8),
                     InkIcon(icon: CupertinoIcons.sidebar_left, onTap: widget.onToggle, tooltip: AppLocalizations.of(context)!.toggleSidebar),
@@ -542,12 +565,13 @@ class SidebarToolbar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: Row(
         children: [
-          _buildSettingsButton(context),
-          const Gap(size: 4),
+          // On desktop show settings gear; on mobile settings is in the Echo header
+          if (!kIsMobile) _buildSettingsButton(context),
+          if (!kIsMobile) const Gap(size: 4),
           _buildSelectModeButton(context),
           if (chatProvider.isSelectMode) ...[const Gap(size: 4), _buildSelectAllButton(context), const Gap(size: 4), _buildDeleteButton(context)],
           const Spacer(),
-          if (AuthService().isLoggedIn) _buildLogoutButton(context),
+          if (AuthService().isLoggedIn && !kIsMobile) _buildLogoutButton(context),
           const Gap(size: 4),
         ],
       ),

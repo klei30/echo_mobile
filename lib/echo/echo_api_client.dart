@@ -152,4 +152,150 @@ class EchoApiClient {
     }
     return null;
   }
+
+  Future<List<String>?> getDailyQuestions() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/daily/questions'), headers: _h)
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['questions'] as List? ?? []).map((e) => e.toString()).toList();
+      }
+      _log.warning('getDailyQuestions HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getDailyQuestions error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getUserReport() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/report'), headers: _h)
+          .timeout(const Duration(seconds: 45));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getUserReport HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getUserReport error: $e');
+    }
+    return null;
+  }
+
+  Future<void> registerFcmToken(String token) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      await http
+          .post(
+            Uri.parse('$_base/v1/user/fcm-token'),
+            headers: h,
+            body: jsonEncode({'token': token, 'platform': 'android'}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      _log.warning('registerFcmToken error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserSignal() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/signal'), headers: _h)
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getUserSignal HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getUserSignal error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getPracticeToday() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/practice/today'), headers: _h)
+          .timeout(const Duration(seconds: 30));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getPracticeToday HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getPracticeToday error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> logPractice(String repId, bool done) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/practice/log'),
+            headers: h,
+            body: jsonEncode({'rep_id': repId, 'done': done}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('logPractice HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('logPractice error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> askTwin(String question) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/twin/ask'),
+            headers: h,
+            body: jsonEncode({'question': question}),
+          )
+          .timeout(const Duration(seconds: 45));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('askTwin HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('askTwin error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> chooseTwin(String sessionId, String chosen) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/twin/choose'),
+            headers: h,
+            body: jsonEncode({'session_id': sessionId, 'chosen': chosen}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('chooseTwin HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('chooseTwin error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> submitDailyCheckin(
+      List<Map<String, String>> qas) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/daily/checkin'),
+            headers: h,
+            body: jsonEncode({
+              'qas': qas,
+              'date': DateTime.now().toIso8601String().substring(0, 10),
+            }),
+          )
+          .timeout(const Duration(seconds: 25));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('submitDailyCheckin HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('submitDailyCheckin error: $e');
+    }
+    return null;
+  }
 }

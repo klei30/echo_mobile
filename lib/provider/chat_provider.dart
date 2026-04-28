@@ -16,6 +16,11 @@ class ChatProvider extends ChangeNotifier {
   bool isSelectMode = false;
   Set<int?> selectedChats = {};
 
+  // Incremented every time the user explicitly requests a new chat.
+  // ChatPage watches this to force a reset even if state appears unchanged.
+  int _newChatTrigger = 0;
+  int get newChatTrigger => _newChatTrigger;
+
   // Pagination state
   int _currentPage = 1; // 从 1 开始更符合常规分页概念
   bool _hasMoreChats = true;
@@ -170,6 +175,12 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> clearActiveChat() async {
     _activeChat = null;
+    notifyListeners();
+  }
+
+  void startNewChat() {
+    _activeChat = null;
+    _newChatTrigger++;
     notifyListeners();
   }
 

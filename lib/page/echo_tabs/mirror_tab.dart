@@ -12,7 +12,7 @@ class MirrorTab extends StatefulWidget {
 }
 
 class _MirrorTabState extends State<MirrorTab> {
-  Map<String, dynamic>? _mirror;
+  Map<String, dynamic>? _report;
   bool _loading = true;
   bool _error = false;
 
@@ -24,24 +24,20 @@ class _MirrorTabState extends State<MirrorTab> {
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = false; });
-    final data = await EchoApiClient().getWeeklyMirror();
+    final data = await EchoApiClient().getUserReport();
     if (!mounted) return;
     setState(() {
-      _mirror = data;
+      _report = data;
       _loading = false;
       _error = data == null;
     });
   }
 
-  String _headerDate() {
+  String _weekLabel() {
     final now = DateTime.now();
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
-    final dayName = days[now.weekday - 1];
-    final h = now.hour.toString().padLeft(2, '0');
-    final m = now.minute.toString().padLeft(2, '0');
-    return '$dayName · ${months[now.month - 1]} ${now.day} · $h:${m}pm';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[now.month - 1]} ${now.day}';
   }
 
   @override
@@ -66,11 +62,11 @@ class _MirrorTabState extends State<MirrorTab> {
   Widget _buildLoading() {
     return ListView(children: [
       SizedBox(
-        height: 400,
+        height: 420,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            EchoOrb(size: 36, rings: 2),
+            EchoOrb(size: 40, rings: 2),
             const SizedBox(height: 18),
             Text(
               'Echo is reflecting...',
@@ -88,23 +84,19 @@ class _MirrorTabState extends State<MirrorTab> {
   Widget _buildError() {
     return ListView(children: [
       SizedBox(
-        height: 400,
+        height: 420,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Couldn\'t reach Echo.',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14, color: EchoColors.textGhost),
-            ),
+            Text('Couldn\'t reach Echo.',
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, color: EchoColors.textGhost)),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: _load,
-              child: Text(
-                'Tap to retry',
-                style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13, color: EchoColors.amber),
-              ),
+              child: Text('Tap to retry',
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13, color: EchoColors.amber)),
             ),
           ],
         ),
@@ -113,111 +105,121 @@ class _MirrorTabState extends State<MirrorTab> {
   }
 
   Widget _buildContent() {
-    final headline = _mirror?['headline'] as String? ?? '';
-    final observations = (_mirror?['observations'] as List?)
-            ?.map((o) => o.toString())
-            .toList() ??
-        [];
-    final sitWithThis = _mirror?['sit_with_this'] as String? ?? '';
-    final experiment = _mirror?['experiment'] as String? ?? '';
-    final weekNumber = _mirror?['week_number'] as int? ?? 1;
+    final weeks = _report?['weeks'] as int? ?? 0;
+    final totalPairs = _report?['total_pairs'] as int? ?? 0;
+    final headline = _report?['headline'] as String? ?? '';
+    final observations = (_report?['observations'] as List?)
+            ?.map((o) => o.toString()).toList() ?? [];
+    final sitWithThis = _report?['sit_with_this'] as String? ?? '';
+    final rules = (_report?['rules'] as List?)
+            ?.map((r) => r.toString()).toList() ?? [];
+    final recentMsgs = (_report?['recent_messages'] as List?)
+            ?.map((m) => Map<String, dynamic>.from(m as Map)).toList() ?? [];
+    final weekCompletions = _report?['week_completions'] as int? ?? 0;
+    final avgConf = (_report?['avg_confidence'] as num?)?.toDouble() ?? 0.0;
+    final lastTrained = _report?['last_trained'] as String?;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(weekNumber),
-          const SizedBox(height: 20),
-          _buildKicker(),
-          const SizedBox(height: 14),
-          _buildHeadline(headline),
+          // ─── Header ───────────────────────────────────────────────
+          _buildHeader(weeks, totalPairs),
           const SizedBox(height: 24),
-          _buildSectionLabel('WHAT I NOTICED'),
-          const SizedBox(height: 12),
-          ...observations.asMap().entries.map((e) => _mirrorItem(
-                highlighted: e.key < 2,
-                text: e.value,
-              )),
-          const SizedBox(height: 16),
-          if (sitWithThis.isNotEmpty) _buildSitWithThis(sitWithThis),
-          if (sitWithThis.isNotEmpty) const SizedBox(height: 10),
-          if (experiment.isNotEmpty) _buildExperiment(experiment),
+
+          // ─── Headline ─────────────────────────────────────────────
+          if (headline.isNotEmpty) ...[
+            Text(
+              '"$headline"',
+              style: GoogleFonts.lora(
+                fontSize: 20, fontStyle: FontStyle.italic,
+                color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(height: 1, color: EchoColors.amber.withValues(alpha: 0.3)),
+            const SizedBox(height: 20),
+          ],
+
+          // ─── This week I noticed ───────────────────────────────────
+          if (observations.isNotEmpty) ...[
+            _sectionLabel('THIS WEEK I NOTICED'),
+            const SizedBox(height: 14),
+            ...observations.asMap().entries.map((e) =>
+              _observationItem(index: e.key + 1, text: e.value)),
+            const SizedBox(height: 20),
+          ],
+
+          // ─── Sit with this ────────────────────────────────────────
+          if (sitWithThis.isNotEmpty) ...[
+            _buildSitWithThis(sitWithThis),
+            const SizedBox(height: 20),
+          ],
+
+          Container(height: 1, color: EchoColors.borderSubtle),
+          const SizedBox(height: 20),
+
+          // ─── Shadow clone status ──────────────────────────────────
+          _buildCloneStatus(totalPairs, weeks, avgConf, weekCompletions, lastTrained),
+          const SizedBox(height: 20),
+
+          // ─── Behavioral rules ─────────────────────────────────────
+          if (rules.isNotEmpty) ...[
+            _sectionLabel('YOUR OPERATING SYSTEM'),
+            const SizedBox(height: 12),
+            ...rules.map((r) => _ruleItem(r)),
+            const SizedBox(height: 20),
+          ],
+
+          // ─── Recent things you said ───────────────────────────────
+          if (recentMsgs.isNotEmpty) ...[
+            _sectionLabel('RECENTLY'),
+            const SizedBox(height: 12),
+            ...recentMsgs.map((m) => _messageItem(m['text'] as String? ?? '')),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader(int weekNumber) {
+  Widget _buildHeader(int weeks, int totalPairs) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Weekly Mirror',
+                'WHAT ECHO SEES',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16, fontWeight: FontWeight.w600,
-                  color: EchoColors.textPrimary, letterSpacing: -0.3,
+                  fontSize: 9.5, fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2, color: EchoColors.amber,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
-                _headerDate(),
+                weeks > 0 ? 'Week $weeks · ${_weekLabel()}' : _weekLabel(),
                 style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10.5, color: EchoColors.textGhost),
+                  fontSize: 12, color: EchoColors.textGhost,
+                ),
               ),
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: EchoColors.bgSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: EchoColors.border),
-          ),
-          child: Text(
-            'Wk $weekNumber',
+        if (totalPairs > 0)
+          Text(
+            '$totalPairs conversations',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 11, fontWeight: FontWeight.w600,
-              color: EchoColors.amberText,
+              fontSize: 10.5, color: EchoColors.textGhost,
             ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildKicker() {
-    return Row(
-      children: [
-        Text(
-          'THIS WEEK\'S REFLECTION',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 9.5, fontWeight: FontWeight.w700,
-            letterSpacing: 1.2, color: const Color(0xFF5A4A38),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Container(height: 1, color: EchoColors.borderSubtle)),
-      ],
-    );
-  }
-
-  Widget _buildHeadline(String text) {
-    return Text(
-      text.isEmpty ? 'Echo is watching.' : text,
-      style: GoogleFonts.lora(
-        fontSize: 21, fontStyle: FontStyle.italic,
-        height: 1.5, letterSpacing: -0.2,
-        color: EchoColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildSectionLabel(String label) {
+  Widget _sectionLabel(String label) {
     return Text(
       label,
       style: GoogleFonts.plusJakartaSans(
@@ -227,46 +229,36 @@ class _MirrorTabState extends State<MirrorTab> {
     );
   }
 
-  Widget _mirrorItem({required bool highlighted, required String text}) {
+  Widget _observationItem({required int index, required String text}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 2,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(1),
-                gradient: highlighted
-                    ? const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [EchoColors.amber, Colors.transparent],
-                      )
-                    : null,
-                color: highlighted ? null : EchoColors.borderSubtle,
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            index.toString().padLeft(2, '0'),
+            style: GoogleFonts.lora(
+              fontSize: 11, fontStyle: FontStyle.italic,
+              color: EchoColors.amber, letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, height: 1.7, color: EchoColors.textMuted,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12.5, height: 1.68,
-                  color: EchoColors.textMuted,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSitWithThis(String text) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: EchoColors.bgSurface,
         borderRadius: BorderRadius.circular(13),
@@ -282,12 +274,12 @@ class _MirrorTabState extends State<MirrorTab> {
               letterSpacing: 1.0, color: EchoColors.amber,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           Text(
             text,
             style: GoogleFonts.lora(
-              fontSize: 13, fontStyle: FontStyle.italic,
-              height: 1.72, color: const Color(0xFFA8A4A0),
+              fontSize: 14, fontStyle: FontStyle.italic,
+              height: 1.65, color: EchoColors.textSecondary,
             ),
           ),
         ],
@@ -295,34 +287,162 @@ class _MirrorTabState extends State<MirrorTab> {
     );
   }
 
-  Widget _buildExperiment(String text) {
+  Widget _buildCloneStatus(int totalPairs, int weeks, double avgConf,
+      int weekCompletions, String? lastTrained) {
+    final clonePct = (avgConf * 100).round();
+    final trained = lastTrained != null
+        ? _formatDate(lastTrained)
+        : 'Not yet';
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: EchoColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 6, height: 6,
+                decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: EchoColors.amber),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'SHADOW CLONE',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 9.5, fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0, color: const Color(0xFF7A5A30),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Text(
-            'THIS WEEK\'S EXPERIMENT',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9.5, fontWeight: FontWeight.w700,
-              letterSpacing: 1.0, color: EchoColors.textGhost,
+            '$totalPairs conversations · $weeks week${weeks == 1 ? '' : 's'} · still learning.',
+            style: GoogleFonts.lora(
+              fontSize: 13, fontStyle: FontStyle.italic,
+              color: EchoColors.textMuted, height: 1.55,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('This week\'s practice',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10, color: EchoColors.textGhost)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: List.generate(7, (i) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Container(
+                          width: 8, height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: i < weekCompletions
+                                ? EchoColors.amber
+                                : const Color(0xFF1A1815),
+                          ),
+                        ),
+                      )),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Avg confidence',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10, color: EchoColors.textGhost)),
+                  const SizedBox(height: 2),
+                  Text(
+                    clonePct > 0 ? '$clonePct%' : '—',
+                    style: GoogleFonts.lora(
+                      fontSize: 16, fontStyle: FontStyle.italic,
+                      color: EchoColors.amber,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Text(
-            text,
+            'Last trained · $trained',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 12.5, height: 1.55,
-              color: EchoColors.textDim,
+              fontSize: 10, color: EchoColors.textVeryGhost,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _ruleItem(String rule) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 2,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(1),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [EchoColors.amber, Colors.transparent],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                rule,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5, height: 1.65, color: EchoColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _messageItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        '"${text.trim()}"',
+        style: GoogleFonts.lora(
+          fontSize: 12.5, fontStyle: FontStyle.italic,
+          height: 1.6, color: EchoColors.textGhost,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[dt.month - 1]} ${dt.day}';
+    } catch (_) {
+      return 'Unknown';
+    }
   }
 }

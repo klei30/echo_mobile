@@ -86,6 +86,8 @@ dependencies:
   dio: ^5.4.0  # HTTP客户端
   livekit_client: ^2.7.0  # Realtime voice/video
   google_fonts: ^6.2.1    # Lora serif + Plus Jakarta Sans for Echo brand
+  flutter_local_notifications: ^18.0.0  # Evening Signal daily trigger
+  timezone: ^0.9.4                       # Scheduled notification timezone support
 
 dev_dependencies:
   flutter_test:

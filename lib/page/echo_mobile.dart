@@ -11,7 +11,9 @@ import 'package:chatmcp/page/echo_tabs/you_tab.dart';
 import 'package:chatmcp/page/onboarding/onboarding_page.dart';
 import 'package:chatmcp/page/echo_settings/echo_settings_sheet.dart';
 import 'package:chatmcp/provider/chat_model_provider.dart';
+import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 
 class EchoMobilePage extends StatefulWidget {
   const EchoMobilePage({super.key});
@@ -211,17 +213,42 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                     height: 1.2,
                   ),
                 ),
-                Text(
-                  'your shadow clone',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: EchoColors.textGhost,
-                    height: 1.3,
-                  ),
-                ),
+                Builder(builder: (context) {
+                  final username = AuthService().username;
+                  final firstName = username != null && username.isNotEmpty
+                      ? username.split(' ').first
+                      : null;
+                  return Text(
+                    firstName != null ? 'hi, $firstName' : 'your shadow clone',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      color: EchoColors.textGhost,
+                      height: 1.3,
+                    ),
+                  );
+                }),
               ],
             ),
           ),
+          // New chat button
+          GestureDetector(
+            onTap: () {
+              final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+              chatProvider.startNewChat();
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: EchoColors.bgSurface,
+                border: Border.all(color: EchoColors.border),
+              ),
+              child: const Icon(Icons.edit_outlined, size: 16, color: EchoColors.textMuted),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Settings button
           GestureDetector(
             onTap: () => EchoSettingsSheet.show(context),

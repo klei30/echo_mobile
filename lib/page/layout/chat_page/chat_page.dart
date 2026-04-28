@@ -23,7 +23,10 @@ import 'dart:convert';
 import 'package:chatmcp/mcp/models/json_rpc_message.dart';
 import 'dart:async';
 import 'package:chatmcp/echo/echo_client.dart';
+import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/llm/openai_client.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -183,6 +186,19 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _onChatProviderChanged() {
+    // Detect explicit "new chat" requests and force a full reset.
+    final trigger = ProviderManager.chatProvider.newChatTrigger;
+    if (trigger != _lastNewChatTrigger) {
+      _lastNewChatTrigger = trigger;
+      setState(() {
+        _messages = [];
+        _chat = null;
+        _parentMessageId = '';
+      });
+      _resetState();
+      return;
+    }
+
     _initializeHistoryMessages();
     if (_isMobile() && ProviderManager.chatProvider.showCodePreview && ProviderManager.chatProvider.artifactEvent != null) {
       _showMobileCodePreview();
@@ -194,6 +210,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   bool _showCodePreview = false;
+  int _lastNewChatTrigger = 0;
 
   List<ChatMessage> _allMessages = [];
 
@@ -367,15 +384,7 @@ class _ChatPageState extends State<ChatPage> {
   // UI building related methods
   Widget _buildMessageList() {
     if (_messages.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
-      return Expanded(
-        child: Container(
-          color: AppColors.transparent,
-          child: Center(
-            child: Text(l10n.welcomeMessage, style: TextStyle(fontSize: 18, color: AppColors.getWelcomeMessageColor())),
-          ),
-        ),
-      );
+      return Expanded(child: _buildEmptyState());
     }
 
     final parentMsgIndex = _messages.length - 1;
@@ -390,6 +399,84 @@ class _ChatPageState extends State<ChatPage> {
         messages: _isWaiting ? [..._messages, ChatMessage(content: '', role: MessageRole.loading)] : _messages.toList(),
         onRetry: _onRetry,
         onSwitch: _onSwitch,
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final username = AuthService().username;
+    final firstName = username != null && username.isNotEmpty
+        ? username.split(' ').first
+        : null;
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    final headline = firstName != null ? '$greeting, $firstName.' : '$greeting.';
+
+    final starters = [
+      "What's something I've been avoiding?",
+      "Help me think through a decision",
+      "What have you noticed about me lately?",
+    ];
+
+    return Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset('assets/echo_logo.png', width: 44, height: 44),
+          const SizedBox(height: 18),
+          Text(
+            headline,
+            style: GoogleFonts.lora(
+              fontSize: 22,
+              fontStyle: FontStyle.italic,
+              color: EchoColors.textPrimary,
+              letterSpacing: -0.3,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "What's on your mind?",
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              color: EchoColors.textGhost,
+            ),
+          ),
+          const SizedBox(height: 28),
+          ...starters.map((s) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildStarterPrompt(s),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStarterPrompt(String text) {
+    return GestureDetector(
+      onTap: () {
+        _inputAreaKey.currentState?.textController.text = text;
+        _handleTextChanged(text);
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0A08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.border),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: EchoColors.textMuted,
+            height: 1.4,
+          ),
+        ),
       ),
     );
   }

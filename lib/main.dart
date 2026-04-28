@@ -10,6 +10,8 @@ import 'package:logging/logging.dart';
 import 'utils/platform.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/notification_service.dart';
+import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'utils/init.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
@@ -56,6 +58,15 @@ void main() async {
 
   try {
     await Future.wait([ProviderManager.init(), initDb(), AuthService().init()]);
+
+    await initNotifications(
+      onTap: () async {
+        await Future.delayed(const Duration(milliseconds: 300));
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
+        );
+      },
+    );
 
     // Sync JWT into Echo provider if already logged in
     if (AuthService().isLoggedIn) {
