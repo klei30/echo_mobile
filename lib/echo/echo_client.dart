@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:logging/logging.dart';
@@ -31,7 +32,14 @@ class EchoClient {
 
   static final _log = Logger('echo.client');
 
-  String get baseUrl => 'http://localhost:8002';
+  String get _baseUrl {
+    // Android emulator uses 10.0.2.2 to reach host's localhost
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    return isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
+  }
+
+  // Public getter for code that references .baseUrl
+  String get baseUrl => _baseUrl;
 
   String? _lastUserMessage;
   String _lastModelUsed = '';
@@ -54,7 +62,7 @@ class EchoClient {
       final uid = AuthService().userId!;
       final resp = await http
           .post(
-            Uri.parse('$baseUrl/context'),
+            Uri.parse('$_baseUrl/context'),
             headers: _headers,
             body: jsonEncode({'user_id': uid, 'message': message}),
           )
@@ -112,7 +120,7 @@ class EchoClient {
       final uid = AuthService().userId!;
       await http
           .post(
-            Uri.parse('$baseUrl/save'),
+            Uri.parse('$_baseUrl/save'),
             headers: _headers,
             body: jsonEncode({
               'user_id': uid,

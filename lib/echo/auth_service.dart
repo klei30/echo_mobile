@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
@@ -19,7 +20,14 @@ class AuthService {
   String? _userId;
   String? _username;
 
-  String get baseUrl => 'http://localhost:8002';
+  String get _baseUrl {
+    // Android emulator uses 10.0.2.2 to reach host's localhost
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    return isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
+  }
+
+  // Public getter for code that references .baseUrl
+  String get baseUrl => _baseUrl;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,7 +54,7 @@ class AuthService {
     try {
       final resp = await http
           .post(
-            Uri.parse('$baseUrl/auth/register'),
+            Uri.parse('$_baseUrl/auth/register'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email, 'username': username, 'password': password}),
           )
@@ -71,7 +79,7 @@ class AuthService {
     try {
       final resp = await http
           .post(
-            Uri.parse('$baseUrl/auth/login'),
+            Uri.parse('$_baseUrl/auth/login'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email, 'password': password}),
           )

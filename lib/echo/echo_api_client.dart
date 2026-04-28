@@ -153,6 +153,24 @@ class EchoApiClient {
     return null;
   }
 
+  Future<List<Map<String, dynamic>>> getUserHistory() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/user/history'), headers: _h)
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['pairs'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+      _log.warning('getUserHistory HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getUserHistory error: $e');
+    }
+    return [];
+  }
+
   Future<List<String>?> getDailyQuestions() async {
     try {
       final resp = await http
@@ -275,6 +293,55 @@ class EchoApiClient {
       _log.warning('chooseTwin error: $e');
     }
     return null;
+  }
+
+  Future<String> getTrainingStatus() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/training/status'), headers: _h)
+          .timeout(const Duration(seconds: 5));
+      if (resp.statusCode == 200) {
+        return (jsonDecode(resp.body) as Map<String, dynamic>)['status'] as String? ?? 'idle';
+      }
+    } catch (e) {
+      _log.warning('getTrainingStatus error: $e');
+    }
+    return 'idle';
+  }
+
+  Future<Map<String, dynamic>?> triggerTraining(String userId) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/trigger-training'),
+            headers: h,
+            body: jsonEncode({'user_id': userId}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('triggerTraining HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('triggerTraining error: $e');
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getTrainingHistory() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/training/history'), headers: _h)
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['checkpoints'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (e) {
+      _log.warning('getTrainingHistory error: $e');
+    }
+    return [];
   }
 
   Future<Map<String, dynamic>?> submitDailyCheckin(
