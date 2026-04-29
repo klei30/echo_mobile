@@ -171,6 +171,21 @@ class EchoApiClient {
     return [];
   }
 
+  Future<bool> getCheckinStatus() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/daily/checkin/status'), headers: _h)
+          .timeout(const Duration(seconds: 8));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return data['done'] as bool? ?? false;
+      }
+    } catch (e) {
+      _log.warning('getCheckinStatus error: $e');
+    }
+    return false;
+  }
+
   Future<List<String>?> getDailyQuestions() async {
     try {
       final resp = await http
@@ -385,22 +400,57 @@ class EchoApiClient {
 
   /// Council API: run a question through all 5 clone personalities.
   /// Returns { question, voices: {Builder,Creative,...}, verdict }
-  Future<Map<String, dynamic>?> askCouncil(String question) async {
+  Future<Map<String, dynamic>?> askCouncil(String question, {String? threadId, String? threadContext}) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
+      final body = <String, dynamic>{'question': question};
+      if (threadId != null) body['thread_id'] = threadId;
+      if (threadContext != null) body['thread_context'] = threadContext;
       final resp = await http
           .post(
             Uri.parse('$_base/v1/council/ask'),
             headers: h,
-            body: jsonEncode({'question': question}),
+            body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 90));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('askCouncil HTTP ${resp.statusCode}');
     } catch (e) {
       _log.warning('askCouncil error: $e');
     }
     return null;
+  }
+
+  /// Get active and resolved threads for the current user.
+  /// Returns { active: [...], resolved: [...] }
+  Future<Map<String, dynamic>?> getThreads() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/threads'), headers: _h)
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getThreads HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getThreads error: $e');
+    }
+    return null;
+  }
+
+  /// Resolve a thread after user reads a revelation or council verdict.
+  Future<bool> resolveThread(String threadId, {String note = 'user acknowledged'}) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/threads/$threadId/resolve'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: jsonEncode({'note': note}),
+          )
+          .timeout(const Duration(seconds: 15));
+      return resp.statusCode == 200;
+    } catch (e) {
+      _log.warning('resolveThread error: $e');
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>?> submitDailyCheckin(

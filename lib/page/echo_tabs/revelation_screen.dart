@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
 
 /// Revelation: rare, earned prose letter delivered as a slow typewriter.
-/// No stats, no UI chrome. Just the letter.
+/// Resolves the thread when user taps "Carry this".
 class RevelationScreen extends StatefulWidget {
   final String letter;
-  const RevelationScreen({super.key, required this.letter});
+  final String? threadId;
+  const RevelationScreen({super.key, required this.letter, this.threadId});
 
   @override
   State<RevelationScreen> createState() => _RevelationScreenState();
@@ -150,9 +152,15 @@ class _RevelationScreenState extends State<RevelationScreen>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(32, 16, 32, 32),
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         HapticFeedback.lightImpact();
-                        Navigator.of(context).pop();
+                        if (widget.threadId != null) {
+                          await EchoApiClient().resolveThread(
+                            widget.threadId!,
+                            note: 'revelation delivered',
+                          );
+                        }
+                        if (context.mounted) Navigator.of(context).pop();
                       },
                       child: Container(
                         width: double.infinity,

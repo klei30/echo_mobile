@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,25 +7,19 @@ import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/page/echo_connections/connections_page.dart';
-import 'package:chatmcp/page/echo_tabs/emergence_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
-import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
-import 'package:chatmcp/page/echo_tabs/after_meeting_screen.dart';
-import 'package:chatmcp/page/echo_tabs/anniversary_screen.dart';
 import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
 import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
 import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
-import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
-import 'package:chatmcp/page/echo_tabs/council_screen.dart';
-import 'package:chatmcp/page/echo_tabs/presence_screen.dart';
-import 'package:chatmcp/page/echo_tabs/parallel_self_screen.dart';
+import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
+import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
 
-// ─── Arc painter ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Arc painter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _CloneArcPainter extends CustomPainter {
-  final double progress; // 0.0–1.0
+  final double progress; // 0.0â€“1.0
   const _CloneArcPainter({required this.progress});
 
   @override
@@ -45,7 +39,7 @@ class _CloneArcPainter extends CustomPainter {
 
     if (progress <= 0) return;
 
-    // Amber progress arc — clockwise from top
+    // Amber progress arc â€” clockwise from top
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
@@ -63,7 +57,7 @@ class _CloneArcPainter extends CustomPainter {
   bool shouldRepaint(_CloneArcPainter old) => old.progress != progress;
 }
 
-// ─── Widget ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class YouTab extends StatefulWidget {
   const YouTab({super.key});
@@ -77,6 +71,8 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _practice;
   Map<String, dynamic>? _quote;
   Map<String, dynamic>? _stats;
+  Map<String, dynamic>? _report;
+  Map<String, dynamic>? _experiment;
   bool _loading = true;
   bool _loggedThisSession = false;
 
@@ -84,6 +80,7 @@ class _YouTabState extends State<YouTab> {
   void initState() {
     super.initState();
     _load();
+    _loadExperiment();
   }
 
   Future<void> _load() async {
@@ -93,6 +90,7 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getPracticeToday(),
       EchoApiClient().getNotableQuote(),
       EchoApiClient().getUserStats(),
+      EchoApiClient().getUserReport(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -100,10 +98,16 @@ class _YouTabState extends State<YouTab> {
       _practice = results[1];
       _quote = results[2];
       _stats = results[3];
+      _report = results[4];
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
+  }
 
+  Future<void> _loadExperiment() async {
+    final data = await EchoApiClient().getExperiment();
+    if (!mounted) return;
+    setState(() => _experiment = data);
   }
 
   Future<void> _logPractice(bool done) async {
@@ -149,7 +153,7 @@ class _YouTabState extends State<YouTab> {
     }
   }
 
-  // ─── build ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Widget build(BuildContext context) {
@@ -163,42 +167,47 @@ class _YouTabState extends State<YouTab> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              // ─── CLONE HERO ────────────────────────────────────────────
+              // â”€â”€â”€ CLONE HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _buildCloneHero(context),
-              // ─── ECHO'S SIGNAL ─────────────────────────────────────────
+
+              // ── ECHO'S READ ──────────────────────────────────────────
               _buildSignalZone(),
-              // ─── TODAY'S REP ───────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildPracticeSection(),
-              ),
-              // ─── YOUR HIDDEN TALENT ────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildTalentSection(context),
               ),
-              // ─── ASK YOUR TWIN ─────────────────────────────────────────
+
+              // ── THIS WEEK ────────────────────────────────────────────
+              if (_report != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                  child: _buildWeeklyCard(context),
+                ),
+
+              // ── YOUR PRACTICE ────────────────────────────────────────
+              _chapterLabel('YOUR PRACTICE'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildTwinSection(context),
+                child: _buildPracticeSection(),
               ),
-              // ─── THE COUNCIL ───────────────────────────────────────────
+              if (_experiment != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                  child: _buildExperimentCard(context),
+                ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildCouncilSection(context),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                child: _depthRow(
+                  'Evening Signal',
+                  Icons.nights_stay_rounded,
+                  const Color(0xFF7A8A9A),
+                  () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const DailyCheckinScreen())),
+                ),
               ),
-              // ─── ECHO PRESENCE ─────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildPresenceSection(context),
-              ),
-              // ─── TWO PATHS ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildTwoPathsSection(context),
-              ),
-              // ─── GO DEEPER ─────────────────────────────────────────────
-              _buildGoDeeper(context),
+
+              // ── ARCHIVE ──────────────────────────────────────────────
+              _buildArchiveChips(context),
             ],
           ),
         ),
@@ -206,7 +215,7 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── CLONE HERO ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ CLONE HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildCloneHero(BuildContext context) {
     final avgConf = (_stats?['avg_confidence'] as num?)?.toDouble() ?? 0.0;
@@ -246,7 +255,7 @@ class _YouTabState extends State<YouTab> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Progress arc — animates from 0 to real value on load
+                  // Progress arc â€” animates from 0 to real value on load
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: _loading ? 0.0 : avgConf),
                     duration: const Duration(milliseconds: 1200),
@@ -303,7 +312,7 @@ class _YouTabState extends State<YouTab> {
               const SizedBox(height: 3),
               Text(
                 weeks > 0
-                    ? '$firstName · week $weeks'
+                    ? '$firstName Â· week $weeks'
                     : firstName,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 11,
@@ -401,7 +410,7 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── ECHO'S SIGNAL ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ ECHO'S SIGNAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildSignalZone() {
     final signal = _signal?['signal'] as String?;
@@ -466,7 +475,7 @@ class _YouTabState extends State<YouTab> {
               ),
               const SizedBox(height: 3),
               Text(
-                '— something you said',
+                'â€” something you said',
                 style: GoogleFonts.plusJakartaSans(
                     fontSize: 9.5, color: EchoColors.textVeryGhost),
               ),
@@ -488,7 +497,7 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── TODAY'S REP ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ TODAY'S REP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildPracticeSection() {
     final observation = _practice?['observation'] as String?;
@@ -711,7 +720,7 @@ class _YouTabState extends State<YouTab> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Text(
-                'Keep chatting — Echo needs more conversations\nto generate your practice.',
+                'Keep chatting â€” Echo needs more conversations\nto generate your practice.',
                 style: GoogleFonts.lora(
                   fontSize: 13,
                   fontStyle: FontStyle.italic,
@@ -768,7 +777,7 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── YOUR HIDDEN TALENT ─────────────────────────────────────────────────────
+  // â”€â”€â”€ YOUR HIDDEN TALENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildTalentSection(BuildContext context) {
     final totalPairs = _signal?['total_pairs'] as int? ?? 0;
@@ -811,7 +820,7 @@ class _YouTabState extends State<YouTab> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'What Echo found →',
+                    'What Echo found â†’',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -830,366 +839,33 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── ASK YOUR TWIN ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ CHAPTER HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  Widget _buildTwinSection(BuildContext context) {
-    final totalPairs = _signal?['total_pairs'] as int? ?? 0;
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const TwinScreen())),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: EchoColors.borderCard),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'ASK YOUR TWIN',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1,
-                          color: EchoColors.indigo,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: EchoColors.indigo.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'BETA',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            color: EchoColors.indigo,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    totalPairs > 0
-                        ? 'Your shadow clone has trained on $totalPairs conversations.\nAsk both — see which one sounds more like you.'
-                        : 'Keep chatting to train your shadow clone.',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      height: 1.6,
-                      color: EchoColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Ask something →',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: EchoColors.indigoLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.people_outline_rounded,
-                color: EchoColors.indigo.withValues(alpha: 0.4), size: 26),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── THE COUNCIL ────────────────────────────────────────────────────────────
-
-  Widget _buildCouncilSection(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CouncilScreen())),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: EchoColors.borderCard),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'THE COUNCIL',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                      color: EchoColors.amber,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Five distinct voices. Bring a decision.\nThey will disagree. That\'s the point.',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: EchoColors.textMuted,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.groups_outlined,
-                color: EchoColors.amber.withValues(alpha: 0.4), size: 26),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── ECHO PRESENCE ──────────────────────────────────────────────────────────
-
-  Widget _buildPresenceSection(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PresenceScreen())),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: EchoColors.borderCard),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ECHO PRESENCE',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                      color: EchoColors.amber,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'The 4-state view. Echo speaks when it has something to say.',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: EchoColors.textMuted,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.circle_outlined,
-                color: EchoColors.amber.withValues(alpha: 0.4), size: 26),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── TWO PATHS ──────────────────────────────────────────────────────────────
-
-  Widget _buildTwoPathsSection(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ParallelSelfScreen())),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: EchoColors.borderCard),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'TWO PATHS',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                      color: EchoColors.indigo,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Where your current patterns lead. And the path you keep avoiding.',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: EchoColors.textMuted,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.fork_right_outlined,
-                color: EchoColors.indigo.withValues(alpha: 0.4), size: 26),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── GO DEEPER ──────────────────────────────────────────────────────────────
-
-  Widget _buildGoDeeper(BuildContext context) {
+  Widget _chapterLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 36),
-      child: GestureDetector(
-        onTap: () => _showMoreSheet(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          decoration: BoxDecoration(
-            color: EchoColors.bgSurface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: EchoColors.borderSubtle),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Go deeper',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13.5,
-                  color: EchoColors.textMuted,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_rounded,
-                  size: 14, color: EchoColors.textMuted),
-            ],
-          ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.6,
+          color: EchoColors.textGhost,
         ),
       ),
     );
   }
 
-  // ─── MORE SHEET ─────────────────────────────────────────────────────────────
-
-  void _showMoreSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: EchoColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: EchoColors.textGhost,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              _sheetRow(ctx, 'Memory Vault', Icons.grain_rounded,
-                  EchoColors.indigo,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const MemoriesScreen()))),
-              _sheetRow(ctx, 'Your Rules', Icons.tonality_rounded,
-                  const Color(0xFF9A6AB4),
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const OperatingSystemScreen()))),
-              _sheetRow(ctx, 'Training Detail', Icons.model_training_rounded,
-                  EchoColors.amber,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const NightlyTrainingScreen()))),
-              _sheetRow(ctx, 'Evening Signal', Icons.nights_stay_rounded,
-                  const Color(0xFF7A8A9A),
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const DailyCheckinScreen()))),
-              _sheetRow(ctx, 'Patterns', Icons.auto_awesome_rounded,
-                  EchoColors.amber,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const EmergenceScreen()))),
-              _sheetRow(ctx, 'Experiment', Icons.science_outlined,
-                  const Color(0xFF6A9A7A),
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => ExperimentProposalScreen(
-                            experiment: const EchoExperiment(
-                              number: 1,
-                              trigger: 'Echo noticed a pattern worth exploring.',
-                              hypothesis:
-                                  'A small change in behavior reveals something true about you.',
-                              title: 'Speak without hedging. Just once a day.',
-                              body:
-                                  'Once a day — say your point without hedging. Just once.',
-                              followup: "I'll check in.",
-                            ),
-                            onAccept: () => Navigator.of(context).pop(),
-                            onSkip: () => Navigator.of(context).pop(),
-                          )))),
-              _sheetRow(ctx, 'Permanent Record', Icons.history_edu_rounded,
-                  EchoColors.indigo,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const PermanentRecordScreen()))),
-              _sheetRow(ctx, 'Meetings', Icons.groups_outlined,
-                  const Color(0xFF7A5A30),
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const AfterMeetingScreen()))),
-              _sheetRow(ctx, 'Journey', Icons.celebration_outlined,
-                  EchoColors.amber,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const AnniversaryScreen()))),
-              _sheetRow(ctx, 'Connections', Icons.link_rounded,
-                  EchoColors.textMuted,
-                  () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const ConnectionsPage()))),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _sheetRow(BuildContext context, String label, IconData icon,
-      Color color, VoidCallback onTap) {
+  Widget _depthRow(String label, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        onTap();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 11),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
         child: Row(
           children: [
             Icon(icon, size: 16, color: color.withValues(alpha: 0.75)),
@@ -1197,13 +873,214 @@ class _YouTabState extends State<YouTab> {
             Text(
               label,
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
+                fontSize: 13.5,
                 color: EchoColors.textMuted,
               ),
             ),
             const Spacer(),
             const Icon(Icons.chevron_right_rounded,
-                size: 14, color: EchoColors.textGhost),
+                size: 16, color: EchoColors.textGhost),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  // ─── WEEKLY CARD ─────────────────────────────────────────────────────────────
+
+  Widget _buildWeeklyCard(BuildContext context) {
+    final headline = _report?['headline'] as String? ?? '';
+    final rawObs = _report?['observations'] as List?;
+    final observations = rawObs?.map((o) => o.toString()).take(2).toList() ?? [];
+    final sitWith = _report?['sit_with_this'] as String? ?? '';
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MirrorTab())),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0A08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: EchoColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 6, height: 6,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: EchoColors.amber),
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  'THIS WEEK ECHO NOTICED',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 9.5, fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1, color: EchoColors.amber,
+                  ),
+                ),
+                const Spacer(),
+                Text('Full report →',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10, color: EchoColors.textGhost)),
+              ],
+            ),
+            if (headline.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('"$headline"',
+                  style: GoogleFonts.lora(fontSize: 15, fontStyle: FontStyle.italic,
+                      color: EchoColors.textPrimary, height: 1.55)),
+            ],
+            if (observations.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...observations.asMap().entries.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 7),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${e.key + 1}.',
+                      style: GoogleFonts.lora(fontSize: 10.5,
+                          fontStyle: FontStyle.italic, color: EchoColors.amber)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(e.value,
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12.5, height: 1.6, color: EchoColors.textMuted))),
+                ]),
+              )),
+            ],
+            if (sitWith.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(color: EchoColors.bgSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: EchoColors.borderSubtle)),
+                child: Text(sitWith,
+                    style: GoogleFonts.lora(fontSize: 12, fontStyle: FontStyle.italic,
+                        color: EchoColors.textGhost, height: 1.6)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── EXPERIMENT CARD ──────────────────────────────────────────────────────────
+
+  Widget _buildExperimentCard(BuildContext context) {
+    final title = _experiment?['title'] as String? ?? '';
+    final body = _experiment?['body'] as String? ?? '';
+    final number = (_experiment?['number'] as num?)?.toInt() ?? 1;
+    final days = (_experiment?['duration_days'] as num?)?.toInt() ?? 7;
+    final trigger = _experiment?['trigger'] as String? ?? '';
+    final hypothesis = _experiment?['hypothesis'] as String? ?? '';
+    final followup = _experiment?['followup'] as String? ?? '';
+
+    final experiment = EchoExperiment(
+      number: number, trigger: trigger, hypothesis: hypothesis,
+      title: title, body: body, followup: followup, durationDays: days,
+    );
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ExperimentProposalScreen(experiment: experiment))),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C0A08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF1E1815)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 22, height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF131009),
+                    border: Border.all(color: EchoColors.amber.withValues(alpha: 0.25)),
+                  ),
+                  child: Center(child: Text('$number',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11, fontWeight: FontWeight.w700,
+                          color: EchoColors.amber))),
+                ),
+                const SizedBox(width: 8),
+                Text('EXPERIMENT · $days DAYS',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 9.5, fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0, color: const Color(0xFF4A4038))),
+                const Spacer(),
+                Text('See details →',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10, color: EchoColors.textGhost)),
+              ],
+            ),
+            if (title.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(title,
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15, fontWeight: FontWeight.w500,
+                      color: EchoColors.textPrimary, height: 1.45, letterSpacing: -0.2)),
+            ],
+            if (body.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(body.length > 120 ? '${body.substring(0, 120)}…' : body,
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5, height: 1.65, color: EchoColors.textGhost)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── ARCHIVE CHIPS ───────────────────────────────────────────────────────────
+
+  Widget _buildArchiveChips(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 36),
+      child: Wrap(
+        spacing: 8, runSpacing: 8,
+        children: [
+          _archiveChip('Memory', Icons.grain_rounded, EchoColors.indigo,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
+          _archiveChip('Rules', Icons.tonality_rounded, const Color(0xFF9A6AB4),
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
+          _archiveChip('Training', Icons.model_training_rounded, EchoColors.amber,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()))),
+          _archiveChip('Record', Icons.history_edu_rounded, EchoColors.indigo,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
+          _archiveChip('Connections', Icons.link_rounded, EchoColors.textMuted,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ConnectionsPage()))),
+        ],
+      ),
+    );
+  }
+
+  Widget _archiveChip(String label, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: color.withValues(alpha: 0.70)),
+            const SizedBox(width: 6),
+            Text(label, style: GoogleFonts.plusJakartaSans(
+                fontSize: 12, color: EchoColors.textGhost)),
           ],
         ),
       ),

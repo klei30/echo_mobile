@@ -98,7 +98,15 @@ class VoiceService {
     }
 
     try {
-      _room = Room();
+      // Use RoomOptions to manage speakerphone — livekit_client calls setSpeakerphoneOn
+      // internally via applyAudioSpeakerSettings() when the local mic track is published.
+      _room = Room(
+        roomOptions: const RoomOptions(
+          defaultAudioOutputOptions: AudioOutputOptions(speakerOn: true),
+          adaptiveStream: false,
+          dynacast: false,
+        ),
+      );
 
       _room!.events.on<RoomConnectedEvent>((_) {
         _log.info('LiveKit connected to room ${tokenData.room}');
@@ -111,7 +119,32 @@ class VoiceService {
         _setState(VoiceState.idle);
       });
 
+      // Diagnostic: log when the agent participant joins the room.
+      _room!.events.on<ParticipantConnectedEvent>((event) {
+        _log.info('Remote participant joined: identity=${event.participant.identity} sid=${event.participant.sid}');
+      });
+
+      // Diagnostic: log when agent publishes a track (before media arrives).
+      _room!.events.on<TrackPublishedEvent>((event) {
+        _log.info('Remote track published: kind=${event.publication.kind} source=${event.publication.source} sid=${event.publication.sid}');
+      });
+
+      // Agent audio track subscribed — force speaker output and confirm audio is flowing.
+      _room!.events.on<TrackSubscribedEvent>((event) {
+        _log.info('Remote track subscribed: kind=${event.track.kind} source=${event.track.source}');
+        if (event.track.kind == TrackType.AUDIO) {
+          // Re-assert speakerphone when remote audio track arrives.
+          if (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS) {
+            Hardware.instance.setSpeakerphoneOn(true).then((_) {
+              _log.info('Speakerphone re-asserted on remote audio track');
+            });
+          }
+        }
+      });
+
       _room!.events.on<DataReceivedEvent>((event) {
+        _log.info('DataReceivedEvent: ${event.data.length} bytes from participant=${event.participant?.identity}');
         try {
           final str = utf8.decode(Uint8List.fromList(event.data));
           final msg = jsonDecode(str) as Map<String, dynamic>;
@@ -120,13 +153,20 @@ class VoiceService {
             final role = msg['role'] as String? ?? 'user';
             final text = msg['text'] as String? ?? '';
             if (role == 'user') _lastUserText = text;
+            if (role == 'agent') _lastEchoText = text;
             _transcriptController.add((role: role, text: text));
           } else if (type == 'agent_state') {
             final agentState = msg['state'] as String? ?? '';
-            if (agentState == 'speaking') {
-              _setState(VoiceState.speaking);
-            } else if (agentState == 'listening' || agentState == 'initializing') {
-              if (_state == VoiceState.speaking) _setState(VoiceState.listening);
+            _log.info('Agent state: $agentState');
+            switch (agentState) {
+              case 'speaking':
+                _setState(VoiceState.speaking);
+              case 'thinking':
+                // Keep as listening — orb will reflect thinking visually via VoiceState.listening
+                if (_state != VoiceState.speaking) _setState(VoiceState.listening);
+              case 'listening':
+              case 'initializing':
+                _setState(VoiceState.listening);
             }
           }
         } catch (e) {
@@ -135,7 +175,11 @@ class VoiceService {
       });
 
       _log.info('Connecting to LiveKit ${tokenData.url} room=${tokenData.room}');
-      await _room!.connect(tokenData.url, tokenData.token).timeout(
+      await _room!.connect(
+        tokenData.url,
+        tokenData.token,
+        connectOptions: const ConnectOptions(autoSubscribe: true),
+      ).timeout(
         const Duration(seconds: 15),
         onTimeout: () {
           throw async.TimeoutException(
@@ -146,11 +190,6 @@ class VoiceService {
       );
       _log.info('Connected. Enabling mic.');
       await _room!.localParticipant?.setMicrophoneEnabled(true);
-
-      // On Android the default audio output is the earpiece — force speaker.
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        await Hardware.instance.setSpeakerphoneOn(true);
-      }
       return true;
     } catch (e) {
       _lastError = e.toString();

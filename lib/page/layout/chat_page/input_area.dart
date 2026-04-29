@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:chatmcp/page/layout/widgets/mcp_tools.dart';
+import 'package:chatmcp/page/echo_tabs/voice_session_screen.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +13,6 @@ import 'package:chatmcp/widgets/ink_icon.dart';
 import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/page/layout/widgets/conv_setting.dart';
 import 'package:chatmcp/voice/voice_service.dart';
-import 'package:chatmcp/page/echo_tabs/voice_screen.dart';
 
 class SubmitData {
   final String text;
@@ -155,6 +156,10 @@ class InputAreaState extends State<InputArea> {
 
   // ── Echo mobile input bar ────────────────────────────────────────────────
   Widget _buildEchoMobileInput(BuildContext context) {
+    return _buildEchoInputRow(context);
+  }
+
+  Widget _buildEchoInputRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Row(
@@ -204,14 +209,24 @@ class InputAreaState extends State<InputArea> {
                         return GestureDetector(
                           onTap: isConnecting ? null : () async {
                             if (vs == VoiceState.idle) {
-                              final ok = await VoiceService().connect();
-                              if (ok && context.mounted) {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const EchoVoiceScreen(),
-                                  ),
-                                );
-                              }
+                              // Open dedicated voice session screen
+                              await Navigator.of(ctx).push(PageRouteBuilder(
+                                pageBuilder: (_, __, ___) =>
+                                    const VoiceSessionScreen(),
+                                transitionsBuilder: (_, anim, __, child) =>
+                                    SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0, 1),
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(
+                                          parent: anim,
+                                          curve: Curves.easeOut)),
+                                      child: child,
+                                    ),
+                                transitionDuration:
+                                    const Duration(milliseconds: 350),
+                                fullscreenDialog: true,
+                              ));
                             } else {
                               await VoiceService().disconnect();
                             }
@@ -487,6 +502,96 @@ Padding(
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Voice status banner ───────────────────────────────────────────────────
+
+class _VoiceStatusBanner extends StatefulWidget {
+  const _VoiceStatusBanner();
+
+  @override
+  State<_VoiceStatusBanner> createState() => _VoiceStatusBannerState();
+}
+
+class _VoiceStatusBannerState extends State<_VoiceStatusBanner> {
+  String _lastTranscript = '';
+  late final StreamSubscription<({String role, String text})> _transcriptSub;
+  late final StreamSubscription<VoiceState> _stateSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _transcriptSub = VoiceService().transcriptStream.listen((t) {
+      if (mounted && t.role == 'user' && t.text.isNotEmpty) {
+        setState(() => _lastTranscript = t.text);
+      }
+    });
+    _stateSub = VoiceService().stateStream.listen((s) {
+      if (mounted && s == VoiceState.idle) {
+        setState(() => _lastTranscript = '');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _transcriptSub.cancel();
+    _stateSub.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<VoiceState>(
+      stream: VoiceService().stateStream,
+      initialData: VoiceService().state,
+      builder: (context, snap) {
+        final state = snap.data ?? VoiceState.idle;
+        if (state == VoiceState.idle) return const SizedBox.shrink();
+
+        final (label, icon, color) = switch (state) {
+          VoiceState.connecting    => ('Connecting...', Icons.wifi_tethering_rounded, const Color(0xFF5A5550)),
+          VoiceState.listening     => (_lastTranscript.isNotEmpty ? '"$_lastTranscript"' : 'Echo is listening...', Icons.hearing_rounded, const Color(0xFFC4783A)),
+          VoiceState.speaking      => ('Echo is speaking', Icons.volume_up_rounded, const Color(0xFF4A9EDB)),
+          VoiceState.disconnecting => ('Ending session...', Icons.wifi_tethering_off_rounded, const Color(0xFF5A5550)),
+          _                        => ('Voice active', Icons.mic_rounded, const Color(0xFFC4783A)),
+        };
+
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withValues(alpha: 0.22)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 12, color: color),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

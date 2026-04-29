@@ -1,0 +1,800 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
+import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
+import 'package:chatmcp/page/echo_tabs/revelation_screen.dart';
+
+class TodayScreen extends StatefulWidget {
+  const TodayScreen({super.key});
+
+  @override
+  State<TodayScreen> createState() => _TodayScreenState();
+}
+
+enum _TodayState { silence, checking, morningCheckin, interruption, council, revelation }
+
+class _TodayScreenState extends State<TodayScreen>
+    with TickerProviderStateMixin {
+  _TodayState _state = _TodayState.checking;
+
+  // Content fields
+  String? _statement;
+  String? _letter;
+
+  // Thread fields — populated from /v1/echo/decide
+  String? _threadId;
+  String? _threadName;
+  int _threadDay = 0;
+  int _escalationLevel = 0;
+  String? _threadContext;
+
+  // Digest fields — shown in silence state
+  Map<String, dynamic>? _signal;
+  Map<String, dynamic>? _practice;
+
+  late final AnimationController _orbPulse;
+  late final AnimationController _contentFade;
+
+  @override
+  void initState() {
+    super.initState();
+    _orbPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3400),
+    )..repeat(reverse: true);
+
+    _contentFade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _checkState();
+  }
+
+  @override
+  void dispose() {
+    _orbPulse.dispose();
+    _contentFade.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkState() async {
+    setState(() => _state = _TodayState.checking);
+
+    final results = await Future.wait([
+      EchoApiClient().decideState(),
+      EchoApiClient().getCheckinStatus(),
+      EchoApiClient().getUserSignal(),
+      EchoApiClient().getPracticeToday(),
+    ]);
+    if (!mounted) return;
+
+    final decision = results[0] as Map<String, dynamic>?;
+    final checkinDone = results[1] as bool;
+    _signal = results[2] as Map<String, dynamic>?;
+    _practice = results[3] as Map<String, dynamic>?;
+
+    // Morning check-in gate: before 14:00 local time and not done today
+    if (!checkinDone && DateTime.now().hour < 14) {
+      setState(() => _state = _TodayState.morningCheckin);
+      _contentFade.forward();
+      return;
+    }
+
+    final echoState = decision?['state'] as String? ?? 'silence';
+    final speakNow = decision?['speak_now'] as bool? ?? false;
+
+    // Always capture thread metadata when present
+    final threadId = decision?['thread_id'] as String?;
+    final threadName = decision?['thread_name'] as String?;
+    final threadDay = (decision?['thread_day'] as num?)?.toInt() ?? 0;
+    final escalationLevel = (decision?['escalation_level'] as num?)?.toInt() ?? 0;
+    final threadContext = decision?['thread_context'] as String?;
+
+    if (!speakNow || echoState == 'silence') {
+      setState(() {
+        _state = _TodayState.silence;
+        _threadId = threadId;
+        _threadName = threadName;
+        _threadDay = threadDay;
+        _escalationLevel = escalationLevel;
+      });
+      _contentFade.forward();
+      return;
+    }
+
+    switch (echoState) {
+      case 'interruption':
+        setState(() {
+          _statement = decision?['statement'] as String?;
+          _threadId = threadId;
+          _threadName = threadName;
+          _threadDay = threadDay;
+          _escalationLevel = escalationLevel;
+          _state = _TodayState.interruption;
+        });
+        break;
+      case 'revelation':
+        setState(() {
+          _letter = decision?['letter'] as String?;
+          _threadId = threadId;
+          _threadName = threadName;
+          _threadDay = threadDay;
+          _escalationLevel = escalationLevel;
+          _state = _TodayState.revelation;
+        });
+        break;
+      case 'council':
+        setState(() {
+          _threadId = threadId;
+          _threadName = threadName;
+          _threadDay = threadDay;
+          _escalationLevel = escalationLevel;
+          _threadContext = threadContext;
+          _state = _TodayState.council;
+        });
+        break;
+      default:
+        setState(() => _state = _TodayState.silence);
+    }
+    _contentFade.forward();
+  }
+
+  // Orb glow params per escalation level
+  ({double base, double pulse, double blur}) _orbParams() {
+    switch (_escalationLevel) {
+      case 5:
+        return (base: 0.38, pulse: 0.24, blur: 80);
+      case 4:
+        return (base: 0.28, pulse: 0.20, blur: 70);
+      case 3:
+        return (base: 0.18, pulse: 0.15, blur: 60);
+      case 2:
+        return (base: 0.10, pulse: 0.08, blur: 55);
+      case 1:
+        return (base: 0.05, pulse: 0.05, blur: 50);
+      default:
+        return (base: 0.04, pulse: 0.04, blur: 45);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showAsk = _state == _TodayState.silence || _state == _TodayState.interruption;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Orb zone — fixed at ~42% of screen height
+            SizedBox(
+              height: screenHeight * 0.42,
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildOrbBackground()),
+                  // Refresh — top right corner
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: () {
+                        _contentFade.value = 0;
+                        _checkState();
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.05),
+                        ),
+                        child: Icon(
+                          Icons.refresh_rounded,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content zone — fills remaining space
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 500),
+                child: _buildStateContent(),
+              ),
+            ),
+            // Ask pill — pinned at bottom, only in silence/interruption
+            if (showAsk)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 28, top: 8),
+                child: Center(child: _buildAskPill()),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrbBackground() {
+    return AnimatedBuilder(
+      animation: _orbPulse,
+      builder: (context, child) {
+        final t = _orbPulse.value;
+        final p = _orbParams();
+
+        return Center(
+          child: SizedBox(
+            width: 180,
+            height: 180,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Outer glow — intensity from escalation level
+                Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: EchoColors.amber.withValues(alpha: p.base + t * p.pulse),
+                        blurRadius: p.blur + t * 30,
+                        spreadRadius: t * (_escalationLevel >= 3 ? 12 : 6),
+                      ),
+                    ],
+                  ),
+                ),
+                // Mid ring — visible at level 2+
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: EchoColors.amber.withValues(
+                        alpha: (_escalationLevel >= 2 ? 0.04 : 0.02) + t * 0.03),
+                    border: Border.all(
+                      color: EchoColors.amber.withValues(
+                          alpha: (_escalationLevel >= 2 ? 0.14 : 0.06) + t * 0.10),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+                // Second ring at level 4+
+                if (_escalationLevel >= 4)
+                  Container(
+                    width: 155,
+                    height: 155,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: EchoColors.amber.withValues(alpha: 0.06 + t * 0.08),
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                // Core
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: EchoColors.amber.withValues(
+                        alpha: (_escalationLevel >= 3 ? 0.10 : 0.06) + t * 0.08),
+                    boxShadow: [
+                      BoxShadow(
+                        color: EchoColors.amber.withValues(alpha: p.base + t * p.pulse),
+                        blurRadius: 20 + t * 12,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // "Day N" thread label — shows when thread is day 2+
+  Widget _buildThreadLabel() {
+    if (_threadDay < 2 || _threadName == null) return const SizedBox.shrink();
+    return Column(
+      children: [
+        Text(
+          'Day $_threadDay',
+          style: GoogleFonts.inter(
+            color: EchoColors.amber.withValues(alpha: 0.45),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildStateContent() {
+    switch (_state) {
+      case _TodayState.checking:
+        return const SizedBox.shrink();
+
+      case _TodayState.morningCheckin:
+        return FadeTransition(
+          opacity: _contentFade,
+          key: const ValueKey('morningCheckin'),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Good morning.',
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.55),
+                      fontSize: 14,
+                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Echo is listening.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w300,
+                      height: 1.4,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      await Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              const DailyCheckinScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) =>
+                                  FadeTransition(opacity: animation, child: child),
+                          transitionDuration: const Duration(milliseconds: 500),
+                          fullscreenDialog: true,
+                        ),
+                      );
+                      if (mounted) {
+                        _contentFade.value = 0;
+                        _checkState();
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: EchoColors.amber.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.30)),
+                      ),
+                      child: Text(
+                        'Begin',
+                        style: GoogleFonts.inter(
+                          color: EchoColors.amber,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+      case _TodayState.silence:
+        final hasThread = _escalationLevel >= 1 && _threadName != null;
+        final signal = _signal?['signal'] as String?;
+        final practiceTitle = _practice?['rep_title'] as String?;
+        return FadeTransition(
+          opacity: _contentFade,
+          key: const ValueKey('silence'),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Signal quote — what Echo sees as your core nature
+                if (signal != null) ...[
+                  Text(
+                    '"$signal"',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.lora(
+                      fontSize: 17,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white.withValues(alpha: 0.62),
+                      height: 1.65,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '— what echo sees',
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      fontSize: 10,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ] else ...[
+                  Text(
+                    hasThread ? 'Still watching.' : 'Nothing yet.',
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      fontSize: 13,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
+
+                // Active thread — compact row
+                if (hasThread)
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => AskScreen(threadId: _threadId),
+                      ));
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.02),
+                        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.14)),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: EchoColors.amber.withValues(alpha: 0.50),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _threadName!,
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.42),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _threadDay >= 2 ? 'Day $_threadDay' : 'lv $_escalationLevel',
+                            style: GoogleFonts.inter(
+                              color: EchoColors.amber.withValues(alpha: 0.28),
+                              fontSize: 10,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                if (hasThread) const SizedBox(height: 10),
+
+                // Practice hint — compact, low-key
+                if (practiceTitle != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.015),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          "TODAY'S REP",
+                          style: GoogleFonts.inter(
+                            color: EchoColors.amber.withValues(alpha: 0.35),
+                            fontSize: 8.5,
+                            letterSpacing: 1.0,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            practiceTitle,
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withValues(alpha: 0.32),
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (!hasThread && signal == null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Keep talking.',
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.10),
+                      fontSize: 12,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+
+      case _TodayState.interruption:
+        final statement = _statement ?? '';
+        return FadeTransition(
+          opacity: _contentFade,
+          key: const ValueKey('interruption'),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildThreadLabel(),
+                  Text(
+                    statement,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.90),
+                      fontSize: 21,
+                      fontWeight: FontWeight.w300,
+                      height: 1.55,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildInterruptionActions(),
+                ],
+              ),
+            ),
+          ),
+        );
+
+      case _TodayState.revelation:
+        final letter = _letter ?? '';
+        return FadeTransition(
+          opacity: _contentFade,
+          key: const ValueKey('revelation'),
+          child: GestureDetector(
+            onTap: () {
+              if (letter.isNotEmpty) {
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        RevelationScreen(
+                          letter: letter,
+                          threadId: _threadId,
+                        ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) =>
+                            FadeTransition(opacity: animation, child: child),
+                    transitionDuration: const Duration(milliseconds: 700),
+                    fullscreenDialog: true,
+                  ),
+                );
+              }
+            },
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildThreadLabel(),
+                    Text(
+                      'R E V E L A T I O N',
+                      style: GoogleFonts.inter(
+                        color: EchoColors.amber.withValues(alpha: 0.40),
+                        fontSize: 10,
+                        letterSpacing: 3.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Echo has something to tell you.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w300,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Tap to read',
+                      style: GoogleFonts.inter(
+                        color: EchoColors.amber.withValues(alpha: 0.45),
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+      case _TodayState.council:
+        return FadeTransition(
+          opacity: _contentFade,
+          key: const ValueKey('council'),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildThreadLabel(),
+                  Text(
+                    _threadContext != null
+                        ? 'Echo called the council.'
+                        : 'The council is ready.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.70),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w300,
+                      height: 1.5,
+                    ),
+                  ),
+                  if (_threadContext != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _threadContext!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AskScreen(
+                            threadId: _threadId,
+                            threadContext: _threadContext,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: EchoColors.amber.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                            color: EchoColors.amber.withValues(alpha: 0.30)),
+                      ),
+                      child: Text(
+                        _threadContext != null ? 'Enter the council' : 'Bring your question',
+                        style: GoogleFonts.inter(
+                          color: EchoColors.amber,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildInterruptionActions() {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            setState(() => _state = _TodayState.silence);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Text(
+              'I need to think about this',
+              style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.80),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            setState(() => _state = _TodayState.silence);
+          },
+          child: Text(
+            'Dismiss',
+            style: GoogleFonts.inter(
+              color: Colors.white.withValues(alpha: 0.25),
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAskPill() {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AskScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: Text(
+          'Ask Echo',
+          style: GoogleFonts.inter(
+            color: Colors.white.withValues(alpha: 0.40),
+            fontSize: 13,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+}

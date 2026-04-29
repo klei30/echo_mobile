@@ -4,9 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
-import 'checkin_complete_screen.dart';
-
-enum _Phase { intro, loading, asking, typing, echoing }
+enum _Phase { intro, loading, asking, typing, echoing, done }
 
 class DailyCheckinScreen extends StatefulWidget {
   const DailyCheckinScreen({super.key});
@@ -131,16 +129,9 @@ class _DailyCheckinScreenState extends State<DailyCheckinScreen>
       'q': _questions[i],
       'a': i < _answers.length ? _answers[i] : '',
     });
-    final result = await EchoApiClient().submitDailyCheckin(qas);
+    await EchoApiClient().submitDailyCheckin(qas);
     if (!mounted) return;
-    final synthesis = result != null
-        ? (result['synthesis'] as List?)?.map((e) => e.toString()).toList()
-        : null;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => CheckinCompleteScreen(answers: _answers, synthesis: synthesis),
-      ),
-    );
+    setState(() => _phase = _Phase.done);
   }
 
   @override
@@ -157,8 +148,46 @@ class _DailyCheckinScreenState extends State<DailyCheckinScreen>
                 ? _buildIntro()
                 : _phase == _Phase.loading
                     ? _buildLoading()
-                    : _buildFlow(),
+                    : _phase == _Phase.done
+                        ? _buildDone()
+                        : _buildFlow(),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDone() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const EchoOrb(size: 56, rings: 2),
+            const SizedBox(height: 28),
+            Text(
+              'Echo heard you.',
+              style: GoogleFonts.lora(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 20,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Text(
+                'Close',
+                style: GoogleFonts.inter(
+                  color: EchoColors.textGhost,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

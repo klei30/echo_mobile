@@ -35,7 +35,9 @@ enum _Phase { input, loading, result }
 
 class CouncilScreen extends StatefulWidget {
   final String? initialQuestion;
-  const CouncilScreen({super.key, this.initialQuestion});
+  final String? threadId;
+  final String? threadContext;
+  const CouncilScreen({super.key, this.initialQuestion, this.threadId, this.threadContext});
 
   @override
   State<CouncilScreen> createState() => _CouncilScreenState();
@@ -87,7 +89,11 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
 
     setState(() => _phase = _Phase.loading);
 
-    final result = await EchoApiClient().askCouncil(q);
+    final result = await EchoApiClient().askCouncil(
+      q,
+      threadId: widget.threadId,
+      threadContext: widget.threadContext,
+    );
     if (!mounted) return;
 
     if (result == null) {
@@ -151,6 +157,42 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
+            // Thread context banner — shown when Echo called council proactively
+            if (widget.threadContext != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: EchoColors.amber.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: EchoColors.amber.withValues(alpha: 0.20)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'E C H O  C A L L E D  T H I S',
+                      style: GoogleFonts.inter(
+                        color: EchoColors.amber.withValues(alpha: 0.55),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.8,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.threadContext!,
+                      style: GoogleFonts.inter(
+                        color: EchoColors.textMuted,
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             Text(
               'Bring a decision to the council.',
               style: GoogleFonts.inter(
@@ -410,6 +452,41 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
           ),
 
           const SizedBox(height: 24),
+
+          // Thread resolve — only shown when triggered from a thread
+          if (widget.threadId != null) ...[
+            GestureDetector(
+              onTap: () async {
+                HapticFeedback.lightImpact();
+                await EchoApiClient().resolveThread(
+                  widget.threadId!,
+                  note: 'council heard',
+                );
+                if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: EchoColors.amber.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: EchoColors.amber.withValues(alpha: 0.25)),
+                ),
+                child: Center(
+                  child: Text(
+                    'I\'ve heard this',
+                    style: GoogleFonts.inter(
+                      color: EchoColors.amber.withValues(alpha: 0.80),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
 
           // Ask again
           GestureDetector(

@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/page/layout/sidebar.dart';
 import 'package:chatmcp/page/layout/chat_page/chat_page.dart';
-import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
-import 'package:chatmcp/page/echo_tabs/presence_screen.dart';
+import 'package:chatmcp/page/echo_tabs/you_tab.dart';
+import 'package:chatmcp/page/echo_tabs/today_screen.dart';
 import 'package:chatmcp/page/onboarding/onboarding_page.dart';
 import 'package:chatmcp/page/echo_settings/echo_settings_sheet.dart';
 import 'package:chatmcp/provider/chat_model_provider.dart';
@@ -23,7 +23,7 @@ class EchoMobilePage extends StatefulWidget {
 }
 
 class _EchoMobilePageState extends State<EchoMobilePage> {
-  int _selectedTab = 2;
+  int _selectedTab = 1;
   bool _onboardingChecked = false;
   bool _showOnboarding = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -85,8 +85,8 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                 index: _selectedTab,
                 children: [
                   _buildEchoTab(),
-                  const MirrorTab(),
-                  const PresenceScreen(),
+                  const TodayScreen(),
+                  const YouTab(),
                 ],
               ),
               bottomNavigationBar: _buildBottomNav(),
@@ -300,8 +300,8 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, 'Echo', _EchoTabIcon.echo),
-              _navItem(1, 'Mirror', _EchoTabIcon.mirror),
+              _navItem(0, 'Talk', _EchoTabIcon.echo),
+              _navItem(1, 'Today', _EchoTabIcon.today),
               _navItem(2, 'You', _EchoTabIcon.you),
             ],
           ),
@@ -342,15 +342,15 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
     switch (icon) {
       case _EchoTabIcon.echo:
         return _SonarRingsIcon(color: color);
-      case _EchoTabIcon.mirror:
-        return _MirrorCircleIcon(color: color);
+      case _EchoTabIcon.today:
+        return Icon(Icons.circle_outlined, size: 21, color: color);
       case _EchoTabIcon.you:
         return Icon(Icons.person_outline_rounded, size: 21, color: color);
     }
   }
 }
 
-enum _EchoTabIcon { echo, mirror, you }
+enum _EchoTabIcon { echo, today, you }
 
 /// Sonar rings icon — Echo brand mark: center dot + two concentric arcs emanating outward.
 class _SonarRingsIcon extends StatelessWidget {
@@ -394,47 +394,3 @@ class _SonarRingsPainter extends CustomPainter {
   bool shouldRepaint(covariant _SonarRingsPainter old) => old.color != color;
 }
 
-/// Mirror icon: circle with 4 cardinal tick marks — matches the design's circle+crosses icon.
-class _MirrorCircleIcon extends StatelessWidget {
-  final Color color;
-  const _MirrorCircleIcon({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 21,
-      height: 21,
-      child: CustomPaint(painter: _MirrorPainter(color: color)),
-    );
-  }
-}
-
-class _MirrorPainter extends CustomPainter {
-  final Color color;
-  const _MirrorPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width * 0.38;
-    final tick = size.width * 0.12;
-
-    // Circle
-    canvas.drawCircle(Offset(cx, cy), r, paint);
-    // Cardinal ticks
-    canvas.drawLine(Offset(cx, cy - r), Offset(cx, cy - r - tick), paint); // top
-    canvas.drawLine(Offset(cx, cy + r), Offset(cx, cy + r + tick), paint); // bottom
-    canvas.drawLine(Offset(cx - r, cy), Offset(cx - r - tick, cy), paint); // left
-    canvas.drawLine(Offset(cx + r, cy), Offset(cx + r + tick, cy), paint); // right
-  }
-
-  @override
-  bool shouldRepaint(covariant _MirrorPainter old) => old.color != color;
-}
