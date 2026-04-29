@@ -131,10 +131,67 @@ class LocalChatRepository implements ChatRepository {
     return chatMessages.map((e) => ChatMessage.fromDb(e)).toList();
   }
 
-  /// Claims all chats with no userId for the currently logged-in user.
-  /// Called once on login/startup so legacy chats aren't lost.
+  /// Import conversation history from the Echo backend.
+  /// Pairs are grouped by date → one Chat per date. MessageIds are deterministic
+  /// so re-running this after logout/login never creates duplicates.
+  Future<void> importHistory(List<Map<String, dynamic>> pairs) async {
+    if (pairs.isEmpty) return;
+    final Map<String, List<Map<String, dynamic>>> byDate = {};
+    for (final pair in pairs) {
+      final created = pair['created_at'] as String? ?? '';
+      final date = created.length >= 10 ? created.substring(0, 10) : 'history';
+      byDate.putIfAbsent(date, () => []).add(pair);
+    }
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    for (final entry in byDate.entries) {
+      final date = entry.key;
+      final datePairs = entry.value;
+      String title = date;
+      try {
+        final dt = DateTime.parse(date);
+        title = '${months[dt.month - 1]} ${dt.day}';
+      } catch (_) {}
+      // Reuse existing chat with same title+userId, or create a new one
+      final existing = await _chatDao.query(
+        where: 'title = ? AND userId = ?',
+        whereArgs: [title, _uid],
+      );
+      int chatId;
+      if (existing.isNotEmpty) {
+        chatId = existing.first.id!;
+      } else {
+        DateTime? chatTime;
+        try { chatTime = DateTime.parse(datePairs.last['created_at'] as String); } catch (_) {}
+        final newChat = Chat(title: title, userId: _uid, createdAt: chatTime, updatedAt: chatTime);
+        chatId = await _chatDao.insert(newChat);
+      }
+      final msgs = <ChatMessage>[];
+      for (final p in datePairs.reversed) {
+        final userText = p['user_msg'] as String? ?? '';
+        final asstText = p['assistant_msg'] as String? ?? '';
+        final ts = p['created_at'] as String? ?? '';
+        msgs.add(ChatMessage(
+          role: MessageRole.user,
+          content: userText,
+          messageId: 'echo_u_${ts}_${userText.hashCode.abs()}',
+        ));
+        msgs.add(ChatMessage(
+          role: MessageRole.assistant,
+          content: asstText,
+          messageId: 'echo_a_${ts}_${asstText.hashCode.abs()}',
+        ));
+      }
+      await addChatMessage(chatId, msgs);
+    }
+  }
+
+  /// Claims all chats with no userId (or stamped 'anonymous' from a race condition)
+  /// for the currently logged-in user. Called once on startup after AuthService init.
   Future<void> adoptOrphanChats() async {
     final db = await _chatDao.database;
-    await db.rawUpdate('UPDATE chat SET userId = ? WHERE userId IS NULL', [_uid]);
+    await db.rawUpdate(
+      'UPDATE chat SET userId = ? WHERE userId IS NULL OR userId = ?',
+      [_uid, 'anonymous'],
+    );
   }
 }

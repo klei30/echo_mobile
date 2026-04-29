@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/provider/composio_provider.dart';
 
 /// Composio-style integration marketplace for Echo.
 /// Each connection gives Echo more context about the user's life.
@@ -13,42 +14,6 @@ class ConnectionsPage extends StatefulWidget {
 }
 
 class _ConnectionsPageState extends State<ConnectionsPage> {
-  Map<String, bool> _enabled = {
-    'Gmail': true,
-    'Google Calendar': true,
-    'Kindle / Reading': true,
-    'Spotify': false,
-    'Notion': false,
-    'GitHub': false,
-    'Slack': false,
-    'Twitter / X': false,
-  };
-
-  static const _prefPrefix = 'echo_conn_';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPrefs();
-  }
-
-  Future<void> _loadPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      for (final key in _enabled.keys) {
-        final stored = prefs.getBool('$_prefPrefix$key');
-        if (stored != null) _enabled[key] = stored;
-      }
-    });
-  }
-
-  Future<void> _toggle(String name) async {
-    final next = !_enabled[name]!;
-    setState(() => _enabled[name] = next);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('$_prefPrefix$name', next);
-  }
-
   static const _meta = {
     'Gmail': (Icons.mail_outline_rounded, Color(0xFFE85A5A), Color(0xFF1C0808),
         'Who reaches out to you and how often'),
@@ -70,6 +35,8 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final composio = context.watch<ComposioProvider>();
+
     return Scaffold(
       backgroundColor: EchoColors.bg,
       body: SafeArea(
@@ -83,7 +50,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                 children: [
                   _buildIntro(),
                   const SizedBox(height: 20),
-                  ..._meta.keys.map((name) => _buildItem(name)),
+                  ..._meta.keys.map((name) => _buildItem(name, composio)),
                   const SizedBox(height: 16),
                   _buildFooter(),
                 ],
@@ -150,9 +117,9 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     );
   }
 
-  Widget _buildItem(String name) {
+  Widget _buildItem(String name, ComposioProvider composio) {
     final (icon, iconColor, iconBg, desc) = _meta[name]!;
-    final isOn = _enabled[name]!;
+    final isOn = composio.isConnected(name);
 
     return Column(children: [
       Padding(
@@ -177,7 +144,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
           ),
           const SizedBox(width: 12),
           GestureDetector(
-            onTap: () => _toggle(name),
+            onTap: () => composio.connectToolkit(name),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 38, height: 22,
@@ -211,7 +178,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
 
   Widget _buildFooter() {
     return Text(
-      'More integrations coming soon via Composio.',
+      'Integrations powered by Composio Managed MCP.',
       textAlign: TextAlign.center,
       style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF2A2520)),
     );

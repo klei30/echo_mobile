@@ -85,8 +85,12 @@ Future<McpClient?> initializeMcpServer(Map<String, dynamic> mcpServerConfig) asy
   } catch (e) {
     Logger.root.severe('Failed to initialize MCP server: $e');
 
-    // 显示错误 toast 通知
-    ToastUtils.error('MCP Error: ${e.toString()}');
+    // Only show toast after widget tree is ready (navigatorKey has state).
+    // During app startup the tree isn't mounted yet, so skip the toast to
+    // avoid the BotToast "currentState != null" assertion crash.
+    try {
+      ToastUtils.error('MCP Error: ${e.toString()}');
+    } catch (_) {}
 
     return null;
   }

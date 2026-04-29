@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/provider/mcp_server_provider.dart';
 import 'package:chatmcp/page/setting/mcp_server.dart';
 import 'package:chatmcp/main.dart';
@@ -368,6 +369,7 @@ class _EchoSettingsSheetState extends State<EchoSettingsSheet> {
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
+              ChatProvider().clearOnLogout();
               await AuthService().logout();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(

@@ -184,6 +184,16 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearOnLogout() {
+    _chats.clear();
+    _activeChat = null;
+    _currentPage = 1;
+    _hasMoreChats = true;
+    _isLoadingChats = false;
+    _currentSearchKeyword = null;
+    notifyListeners();
+  }
+
   Future<void> addChatMessage(int chatId, List<llm_model.ChatMessage> messages) async {
     await ChatRepositoryProvider.instance.addChatMessage(chatId, messages);
     notifyListeners();

@@ -57,7 +57,12 @@ void main() async {
   }
 
   try {
-    await Future.wait([ProviderManager.init(), initDb(), AuthService().init()]);
+    // AuthService MUST init first — it loads userId from SharedPreferences.
+    // ProviderManager.init() calls adoptOrphanChats() which stamps chats with
+    // the current userId. If AuthService hasn't loaded yet, userId is null and
+    // all legacy chats get stamped as 'anonymous', making them invisible.
+    await Future.wait([AuthService().init(), initDb()]);
+    await ProviderManager.init();
 
     await initNotifications(
       onTap: () async {

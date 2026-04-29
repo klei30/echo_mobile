@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/page/echo_connections/connections_page.dart';
@@ -17,6 +19,49 @@ import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
 
+// ─── Arc painter ─────────────────────────────────────────────────────────────
+
+class _CloneArcPainter extends CustomPainter {
+  final double progress; // 0.0–1.0
+  const _CloneArcPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 2;
+
+    // Faint full-circle track
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = EchoColors.amber.withValues(alpha: 0.10)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
+
+    if (progress <= 0) return;
+
+    // Amber progress arc — clockwise from top
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress.clamp(0.0, 1.0),
+      false,
+      Paint()
+        ..color = EchoColors.amber.withValues(alpha: 0.80)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CloneArcPainter old) => old.progress != progress;
+}
+
+// ─── Widget ──────────────────────────────────────────────────────────────────
+
 class YouTab extends StatefulWidget {
   const YouTab({super.key});
 
@@ -28,6 +73,7 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _signal;
   Map<String, dynamic>? _practice;
   Map<String, dynamic>? _quote;
+  Map<String, dynamic>? _stats;
   bool _loading = true;
   bool _loggedThisSession = false;
 
@@ -43,12 +89,14 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getUserSignal(),
       EchoApiClient().getPracticeToday(),
       EchoApiClient().getNotableQuote(),
+      EchoApiClient().getUserStats(),
     ]);
     if (!mounted) return;
     setState(() {
       _signal = results[0];
       _practice = results[1];
       _quote = results[2];
+      _stats = results[3];
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
@@ -73,6 +121,32 @@ class _YouTabState extends State<YouTab> {
     }
   }
 
+  bool _wasTrainedRecently(String? iso) {
+    if (iso == null) return false;
+    try {
+      return DateTime.now().difference(DateTime.parse(iso).toLocal()).inHours < 36;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _trainedLabel(String? iso) {
+    if (iso == null) return '';
+    try {
+      final diff = DateTime.now().difference(DateTime.parse(iso).toLocal());
+      if (diff.inHours < 2) return 'trained just now';
+      if (diff.inHours < 12) return 'trained ${diff.inHours}h ago';
+      if (diff.inHours < 36) return 'trained last night';
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      final dt = DateTime.parse(iso).toLocal();
+      return 'trained ${m[dt.month - 1]} ${dt.day}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  // ─── build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,28 +159,27 @@ class _YouTabState extends State<YouTab> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              // ─── USER HEADER ──────────────────────────────────────────
-              _buildUserHeader(),
-              // ─── YOUR SIGNAL ──────────────────────────────────────────
-              _buildSignalSection(),
-              // ─── TODAY — The Practice ─────────────────────────────────
+              // ─── CLONE HERO ────────────────────────────────────────────
+              _buildCloneHero(context),
+              // ─── ECHO'S SIGNAL ─────────────────────────────────────────
+              _buildSignalZone(),
+              // ─── TODAY'S REP ───────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildPracticeSection(),
               ),
-              // ─── YOUR HIDDEN TALENT ───────────────────────────────────
+              // ─── YOUR HIDDEN TALENT ────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildTalentSection(context),
               ),
-              // ─── ASK YOUR TWIN ────────────────────────────────────────
+              // ─── ASK YOUR TWIN ─────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildTwinSection(context),
               ),
-              // ─── DEPTHS ───────────────────────────────────────────────
-              _buildDepthsSection(context),
-              const SizedBox(height: 28),
+              // ─── GO DEEPER ─────────────────────────────────────────────
+              _buildGoDeeper(context),
             ],
           ),
         ),
@@ -114,180 +187,289 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── USER HEADER ───────────────────────────────────────────────────────────
+  // ─── CLONE HERO ─────────────────────────────────────────────────────────────
 
-  Widget _buildUserHeader() {
-    final username = AuthService().username ?? 'You';
-    final firstName = username.split(' ').first;
-    final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'Y';
-    final totalPairs = _signal?['total_pairs'] as int? ?? 0;
+  Widget _buildCloneHero(BuildContext context) {
+    final avgConf = (_stats?['avg_confidence'] as num?)?.toDouble() ?? 0.0;
+    final totalPairs = _stats?['total_pairs'] as int? ?? 0;
+    final lastTrained = _stats?['last_trained'] as String?;
+    final recently = _wasTrainedRecently(lastTrained);
+    final pct = (avgConf * 100).round();
+    final weeks = _signal?['weeks'] as int? ?? 0;
 
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    final username = AuthService().username ?? '';
+    final firstName = username.isNotEmpty ? username.split(' ').first : '';
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFB86A28), Color(0xFFE8AE60)],
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const NightlyTrainingScreen())),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(0, 36, 0, 32),
+        decoration: recently
+            ? BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topCenter,
+                  radius: 1.2,
+                  colors: [
+                    EchoColors.amber.withValues(alpha: 0.04),
+                    Colors.transparent,
+                  ],
+                ),
+              )
+            : null,
+        child: Column(
+          children: [
+            // Orb + arc
+            SizedBox(
+              width: 176,
+              height: 176,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Progress arc — animates from 0 to real value on load
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: _loading ? 0.0 : avgConf),
+                    duration: const Duration(milliseconds: 1200),
+                    curve: Curves.easeOut,
+                    builder: (context2, value, child2) => CustomPaint(
+                      size: const Size(176, 176),
+                      painter: _CloneArcPainter(progress: value),
+                    ),
+                  ),
+                  // Orb centered inside
+                  const EchoOrb(size: 64, rings: 3),
+                  // Percentage badge at bottom of arc
+                  if (!_loading && pct > 0)
+                    Positioned(
+                      bottom: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: EchoColors.bg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: EchoColors.amber.withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          '$pct% you',
+                          style: GoogleFonts.lora(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: EchoColors.amber,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            child: Center(
-              child: Text(
-                initial,
+
+            const SizedBox(height: 18),
+
+            // Label
+            Text(
+              'your shadow clone',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10.5,
+                letterSpacing: 1.1,
+                color: EchoColors.textGhost,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+
+            if (firstName.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Text(
+                weeks > 0
+                    ? '$firstName · week $weeks'
+                    : firstName,
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF060504),
+                  fontSize: 11,
+                  color: EchoColors.textVeryGhost,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Name + context
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$greeting, $firstName.',
-                  style: GoogleFonts.lora(
-                    fontSize: 18,
-                    fontStyle: FontStyle.italic,
-                    color: EchoColors.textPrimary,
-                    letterSpacing: -0.2,
-                    height: 1.2,
-                  ),
+            ],
+
+            const SizedBox(height: 14),
+
+            // Stats row
+            if (!_loading && totalPairs > 0)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _statPill('$totalPairs conversations'),
+                  const SizedBox(width: 8),
+                  if (lastTrained != null)
+                    _statPill(_trainedLabel(lastTrained),
+                        highlight: recently),
+                ],
+              )
+            else if (_loading)
+              Container(
+                width: 180,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: EchoColors.bgSurface,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  totalPairs > 0
-                      ? '$totalPairs conversations with Echo'
-                      : 'Start talking to build your shadow clone',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: EchoColors.textGhost,
-                  ),
+              ),
+
+            // "trained last night" glow pill
+            if (!_loading && recently) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: EchoColors.amber.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: EchoColors.amber.withValues(alpha: 0.22)),
                 ),
-              ],
-            ),
-          ),
-        ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: EchoColors.amber.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'your clone learned something new last night',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: EchoColors.amber.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  // ─── YOUR SIGNAL ───────────────────────────────────────────────────────────
+  Widget _statPill(String label, {bool highlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: highlight
+            ? EchoColors.amber.withValues(alpha: 0.07)
+            : EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: highlight
+              ? EchoColors.amber.withValues(alpha: 0.2)
+              : EchoColors.borderSubtle,
+        ),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11,
+          color: highlight ? EchoColors.amberText : EchoColors.textGhost,
+        ),
+      ),
+    );
+  }
 
-  Widget _buildSignalSection() {
+  // ─── ECHO'S SIGNAL ──────────────────────────────────────────────────────────
+
+  Widget _buildSignalZone() {
     final signal = _signal?['signal'] as String?;
-    final totalPairs = _signal?['total_pairs'] as int? ?? 0;
-    final weeks = _signal?['weeks'] as int? ?? 0;
+    final quote = _quote?['quote'] as String?;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                weeks > 0 ? 'WEEK $weeks' : 'ECHO',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9.5, fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2, color: EchoColors.amber,
-                ),
-              ),
-              if (totalPairs > 0) ...[
-                const SizedBox(width: 8),
-                Container(width: 3, height: 3,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle, color: EchoColors.textGhost)),
-                const SizedBox(width: 8),
-                Text(
-                  '$totalPairs conversations',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5, letterSpacing: 0.5, color: EchoColors.textGhost,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 14),
+          Container(height: 1, color: EchoColors.borderSubtle),
+          const SizedBox(height: 22),
           if (_loading)
-            Container(
-              height: 26,
-              width: 220,
-              decoration: BoxDecoration(
-                color: EchoColors.bgSurface,
-                borderRadius: BorderRadius.circular(6),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                    height: 22, width: 260,
+                    color: EchoColors.bgSurface,
+                    margin: const EdgeInsets.only(bottom: 8)),
+                Container(height: 18, width: 200, color: EchoColors.bgSurface),
+              ],
             )
-          else if (signal != null)
+          else if (signal != null) ...[
             Text(
               '"$signal"',
               style: GoogleFonts.lora(
-                fontSize: 19, fontStyle: FontStyle.italic,
-                color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.3,
-              ),
-            )
-          else
-            Text(
-              'Keep talking — Echo is forming your signal.',
-              style: GoogleFonts.lora(
-                fontSize: 16, fontStyle: FontStyle.italic,
-                color: EchoColors.textGhost, height: 1.5,
+                fontSize: 20,
+                fontStyle: FontStyle.italic,
+                color: EchoColors.textPrimary,
+                height: 1.5,
+                letterSpacing: -0.3,
               ),
             ),
-          // Notable quote
-          if (!_loading && _quote?['quote'] != null) ...[
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('"', style: GoogleFonts.lora(
-                    fontSize: 14, color: EchoColors.amber)),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    _quote!['quote'] as String,
-                    style: GoogleFonts.lora(
-                      fontSize: 12.5, fontStyle: FontStyle.italic,
-                      color: EchoColors.textGhost, height: 1.6,
+            if (quote != null) ...[
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('"',
+                      style: GoogleFonts.lora(
+                          fontSize: 13, color: EchoColors.amber)),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      quote,
+                      style: GoogleFonts.lora(
+                        fontSize: 12.5,
+                        fontStyle: FontStyle.italic,
+                        color: EchoColors.textGhost,
+                        height: 1.6,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text('"', style: GoogleFonts.lora(
-                    fontSize: 14, color: EchoColors.amber)),
-              ],
-            ),
+                  const SizedBox(width: 5),
+                  Text('"',
+                      style: GoogleFonts.lora(
+                          fontSize: 13, color: EchoColors.amber)),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '— something you said',
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 9.5, color: EchoColors.textVeryGhost),
+              ),
+            ],
+          ] else
             Text(
-              '— something you said',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 9.5, color: EchoColors.textVeryGhost,
+              'Keep talking.\nEcho is forming your signal.',
+              style: GoogleFonts.lora(
+                fontSize: 18,
+                fontStyle: FontStyle.italic,
+                color: EchoColors.textGhost,
+                height: 1.55,
               ),
             ),
-          ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           Container(height: 1, color: EchoColors.borderSubtle),
         ],
       ),
     );
   }
 
-  // ─── TODAY — The Practice ──────────────────────────────────────────────────
+  // ─── TODAY'S REP ────────────────────────────────────────────────────────────
 
   Widget _buildPracticeSection() {
     final observation = _practice?['observation'] as String?;
@@ -314,7 +496,8 @@ class _YouTabState extends State<YouTab> {
             child: Row(
               children: [
                 Container(
-                  width: 6, height: 6,
+                  width: 6,
+                  height: 6,
                   decoration: const BoxDecoration(
                       shape: BoxShape.circle, color: EchoColors.amber),
                 ),
@@ -322,8 +505,10 @@ class _YouTabState extends State<YouTab> {
                 Text(
                   'TODAY\'S REP',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5, fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1, color: EchoColors.amber,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                    color: EchoColors.amber,
                   ),
                 ),
                 const Spacer(),
@@ -331,7 +516,8 @@ class _YouTabState extends State<YouTab> {
                   Text(
                     arcLabel,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5, color: EchoColors.textGhost,
+                      fontSize: 9.5,
+                      color: EchoColors.textGhost,
                     ),
                   ),
               ],
@@ -345,15 +531,13 @@ class _YouTabState extends State<YouTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(height: 14, width: 200,
-                      color: EchoColors.bgSurface),
+                  Container(height: 14, width: 200, color: EchoColors.bgSurface),
                   const SizedBox(height: 8),
                   Container(height: 14, width: 160, color: EchoColors.bgSurface),
                 ],
               ),
             )
           else if (observation != null) ...[
-            // Echo observed
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Column(
@@ -362,7 +546,8 @@ class _YouTabState extends State<YouTab> {
                   Text(
                     'ECHO OBSERVED',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9, letterSpacing: 0.8,
+                      fontSize: 9,
+                      letterSpacing: 0.8,
                       color: EchoColors.textGhost,
                     ),
                   ),
@@ -370,8 +555,10 @@ class _YouTabState extends State<YouTab> {
                   Text(
                     '"$observation"',
                     style: GoogleFonts.lora(
-                      fontSize: 14, fontStyle: FontStyle.italic,
-                      color: EchoColors.textMuted, height: 1.55,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                      color: EchoColors.textMuted,
+                      height: 1.55,
                     ),
                   ),
                 ],
@@ -380,8 +567,6 @@ class _YouTabState extends State<YouTab> {
             const SizedBox(height: 14),
             Container(height: 1, color: EchoColors.borderSubtle),
             const SizedBox(height: 14),
-
-            // Rep title + instruction
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Column(
@@ -391,8 +576,10 @@ class _YouTabState extends State<YouTab> {
                     Text(
                       repTitle,
                       style: GoogleFonts.lora(
-                        fontSize: 18, fontStyle: FontStyle.italic,
-                        color: EchoColors.textPrimary, letterSpacing: -0.2,
+                        fontSize: 18,
+                        fontStyle: FontStyle.italic,
+                        color: EchoColors.textPrimary,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   if (repInstruction != null) ...[
@@ -400,7 +587,8 @@ class _YouTabState extends State<YouTab> {
                     Text(
                       repInstruction,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13, height: 1.65,
+                        fontSize: 13,
+                        height: 1.65,
                         color: EchoColors.textMuted,
                       ),
                     ),
@@ -410,7 +598,6 @@ class _YouTabState extends State<YouTab> {
             ),
             const SizedBox(height: 20),
 
-            // Action buttons (if not yet logged)
             if (!logged && repId != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -429,7 +616,8 @@ class _YouTabState extends State<YouTab> {
                             child: Text(
                               'Done today',
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13.5, fontWeight: FontWeight.w600,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
                                 color: const Color(0xFF060504),
                               ),
                             ),
@@ -450,7 +638,8 @@ class _YouTabState extends State<YouTab> {
                         child: Text(
                           'Not today',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13.5, color: EchoColors.textGhost,
+                            fontSize: 13.5,
+                            color: EchoColors.textGhost,
                           ),
                         ),
                       ),
@@ -464,7 +653,8 @@ class _YouTabState extends State<YouTab> {
                 child: Row(
                   children: [
                     Container(
-                      width: 22, height: 22,
+                      width: 22,
+                      height: 22,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: done == true
@@ -485,7 +675,8 @@ class _YouTabState extends State<YouTab> {
                     Text(
                       done == true ? 'Logged today' : 'Skipped today',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5, color: EchoColors.textGhost,
+                        fontSize: 12.5,
+                        color: EchoColors.textGhost,
                       ),
                     ),
                   ],
@@ -493,7 +684,6 @@ class _YouTabState extends State<YouTab> {
               ),
             const SizedBox(height: 20),
 
-            // Week tracker
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: _buildWeekDots(weekCompletions),
@@ -504,8 +694,10 @@ class _YouTabState extends State<YouTab> {
               child: Text(
                 'Keep chatting — Echo needs more conversations\nto generate your practice.',
                 style: GoogleFonts.lora(
-                  fontSize: 13, fontStyle: FontStyle.italic,
-                  color: EchoColors.textGhost, height: 1.6,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                  color: EchoColors.textGhost,
+                  height: 1.6,
                 ),
               ),
             ),
@@ -518,9 +710,7 @@ class _YouTabState extends State<YouTab> {
 
   Widget _buildWeekDots(int completions) {
     const total = 7;
-    final weekday = DateTime.now().weekday; // 1=Mon, 7=Sun
-    final daysPassed = weekday;
-
+    final weekday = DateTime.now().weekday;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -528,7 +718,7 @@ class _YouTabState extends State<YouTab> {
           mainAxisSize: MainAxisSize.min,
           children: List.generate(total, (i) {
             final filled = i < completions;
-            final isToday = i == daysPassed - 1;
+            final isToday = i == weekday - 1;
             return Padding(
               padding: const EdgeInsets.only(right: 6),
               child: AnimatedContainer(
@@ -551,18 +741,18 @@ class _YouTabState extends State<YouTab> {
         Text(
           '$completions of $total this week',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 10.5, color: EchoColors.textGhost,
+            fontSize: 10.5,
+            color: EchoColors.textGhost,
           ),
         ),
       ],
     );
   }
 
-  // ─── YOUR HIDDEN TALENT ────────────────────────────────────────────────────
+  // ─── YOUR HIDDEN TALENT ─────────────────────────────────────────────────────
 
   Widget _buildTalentSection(BuildContext context) {
     final totalPairs = _signal?['total_pairs'] as int? ?? 0;
-
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const TalentScreen())),
@@ -582,8 +772,10 @@ class _YouTabState extends State<YouTab> {
                   Text(
                     'YOUR HIDDEN TALENT',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5, fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1, color: EchoColors.amber,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: EchoColors.amber,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -592,15 +784,18 @@ class _YouTabState extends State<YouTab> {
                         ? '"Something keeps appearing across $totalPairs conversations.\nI want to name it."'
                         : 'Echo is still watching. Keep talking.',
                     style: GoogleFonts.lora(
-                      fontSize: 14, fontStyle: FontStyle.italic,
-                      color: EchoColors.textPrimary, height: 1.55,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                      color: EchoColors.textPrimary,
+                      height: 1.55,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'What Echo found →',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12, fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       color: EchoColors.amber,
                     ),
                   ),
@@ -616,11 +811,10 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── ASK YOUR TWIN ─────────────────────────────────────────────────────────
+  // ─── ASK YOUR TWIN ──────────────────────────────────────────────────────────
 
   Widget _buildTwinSection(BuildContext context) {
     final totalPairs = _signal?['total_pairs'] as int? ?? 0;
-
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const TwinScreen())),
@@ -642,8 +836,10 @@ class _YouTabState extends State<YouTab> {
                       Text(
                         'ASK YOUR TWIN',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 9.5, fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1, color: EchoColors.indigo,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                          color: EchoColors.indigo,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -657,8 +853,10 @@ class _YouTabState extends State<YouTab> {
                         child: Text(
                           'BETA',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 8, fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8, color: EchoColors.indigo,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            color: EchoColors.indigo,
                           ),
                         ),
                       ),
@@ -670,14 +868,17 @@ class _YouTabState extends State<YouTab> {
                         ? 'Your shadow clone has trained on $totalPairs conversations.\nAsk both — see which one sounds more like you.'
                         : 'Keep chatting to train your shadow clone.',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13, height: 1.6, color: EchoColors.textMuted,
+                      fontSize: 13,
+                      height: 1.6,
+                      color: EchoColors.textMuted,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'Ask something →',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12, fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       color: EchoColors.indigoLight,
                     ),
                   ),
@@ -693,145 +894,150 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
-  // ─── DEPTHS ────────────────────────────────────────────────────────────────
+  // ─── GO DEEPER ──────────────────────────────────────────────────────────────
 
-  Widget _buildDepthsSection(BuildContext context) {
+  Widget _buildGoDeeper(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 6, 18, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'EXPLORE DEEPER',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9.5, fontWeight: FontWeight.w700,
-              letterSpacing: 1.0, color: EchoColors.textGhost,
-            ),
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 36),
+      child: GestureDetector(
+        onTap: () => _showMoreSheet(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          decoration: BoxDecoration(
+            color: EchoColors.bgSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: EchoColors.borderSubtle),
           ),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.2,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _depthTile(context, 'Evening Signal', Icons.nights_stay_rounded,
-                  EchoColors.amber, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
-                  )),
-              _depthTile(context, 'Memories', Icons.memory_rounded,
-                  EchoColors.indigo, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MemoriesScreen()),
-                  )),
-              _depthTile(context, 'Rules', Icons.rule_rounded,
-                  const Color(0xFF9A6AB4), () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const OperatingSystemScreen()),
-                  )),
-              _depthTile(context, 'Patterns', Icons.auto_awesome_rounded,
-                  EchoColors.amber, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const EmergenceScreen()),
-                  )),
-              _depthTile(context, 'Training', Icons.model_training_rounded,
-                  EchoColors.indigo, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
-                  )),
-              _depthTile(context, 'Experiment', Icons.science_outlined,
-                  const Color(0xFF6A9A7A), () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => ExperimentProposalScreen(
-                      experiment: const EchoExperiment(
-                        number: 1,
-                        trigger: 'Echo noticed a pattern worth exploring.',
-                        hypothesis: 'A small change in behavior reveals something true about you.',
-                        title: 'Speak without hedging. Just once a day.',
-                        body: 'Once a day — say your point without hedging. Just once.',
-                        followup: "I'll check in.",
-                      ),
-                      onAccept: () => Navigator.of(context).pop(),
-                      onSkip: () => Navigator.of(context).pop(),
-                    )),
-                  )),
-              _depthTile(context, 'Permanent\nRecord', Icons.history_edu_rounded,
-                  EchoColors.amber, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const PermanentRecordScreen()),
-                  )),
-              _depthTile(context, 'Meetings', Icons.groups_outlined,
-                  const Color(0xFF7A5A30), () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AfterMeetingScreen()),
-                  )),
-              _depthTile(context, 'Journey', Icons.celebration_outlined,
-                  EchoColors.amber, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AnniversaryScreen()),
-                  )),
+              Text(
+                'Go deeper',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5,
+                  color: EchoColors.textMuted,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_rounded,
+                  size: 14, color: EchoColors.textMuted),
             ],
           ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ConnectionsPage())),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              decoration: BoxDecoration(
-                color: EchoColors.bgSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: EchoColors.borderSubtle),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.link_rounded, size: 14, color: EchoColors.textGhost),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Connections',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5, color: EchoColors.textMuted,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Not connected',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11, color: EchoColors.textGhost,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right_rounded,
-                      size: 14, color: EchoColors.textGhost),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _depthTile(BuildContext context, String label, IconData icon,
+  // ─── MORE SHEET ─────────────────────────────────────────────────────────────
+
+  void _showMoreSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: EchoColors.bgCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: EchoColors.textGhost,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              _sheetRow(ctx, 'Memory Vault', Icons.grain_rounded,
+                  EchoColors.indigo,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const MemoriesScreen()))),
+              _sheetRow(ctx, 'Your Rules', Icons.tonality_rounded,
+                  const Color(0xFF9A6AB4),
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const OperatingSystemScreen()))),
+              _sheetRow(ctx, 'Training Detail', Icons.model_training_rounded,
+                  EchoColors.amber,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const NightlyTrainingScreen()))),
+              _sheetRow(ctx, 'Evening Signal', Icons.nights_stay_rounded,
+                  const Color(0xFF7A8A9A),
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const DailyCheckinScreen()))),
+              _sheetRow(ctx, 'Patterns', Icons.auto_awesome_rounded,
+                  EchoColors.amber,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const EmergenceScreen()))),
+              _sheetRow(ctx, 'Experiment', Icons.science_outlined,
+                  const Color(0xFF6A9A7A),
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ExperimentProposalScreen(
+                            experiment: const EchoExperiment(
+                              number: 1,
+                              trigger: 'Echo noticed a pattern worth exploring.',
+                              hypothesis:
+                                  'A small change in behavior reveals something true about you.',
+                              title: 'Speak without hedging. Just once a day.',
+                              body:
+                                  'Once a day — say your point without hedging. Just once.',
+                              followup: "I'll check in.",
+                            ),
+                            onAccept: () => Navigator.of(context).pop(),
+                            onSkip: () => Navigator.of(context).pop(),
+                          )))),
+              _sheetRow(ctx, 'Permanent Record', Icons.history_edu_rounded,
+                  EchoColors.indigo,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const PermanentRecordScreen()))),
+              _sheetRow(ctx, 'Meetings', Icons.groups_outlined,
+                  const Color(0xFF7A5A30),
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const AfterMeetingScreen()))),
+              _sheetRow(ctx, 'Journey', Icons.celebration_outlined,
+                  EchoColors.amber,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const AnniversaryScreen()))),
+              _sheetRow(ctx, 'Connections', Icons.link_rounded,
+                  EchoColors.textMuted,
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const ConnectionsPage()))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetRow(BuildContext context, String label, IconData icon,
       Color color, VoidCallback onTap) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: EchoColors.borderSubtle),
-        ),
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 11),
         child: Row(
           children: [
-            Icon(icon, size: 13, color: color.withValues(alpha: 0.7)),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10.5, color: EchoColors.textMuted,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            Icon(icon, size: 16, color: color.withValues(alpha: 0.75)),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                color: EchoColors.textMuted,
               ),
             ),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded,
+                size: 14, color: EchoColors.textGhost),
           ],
         ),
       ),

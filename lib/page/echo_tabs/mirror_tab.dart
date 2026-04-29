@@ -11,19 +11,43 @@ class MirrorTab extends StatefulWidget {
   State<MirrorTab> createState() => _MirrorTabState();
 }
 
-class _MirrorTabState extends State<MirrorTab> {
+class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _report;
   bool _loading = true;
   bool _error = false;
+  late AnimationController _fadeCtrl;
+
+  // Five staggered sections
+  late Animation<double> _aHeader;
+  late Animation<double> _aHeadline;
+  late Animation<double> _aObservations;
+  late Animation<double> _aSitWith;
+  late Animation<double> _aClone;
 
   @override
   void initState() {
     super.initState();
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _aHeader       = CurvedAnimation(parent: _fadeCtrl, curve: const Interval(0.00, 0.35, curve: Curves.easeOut));
+    _aHeadline     = CurvedAnimation(parent: _fadeCtrl, curve: const Interval(0.18, 0.50, curve: Curves.easeOut));
+    _aObservations = CurvedAnimation(parent: _fadeCtrl, curve: const Interval(0.34, 0.66, curve: Curves.easeOut));
+    _aSitWith      = CurvedAnimation(parent: _fadeCtrl, curve: const Interval(0.50, 0.80, curve: Curves.easeOut));
+    _aClone        = CurvedAnimation(parent: _fadeCtrl, curve: const Interval(0.65, 1.00, curve: Curves.easeOut));
     _load();
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = false; });
+    _fadeCtrl.reset();
     final data = await EchoApiClient().getUserReport();
     if (!mounted) return;
     setState(() {
@@ -31,6 +55,9 @@ class _MirrorTabState extends State<MirrorTab> {
       _loading = false;
       _error = data == null;
     });
+    if (data != null) {
+      _fadeCtrl.forward();
+    }
   }
 
   String _weekLabel() {
@@ -125,59 +152,91 @@ class _MirrorTabState extends State<MirrorTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ─── Header ───────────────────────────────────────────────
-          _buildHeader(weeks, totalPairs),
-          const SizedBox(height: 24),
+          FadeTransition(
+            opacity: _aHeader,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(weeks, totalPairs),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
 
           // ─── Headline ─────────────────────────────────────────────
-          if (headline.isNotEmpty) ...[
-            Text(
-              '"$headline"',
-              style: GoogleFonts.lora(
-                fontSize: 20, fontStyle: FontStyle.italic,
-                color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.2,
+          if (headline.isNotEmpty)
+            FadeTransition(
+              opacity: _aHeadline,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '"$headline"',
+                    style: GoogleFonts.lora(
+                      fontSize: 20, fontStyle: FontStyle.italic,
+                      color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(height: 1, color: EchoColors.amber.withValues(alpha: 0.3)),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            const SizedBox(height: 14),
-            Container(height: 1, color: EchoColors.amber.withValues(alpha: 0.3)),
-            const SizedBox(height: 20),
-          ],
 
           // ─── This week I noticed ───────────────────────────────────
-          if (observations.isNotEmpty) ...[
-            _sectionLabel('THIS WEEK I NOTICED'),
-            const SizedBox(height: 14),
-            ...observations.asMap().entries.map((e) =>
-              _observationItem(index: e.key + 1, text: e.value)),
-            const SizedBox(height: 20),
-          ],
+          if (observations.isNotEmpty)
+            FadeTransition(
+              opacity: _aObservations,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionLabel('THIS WEEK I NOTICED'),
+                  const SizedBox(height: 14),
+                  ...observations.asMap().entries.map((e) =>
+                    _observationItem(index: e.key + 1, text: e.value)),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
 
           // ─── Sit with this ────────────────────────────────────────
-          if (sitWithThis.isNotEmpty) ...[
-            _buildSitWithThis(sitWithThis),
-            const SizedBox(height: 20),
-          ],
+          if (sitWithThis.isNotEmpty)
+            FadeTransition(
+              opacity: _aSitWith,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSitWithThis(sitWithThis),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
 
-          Container(height: 1, color: EchoColors.borderSubtle),
-          const SizedBox(height: 20),
-
-          // ─── Shadow clone status ──────────────────────────────────
-          _buildCloneStatus(totalPairs, weeks, avgConf, weekCompletions, lastTrained),
-          const SizedBox(height: 20),
-
-          // ─── Behavioral rules ─────────────────────────────────────
-          if (rules.isNotEmpty) ...[
-            _sectionLabel('YOUR OPERATING SYSTEM'),
-            const SizedBox(height: 12),
-            ...rules.map((r) => _ruleItem(r)),
-            const SizedBox(height: 20),
-          ],
-
-          // ─── Recent things you said ───────────────────────────────
-          if (recentMsgs.isNotEmpty) ...[
-            _sectionLabel('RECENTLY'),
-            const SizedBox(height: 12),
-            ...recentMsgs.map((m) => _messageItem(m['text'] as String? ?? '')),
-          ],
+          // ─── Shadow clone + rules ─────────────────────────────────
+          FadeTransition(
+            opacity: _aClone,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 1, color: EchoColors.borderSubtle),
+                const SizedBox(height: 20),
+                _buildCloneStatus(totalPairs, weeks, avgConf, weekCompletions, lastTrained),
+                const SizedBox(height: 20),
+                if (rules.isNotEmpty) ...[
+                  _sectionLabel('YOUR OPERATING SYSTEM'),
+                  const SizedBox(height: 12),
+                  ...rules.map((r) => _ruleItem(r)),
+                  const SizedBox(height: 20),
+                ],
+                if (recentMsgs.isNotEmpty) ...[
+                  _sectionLabel('RECENTLY'),
+                  const SizedBox(height: 12),
+                  ...recentMsgs.map((m) => _messageItem(m['text'] as String? ?? '')),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

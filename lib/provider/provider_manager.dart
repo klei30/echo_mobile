@@ -7,6 +7,8 @@ import 'chat_model_provider.dart';
 import 'serve_state_provider.dart';
 import 'package:chatmcp/repository/local_chat_repository.dart';
 
+import 'composio_provider.dart';
+
 class ProviderManager {
   static List<ChangeNotifierProvider> providers = [
     ChangeNotifierProvider<SettingsProvider>(create: (_) => SettingsProvider()),
@@ -14,6 +16,8 @@ class ProviderManager {
     ChangeNotifierProvider<ChatProvider>(create: (_) => ChatProvider()),
     ChangeNotifierProvider<ChatModelProvider>(create: (_) => ChatModelProvider()),
     ChangeNotifierProvider<ServerStateProvider>(create: (_) => ServerStateProvider()),
+    ChangeNotifierProvider<ComposioProvider>(
+        create: (_) => ComposioProvider(apiKey: 'ck_FfOtpTfaNSkht1DkKnAA')),
   ];
 
   static SettingsProvider? _settingsProvider;
@@ -49,6 +53,13 @@ class ProviderManager {
   static ServerStateProvider get serverStateProvider {
     _serverStateProvider ??= ServerStateProvider();
     return _serverStateProvider!;
+  }
+
+  static ComposioProvider? _composioProvider;
+
+  static ComposioProvider get composioProvider {
+    _composioProvider ??= ComposioProvider(apiKey: 'ck_FfOtpTfaNSkht1DkKnAA');
+    return _composioProvider!;
   }
 
   static Future<void> init() async {

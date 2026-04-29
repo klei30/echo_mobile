@@ -622,6 +622,7 @@ class SidebarToolbar extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
+              ChatProvider().clearOnLogout();
               await AuthService().logout();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(

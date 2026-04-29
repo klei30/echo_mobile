@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/repository/local_chat_repository.dart';
 
 class AuthPage extends StatefulWidget {
   final VoidCallback onAuthenticated;
@@ -63,6 +65,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       setState(() => _error = err);
     } else {
       await AuthService().syncTokenToSettings();
+      await _importHistory();
       widget.onAuthenticated();
     }
   }
@@ -92,8 +95,18 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       setState(() => _error = err);
     } else {
       await AuthService().syncTokenToSettings();
+      await _importHistory();
       widget.onAuthenticated();
     }
+  }
+
+  Future<void> _importHistory() async {
+    try {
+      final pairs = await EchoApiClient().getUserHistory();
+      if (pairs.isNotEmpty) {
+        await LocalChatRepository().importHistory(pairs);
+      }
+    } catch (_) {}
   }
 
   @override
