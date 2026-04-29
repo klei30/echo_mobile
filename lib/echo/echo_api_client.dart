@@ -344,6 +344,65 @@ class EchoApiClient {
     return [];
   }
 
+  /// Timing Engine: which of the 4 Echo states applies right now?
+  /// Returns { state, speak_now, reason, statement?, letter?, clone_lead? }
+  Future<Map<String, dynamic>?> decideState({String message = ''}) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/echo/decide'),
+            headers: h,
+            body: jsonEncode({'message': message}),
+          )
+          .timeout(const Duration(seconds: 40));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('decideState HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('decideState error: $e');
+    }
+    return null;
+  }
+
+  /// Parallel self simulation: two diverging trajectories from current patterns.
+  /// Returns { current_path, avoided_path, ready }
+  Future<Map<String, dynamic>?> getSimulation() async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/echo/simulate'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: '{}',
+          )
+          .timeout(const Duration(seconds: 50));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getSimulation HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getSimulation error: $e');
+    }
+    return null;
+  }
+
+  /// Council API: run a question through all 5 clone personalities.
+  /// Returns { question, voices: {Builder,Creative,...}, verdict }
+  Future<Map<String, dynamic>?> askCouncil(String question) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/council/ask'),
+            headers: h,
+            body: jsonEncode({'question': question}),
+          )
+          .timeout(const Duration(seconds: 60));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('askCouncil HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('askCouncil error: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> submitDailyCheckin(
       List<Map<String, String>> qas) async {
     try {

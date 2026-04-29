@@ -18,6 +18,9 @@ import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
 import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
+import 'package:chatmcp/page/echo_tabs/council_screen.dart';
+import 'package:chatmcp/page/echo_tabs/presence_screen.dart';
+import 'package:chatmcp/page/echo_tabs/parallel_self_screen.dart';
 
 // ─── Arc painter ─────────────────────────────────────────────────────────────
 
@@ -100,6 +103,7 @@ class _YouTabState extends State<YouTab> {
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
+
   }
 
   Future<void> _logPractice(bool done) async {
@@ -177,6 +181,21 @@ class _YouTabState extends State<YouTab> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildTwinSection(context),
+              ),
+              // ─── THE COUNCIL ───────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: _buildCouncilSection(context),
+              ),
+              // ─── ECHO PRESENCE ─────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: _buildPresenceSection(context),
+              ),
+              // ─── TWO PATHS ─────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: _buildTwoPathsSection(context),
               ),
               // ─── GO DEEPER ─────────────────────────────────────────────
               _buildGoDeeper(context),
@@ -887,6 +906,153 @@ class _YouTabState extends State<YouTab> {
             ),
             const SizedBox(width: 12),
             Icon(Icons.people_outline_rounded,
+                color: EchoColors.indigo.withValues(alpha: 0.4), size: 26),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── THE COUNCIL ────────────────────────────────────────────────────────────
+
+  Widget _buildCouncilSection(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CouncilScreen())),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: EchoColors.borderCard),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'THE COUNCIL',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: EchoColors.amber,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Five distinct voices. Bring a decision.\nThey will disagree. That\'s the point.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: EchoColors.textMuted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.groups_outlined,
+                color: EchoColors.amber.withValues(alpha: 0.4), size: 26),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── ECHO PRESENCE ──────────────────────────────────────────────────────────
+
+  Widget _buildPresenceSection(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PresenceScreen())),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: EchoColors.borderCard),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ECHO PRESENCE',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: EchoColors.amber,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'The 4-state view. Echo speaks when it has something to say.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: EchoColors.textMuted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.circle_outlined,
+                color: EchoColors.amber.withValues(alpha: 0.4), size: 26),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── TWO PATHS ──────────────────────────────────────────────────────────────
+
+  Widget _buildTwoPathsSection(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ParallelSelfScreen())),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: EchoColors.borderCard),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TWO PATHS',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: EchoColors.indigo,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Where your current patterns lead. And the path you keep avoiding.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: EchoColors.textMuted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.fork_right_outlined,
                 color: EchoColors.indigo.withValues(alpha: 0.4), size: 26),
           ],
         ),

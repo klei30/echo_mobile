@@ -7,7 +7,7 @@ import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/page/layout/sidebar.dart';
 import 'package:chatmcp/page/layout/chat_page/chat_page.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
-import 'package:chatmcp/page/echo_tabs/you_tab.dart';
+import 'package:chatmcp/page/echo_tabs/presence_screen.dart';
 import 'package:chatmcp/page/onboarding/onboarding_page.dart';
 import 'package:chatmcp/page/echo_settings/echo_settings_sheet.dart';
 import 'package:chatmcp/provider/chat_model_provider.dart';
@@ -23,7 +23,7 @@ class EchoMobilePage extends StatefulWidget {
 }
 
 class _EchoMobilePageState extends State<EchoMobilePage> {
-  int _selectedTab = 0;
+  int _selectedTab = 2;
   bool _onboardingChecked = false;
   bool _showOnboarding = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -86,7 +86,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                 children: [
                   _buildEchoTab(),
                   const MirrorTab(),
-                  const YouTab(),
+                  const PresenceScreen(),
                 ],
               ),
               bottomNavigationBar: _buildBottomNav(),
