@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:logging/logging.dart';
 
 class EchoContext {
@@ -9,12 +10,14 @@ class EchoContext {
   final String recommendedModel; // "local" or "openai"
   final String? loraId;
   final double confidence;
+  final Map<String, dynamic> loopState;
 
   const EchoContext({
     required this.systemInjection,
     required this.recommendedModel,
     this.loraId,
     required this.confidence,
+    this.loopState = const {},
   });
 
   factory EchoContext.fromJson(Map<String, dynamic> json) => EchoContext(
@@ -22,6 +25,7 @@ class EchoContext {
         recommendedModel: json['recommended_model'] as String? ?? 'openai',
         loraId: json['lora_id'] as String?,
         confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+        loopState: Map<String, dynamic>.from(json['loop_state'] as Map? ?? {}),
       );
 }
 
@@ -51,6 +55,7 @@ class EchoClient {
   Future<String?> get userId async => AuthService().userId;
 
   Map<String, String> get _headers => AuthService().authHeaders;
+  String? get lastUserMessage => _lastUserMessage;
 
   /// Call before every LLM request. Returns enriched context or null (silent fail).
   /// Falls back to the last cached context if the server doesn't respond in time.
@@ -71,6 +76,12 @@ class EchoClient {
       if (resp.statusCode == 200) {
         final ctx = EchoContext.fromJson(jsonDecode(resp.body) as Map<String, dynamic>);
         _cachedContext = ctx;
+        final priority = ctx.loopState['today_priority'];
+        final thesis = ctx.loopState['thesis'];
+        EchoLoopState().apply(
+          todayPriority: priority is Map ? Map<String, dynamic>.from(priority) : null,
+          thesis: thesis is Map ? Map<String, dynamic>.from(thesis) : null,
+        );
         _log.info('Echo /context OK model=${ctx.recommendedModel} confidence=${ctx.confidence.toStringAsFixed(2)}');
         return ctx;
       }
@@ -83,15 +94,15 @@ class EchoClient {
   }
 
   /// Call after every LLM response. Fire-and-forget.
-  void savePair({
+  Future<Map<String, dynamic>?> savePair({
     required String userMessage,
     required String assistantMessage,
     required String modelUsed,
     String engagementSignal = 'continue',
   }) {
     _lastModelUsed = modelUsed;
-    if (!AuthService().isLoggedIn) return;
-    _savePairAsync(
+    if (!AuthService().isLoggedIn) return Future.value(null);
+    return _savePairAsync(
       userMessage: userMessage,
       assistantMessage: assistantMessage,
       modelUsed: modelUsed,
@@ -102,15 +113,10 @@ class EchoClient {
   /// Thumbs up/down — uses stored last user message.
   void sendFeedback({required String assistantMessage, required String signal}) {
     if (_lastUserMessage == null || _lastUserMessage!.isEmpty) return;
-    _savePairAsync(
-      userMessage: _lastUserMessage!,
-      assistantMessage: assistantMessage,
-      modelUsed: _lastModelUsed.isEmpty ? 'unknown' : _lastModelUsed,
-      engagementSignal: signal,
-    );
+    _sendOutcomeAsync(assistantMessage: assistantMessage, signal: signal);
   }
 
-  Future<void> _savePairAsync({
+  Future<Map<String, dynamic>?> _savePairAsync({
     required String userMessage,
     required String assistantMessage,
     required String modelUsed,
@@ -118,7 +124,7 @@ class EchoClient {
   }) async {
     try {
       final uid = AuthService().userId!;
-      await http
+      final resp = await http
           .post(
             Uri.parse('$_baseUrl/save'),
             headers: _headers,
@@ -131,8 +137,59 @@ class EchoClient {
             }),
           )
           .timeout(const Duration(seconds: 5));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final delta = data['loop_delta'];
+        if (delta is Map) {
+          final priority = delta['today_priority'];
+          final thesis = delta['thesis'];
+          final snapshot = delta['snapshot'];
+          EchoLoopState().apply(
+            todayPriority: priority is Map ? Map<String, dynamic>.from(priority) : null,
+            thesis: thesis is Map ? Map<String, dynamic>.from(thesis) : null,
+            snapshot: snapshot is Map ? Map<String, dynamic>.from(snapshot) : null,
+          );
+        }
+        return data;
+      }
     } catch (e) {
       _log.warning('Echo /save failed: $e');
+    }
+    return null;
+  }
+
+  Future<void> _sendOutcomeAsync({
+    required String assistantMessage,
+    required String signal,
+  }) async {
+    final scores = <String, double>{
+      'thumbs_up': 1.0,
+      'helped': 1.0,
+      'saved_signal': 1.2,
+      'thumbs_down': -1.0,
+      'not_true': -0.7,
+    };
+    final userMsg = _lastUserMessage ?? '';
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/v1/outcome'),
+            headers: {..._headers, 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'subject_type': 'chat_response',
+              'outcome': signal,
+              'score': scores[signal] ?? 0.5,
+              'note': jsonEncode({
+                'user_preview': userMsg.substring(0, userMsg.length.clamp(0, 240)),
+                'assistant_preview': assistantMessage.substring(0, assistantMessage.length.clamp(0, 240)),
+                'model_used': _lastModelUsed.isEmpty ? 'unknown' : _lastModelUsed,
+              }),
+            }),
+          )
+          .timeout(const Duration(seconds: 5));
+      await EchoLoopState().refresh();
+    } catch (e) {
+      _log.warning('Echo /outcome failed: $e');
     }
   }
 }

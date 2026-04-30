@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/provider/composio_provider.dart';
+import 'package:chatmcp/widgets/composio_auth_button.dart';
 
 /// Composio-style integration marketplace for Echo.
-/// Each connection gives Echo more context about the user's life.
 class ConnectionsPage extends StatefulWidget {
   const ConnectionsPage({super.key});
 
@@ -34,6 +34,15 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    // Refresh status each time page opens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ComposioProvider>().loadStatus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final composio = context.watch<ComposioProvider>();
 
@@ -48,7 +57,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                 children: [
-                  _buildIntro(),
+                  _buildIntro(composio),
                   const SizedBox(height: 20),
                   ..._meta.keys.map((name) => _buildItem(name, composio)),
                   const SizedBox(height: 16),
@@ -91,7 +100,30 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     );
   }
 
-  Widget _buildIntro() {
+  Widget _buildIntro(ComposioProvider composio) {
+    // Show error if a recent connection attempt failed.
+    if (composio.lastError != null) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C0808),
+          border: Border.all(color: const Color(0xFF4A1010)),
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Row(children: [
+          const Icon(Icons.error_outline, size: 18, color: Color(0xFFE85A5A)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              composio.lastError!,
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12, color: const Color(0xFFE88A8A), height: 1.55),
+            ),
+          ),
+        ]),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -120,6 +152,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   Widget _buildItem(String name, ComposioProvider composio) {
     final (icon, iconColor, iconBg, desc) = _meta[name]!;
     final isOn = composio.isConnected(name);
+    final isLoading = composio.isLoading;
 
     return Column(children: [
       Padding(
@@ -144,7 +177,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
           ),
           const SizedBox(width: 12),
           GestureDetector(
-            onTap: () => composio.connectToolkit(name),
+            onTap: isLoading ? null : () => _handleToggle(name, isOn, composio),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 38, height: 22,
@@ -161,12 +194,23 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
               ),
               child: Align(
                 alignment: isOn ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  width: 16, height: 16,
-                  margin: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: Color(0xFFEAE6E0)),
-                ),
+                child: isLoading
+                    ? const Padding(
+                        padding: EdgeInsets.all(3),
+                        child: SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation(Color(0xFFEAE6E0)),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 16, height: 16,
+                        margin: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle, color: Color(0xFFEAE6E0)),
+                      ),
               ),
             ),
           ),
@@ -174,6 +218,96 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
       ),
       const Divider(color: Color(0xFF0F0E0C), height: 1),
     ]);
+  }
+
+  Future<void> _handleToggle(String name, bool isOn, ComposioProvider composio) async {
+    if (isOn) {
+      // Already connected — nothing to do for now (disconnect not yet supported).
+      return;
+    }
+
+    // Ensure MCP is running before attempting to get an auth URL.
+    if (!composio.isRunning) {
+      try {
+        await composio.installEchoTools();
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(composio.lastError ?? 'Could not start Echo Tools.'),
+              backgroundColor: const Color(0xFF4A1010),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final url = await composio.getConnectionUrl(name);
+    if (!mounted) return;
+
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(composio.lastError ?? 'Could not get a connection URL for $name.'),
+          backgroundColor: const Color(0xFF4A1010),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+      return;
+    }
+
+    final slug = ComposioProvider.toolkitSlugs[name] ?? name.toLowerCase();
+    _showAuthSheet(url, name, slug);
+  }
+
+  void _showAuthSheet(String url, String displayName, String slug) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: EchoColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24, 24, 24,
+          24 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Connect $displayName',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, fontWeight: FontWeight.w600,
+                color: EchoColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Echo will use $displayName to understand your context better. '
+              'Tap the button below, sign in, and return to this app.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, color: EchoColors.textMuted, height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ComposioAuthButton(
+              url: url,
+              label: 'Connect $displayName',
+              toolkit: slug,
+              onConnected: () {
+                context.read<ComposioProvider>().markConnected(slug);
+                Navigator.of(context).pop();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildFooter() {

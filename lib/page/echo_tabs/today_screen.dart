@@ -3,9 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
+import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
+import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/revelation_screen.dart';
+import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -34,6 +38,7 @@ class _TodayScreenState extends State<TodayScreen>
   // Digest fields — shown in silence state
   Map<String, dynamic>? _signal;
   Map<String, dynamic>? _practice;
+  Map<String, dynamic>? _priority;
 
   late final AnimationController _orbPulse;
   late final AnimationController _contentFade;
@@ -76,6 +81,9 @@ class _TodayScreenState extends State<TodayScreen>
     final checkinDone = results[1] as bool;
     _signal = results[2] as Map<String, dynamic>?;
     _practice = results[3] as Map<String, dynamic>?;
+    _priority = await EchoApiClient().getTodayPriority();
+    EchoLoopState().apply(todayPriority: _priority);
+    if (!mounted) return;
 
     // Morning check-in gate: before 14:00 local time and not done today
     if (!checkinDone && DateTime.now().hour < 14) {
@@ -504,6 +512,8 @@ class _TodayScreenState extends State<TodayScreen>
 
                 if (hasThread) const SizedBox(height: 10),
 
+                if (_priority != null) _buildPriorityCard(_priority!),
+
                 // Practice hint — compact, low-key
                 if (practiceTitle != null)
                   Container(
@@ -727,6 +737,215 @@ class _TodayScreenState extends State<TodayScreen>
           ),
         );
     }
+  }
+
+  Future<void> _handlePriorityAction(Map<String, dynamic> priority) async {
+    final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
+    final payload = Map<String, dynamic>.from(action['payload'] as Map? ?? {});
+    final type = action['type'] as String? ?? 'none';
+    HapticFeedback.lightImpact();
+
+    switch (type) {
+      case 'daily_checkin':
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
+        );
+        break;
+      case 'run_tournament':
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ShadowTournamentScreen(
+              initialPrompt: payload['prompt'] as String?,
+            ),
+          ),
+        );
+        break;
+      case 'open_council':
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AskScreen(
+              threadId: payload['thread_id'] as String?,
+              threadContext: payload['thread_context'] as String?,
+            ),
+          ),
+        );
+        break;
+      case 'log_practice':
+        final repId = payload['rep_id'] as String?;
+        if (repId != null) {
+          await EchoApiClient().logPractice(repId, true);
+        }
+        break;
+      case 'open_training':
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
+        );
+        break;
+      case 'open_mirror':
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MirrorTab()),
+        );
+        break;
+      default:
+        await _recordPriorityOutcome(priority, 'acknowledged', 0.5);
+        return;
+    }
+
+    if (mounted) {
+      _contentFade.value = 0;
+      _checkState();
+    }
+  }
+
+  Future<void> _recordPriorityOutcome(
+      Map<String, dynamic> priority, String outcome, double score) async {
+    HapticFeedback.selectionClick();
+    final subjectType = (priority['subject_type'] as String?) ??
+        (priority['kind'] as String?) ??
+        'today_priority';
+    await EchoApiClient().recordOutcome(
+      subjectType: subjectType,
+      subjectId: priority['subject_id'] as String?,
+      outcome: outcome,
+      score: score,
+      note: 'Feedback from Today priority card',
+    );
+    if (mounted) {
+      _contentFade.value = 0;
+      _checkState();
+    }
+  }
+
+  Widget _buildPriorityCard(Map<String, dynamic> priority) {
+    final title = priority['title'] as String? ?? 'Echo has a next step.';
+    final body = priority['body'] as String? ?? '';
+    final kind = priority['kind'] as String? ?? 'signal';
+    final evidence = (priority['evidence_count'] as num?)?.toInt() ?? 0;
+    final confidence = priority['confidence'] as String? ?? 'emerging';
+    final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
+    final actionLabel = action['label'] as String? ?? 'Open';
+    final actionType = action['type'] as String? ?? 'none';
+    IconData icon = Icons.auto_awesome_motion_rounded;
+    if (kind == 'practice') {
+      icon = Icons.bolt_rounded;
+    } else if (kind == 'training_ready') {
+      icon = Icons.model_training_rounded;
+    } else if (kind == 'tournament' ||
+        kind == 'thread_tournament' ||
+        kind == 'tournament_result') {
+      icon = Icons.military_tech_rounded;
+    } else if (kind == 'council') {
+      icon = Icons.forum_rounded;
+    } else if (kind == 'mirror') {
+      icon = Icons.auto_stories_rounded;
+    } else if (kind == 'thesis_test') {
+      icon = Icons.psychology_alt_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.018),
+        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.14)),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: EchoColors.amber.withValues(alpha: 0.52)),
+              const SizedBox(width: 8),
+              Text(
+                confidence.toUpperCase(),
+                style: GoogleFonts.inter(
+                  color: EchoColors.amber.withValues(alpha: 0.38),
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const Spacer(),
+              if (evidence > 0)
+                Text(
+                  '$evidence signals',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    fontSize: 10,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              color: Colors.white.withValues(alpha: 0.68),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
+            ),
+          ),
+          if (body.isNotEmpty) ...[
+            const SizedBox(height: 7),
+            Text(
+              body,
+              style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.34),
+                fontSize: 12,
+                height: 1.45,
+              ),
+            ),
+          ],
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              if (actionType != 'none')
+                GestureDetector(
+                  onTap: () => _handlePriorityAction(priority),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: EchoColors.amber.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: EchoColors.amber.withValues(alpha: 0.22)),
+                    ),
+                    child: Text(
+                      actionLabel,
+                      style: GoogleFonts.inter(
+                        color: EchoColors.amber.withValues(alpha: 0.74),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              _miniOutcome(priority, 'helped', 'Helpful', 1.0),
+              const SizedBox(width: 8),
+              _miniOutcome(priority, 'not_true', 'Not true', -0.5),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniOutcome(
+      Map<String, dynamic> priority, String outcome, String label, double score) {
+    return GestureDetector(
+      onTap: () => _recordPriorityOutcome(priority, outcome, score),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          color: Colors.white.withValues(alpha: 0.24),
+          fontSize: 11,
+        ),
+      ),
+    );
   }
 
   Widget _buildInterruptionActions() {

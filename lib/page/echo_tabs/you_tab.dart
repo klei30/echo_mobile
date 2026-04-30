@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/page/echo_connections/connections_page.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
@@ -15,6 +16,7 @@ import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
 import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
+import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
 // â”€â”€â”€ Arc painter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -73,6 +75,8 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _stats;
   Map<String, dynamic>? _report;
   Map<String, dynamic>? _experiment;
+  Map<String, dynamic>? _thesis;
+  Map<String, dynamic>? _trainingSummary;
   bool _loading = true;
   bool _loggedThisSession = false;
 
@@ -91,6 +95,8 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getNotableQuote(),
       EchoApiClient().getUserStats(),
       EchoApiClient().getUserReport(),
+      EchoApiClient().getCurrentThesis(),
+      EchoApiClient().getTrainingSummary(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -99,9 +105,12 @@ class _YouTabState extends State<YouTab> {
       _quote = results[2];
       _stats = results[3];
       _report = results[4];
+      _thesis = results[5];
+      _trainingSummary = results[6];
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
+    EchoLoopState().apply(thesis: _thesis);
   }
 
   Future<void> _loadExperiment() async {
@@ -165,52 +174,261 @@ class _YouTabState extends State<YouTab> {
           backgroundColor: EchoColors.bgSurface,
           onRefresh: _load,
           child: ListView(
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
             children: [
-              // â”€â”€â”€ CLONE HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-              _buildCloneHero(context),
-
-              // ── ECHO'S READ ──────────────────────────────────────────
-              _buildSignalZone(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildTalentSection(context),
-              ),
-
-              // ── THIS WEEK ────────────────────────────────────────────
-              if (_report != null)
+              _buildYouHeader(),
+              _chapterLabel('CURRENT READ'),
+              if (_thesis != null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                  child: _buildWeeklyCard(context),
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  child: _buildThesisCard(context),
                 ),
 
-              // ── YOUR PRACTICE ────────────────────────────────────────
-              _chapterLabel('YOUR PRACTICE'),
+              _chapterLabel('EVIDENCE'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: _buildEvidenceSection(),
+              ),
+
+              _chapterLabel('ACTIVE LOOP'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildPracticeSection(),
               ),
-              if (_experiment != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                  child: _buildExperimentCard(context),
-                ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
-                child: _depthRow(
-                  'Evening Signal',
-                  Icons.nights_stay_rounded,
-                  const Color(0xFF7A8A9A),
-                  () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const DailyCheckinScreen())),
-                ),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: _buildLabTools(context),
               ),
 
-              // ── ARCHIVE ──────────────────────────────────────────────
-              _buildArchiveChips(context),
+              _chapterLabel('TRAINING STATE'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                child: _buildTrainingStateSection(context),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildYouHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: EchoColors.amber.withValues(alpha: 0.38)),
+            ),
+            child: const Icon(Icons.auto_awesome_rounded, color: EchoColors.amber, size: 17),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: EchoColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Current read, evidence, active loop, training state.',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    color: EchoColors.textGhost,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvidenceSection() {
+    final evidence = (_thesis?['evidence'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .take(8)
+        .toList();
+    if (evidence.isEmpty) {
+      return _quietPanel(
+        icon: Icons.fact_check_outlined,
+        title: 'No evidence yet',
+        body: 'Talk normally, choose tournament winners, and log outcomes. Echo will turn those moments into proof.',
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < evidence.length; i++) ...[
+            _evidenceRow(evidence[i]),
+            if (i != evidence.length - 1) _rowDivider(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _evidenceRow(Map<String, dynamic> item) {
+    final source = (item['source'] as String? ?? 'signal').toUpperCase();
+    final summary = item['summary'] as String? ?? '';
+    final weight = (item['weight'] as num?)?.toDouble() ?? 1.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.bubble_chart_rounded,
+              size: 17, color: EchoColors.amber.withValues(alpha: weight >= 1.2 ? 0.85 : 0.45)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  source,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: EchoColors.textGhost,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  summary,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: EchoColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrainingStateSection(BuildContext context) {
+    final totalPairs = (_stats?['total_pairs'] as num?)?.toInt() ?? 0;
+    final untrained = (_trainingSummary?['untrained_pairs'] as num?)?.toInt() ?? 0;
+    final battles = (_trainingSummary?['tournament_battles'] as num?)?.toInt() ?? 0;
+    final ready = _trainingSummary?['ready_for_training'] as bool? ?? false;
+    final lastTrained = _trainedLabel(_stats?['last_trained'] as String?);
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: ready ? EchoColors.amber.withValues(alpha: 0.35) : EchoColors.borderSubtle),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.model_training_rounded,
+                    size: 18, color: ready ? EchoColors.amber : EchoColors.textMuted),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ready ? 'Ready to train' : 'Collecting training signal',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _loopPill(Icons.chat_bubble_outline_rounded, '$totalPairs moments'),
+                _loopPill(Icons.hourglass_bottom_rounded, '$untrained untrained'),
+                _loopPill(Icons.military_tech_rounded, '$battles battles'),
+                if (lastTrained.isNotEmpty) _loopPill(Icons.check_circle_outline_rounded, lastTrained),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _quietPanel({
+    required IconData icon,
+    required String title,
+    required String body,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: EchoColors.textGhost),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: EchoColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: EchoColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -497,6 +715,262 @@ class _YouTabState extends State<YouTab> {
     );
   }
 
+  Future<void> _handleThesisAction() async {
+    final action = Map<String, dynamic>.from(_thesis?['next_action'] as Map? ?? {});
+    final payload = Map<String, dynamic>.from(action['payload'] as Map? ?? {});
+    final type = action['type'] as String? ?? 'none';
+    HapticFeedback.lightImpact();
+
+    if (type == 'run_tournament') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ShadowTournamentScreen(
+            initialPrompt: payload['prompt'] as String?,
+          ),
+        ),
+      );
+      if (mounted) _load();
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const TalentScreen()),
+    );
+    if (mounted) _load();
+  }
+
+  Future<void> _recordThesisFeedback(String outcome, double score) async {
+    final thesisId = _thesis?['id'] as String?;
+    HapticFeedback.selectionClick();
+    await EchoApiClient().recordOutcome(
+      subjectType: 'thesis',
+      subjectId: thesisId,
+      outcome: outcome,
+      score: score,
+      note: 'Feedback from Echo current read card',
+    );
+    if (mounted) _load();
+  }
+
+  Widget _buildThesisCard(BuildContext context) {
+    final title = _thesis?['title'] as String? ?? 'Still Forming';
+    final statement = _thesis?['statement'] as String? ??
+        'Echo is waiting for enough real moments to form a thesis.';
+    final stage = _thesis?['stage'] as String? ?? 'forming';
+    final confidence = _thesis?['confidence_label'] as String? ?? 'early';
+    final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? 0;
+    final evidence = (_thesis?['evidence'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .take(3)
+        .toList();
+    final action = Map<String, dynamic>.from(_thesis?['next_action'] as Map? ?? {});
+    final actionLabel = action['label'] as String? ?? 'Open talent';
+
+    return GestureDetector(
+      onTap: _handleThesisAction,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10100E),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.amber.withValues(alpha: 0.24)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome_motion_rounded,
+                    size: 17, color: EchoColors.amber.withValues(alpha: 0.9)),
+                const SizedBox(width: 8),
+                Text(
+                  'ECHO\'S CURRENT READ',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w800,
+                    color: EchoColors.amber,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$evidenceCount signals',
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10.5, color: EchoColors.textVeryGhost),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: EchoColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              statement,
+              style: GoogleFonts.lora(
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+                color: EchoColors.textPrimary,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _loopPill(Icons.timeline_rounded, stage),
+                _loopPill(Icons.query_stats_rounded, confidence),
+                _loopPill(Icons.fact_check_rounded, '$evidenceCount evidence'),
+              ],
+            ),
+            if (evidence.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              ...evidence.map((item) {
+                final summary = item['summary'] as String? ?? '';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 5,
+                        height: 5,
+                        margin: const EdgeInsets.only(top: 7, right: 8),
+                        decoration: BoxDecoration(
+                          color: EchoColors.amber.withValues(alpha: 0.55),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          summary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5,
+                            color: EchoColors.textMuted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Icon(Icons.military_tech_rounded,
+                    size: 15, color: EchoColors.amber.withValues(alpha: 0.75)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    actionLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.amber.withValues(alpha: 0.86),
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: EchoColors.amber.withValues(alpha: 0.45)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(height: 1, color: EchoColors.borderSubtle),
+            const SizedBox(height: 12),
+            Text(
+              'What would change this read',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: EchoColors.textGhost,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'A shadow choice, a completed rep, or a correction from you.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.5,
+                color: EchoColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _thesisFeedbackChip('True', 'true', 1.0),
+                const SizedBox(width: 8),
+                _thesisFeedbackChip('Partly', 'partly_true', 0.45),
+                const SizedBox(width: 8),
+                _thesisFeedbackChip('Not true', 'not_true', -0.6),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _thesisFeedbackChip(String label, String outcome, double score) {
+    return GestureDetector(
+      onTap: () => _recordThesisFeedback(outcome, score),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: EchoColors.textGhost,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loopPill(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: EchoColors.textGhost),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: EchoColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // â”€â”€â”€ TODAY'S REP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildPracticeSection() {
@@ -508,6 +982,7 @@ class _YouTabState extends State<YouTab> {
     final logged = _loggedThisSession || (_practice?['logged'] as bool? ?? false);
     final done = _practice?['done'] as bool?;
     final weekCompletions = _practice?['week_completions'] as int? ?? 0;
+    final thesisTitle = _thesis?['title'] as String?;
 
     return Container(
       decoration: BoxDecoration(
@@ -540,7 +1015,19 @@ class _YouTabState extends State<YouTab> {
                   ),
                 ),
                 const Spacer(),
-                if (arcLabel != null)
+                if (thesisTitle != null)
+                  Flexible(
+                    child: Text(
+                      'Trains: $thesisTitle',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 9.5,
+                        color: EchoColors.textGhost,
+                      ),
+                    ),
+                  )
+                else if (arcLabel != null)
                   Text(
                     arcLabel,
                     style: GoogleFonts.plusJakartaSans(
@@ -1038,6 +1525,169 @@ class _YouTabState extends State<YouTab> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLabTools(BuildContext context) {
+    final experimentTitle = _experiment?['title'] as String?;
+    return Container(
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Column(
+        children: [
+          _toolRow(
+            'Run your shadows',
+            'Test the current read against one real situation.',
+            Icons.military_tech_rounded,
+            EchoColors.amber,
+            () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ShadowTournamentScreen()),
+            ),
+          ),
+          if (_experiment != null) ...[
+            _rowDivider(),
+            _toolRow(
+              experimentTitle?.isNotEmpty == true ? experimentTitle! : 'Personal experiment',
+              'Turn a pattern into a 7-day test.',
+              Icons.science_rounded,
+              const Color(0xFF5A8DEE),
+              () {
+                final experiment = EchoExperiment(
+                  number: (_experiment?['number'] as num?)?.toInt() ?? 1,
+                  trigger: _experiment?['trigger'] as String? ?? '',
+                  hypothesis: _experiment?['hypothesis'] as String? ?? '',
+                  title: _experiment?['title'] as String? ?? '',
+                  body: _experiment?['body'] as String? ?? '',
+                  followup: _experiment?['followup'] as String? ?? '',
+                  durationDays: (_experiment?['duration_days'] as num?)?.toInt() ?? 7,
+                );
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => ExperimentProposalScreen(experiment: experiment)));
+              },
+            ),
+          ],
+          _rowDivider(),
+          _toolRow(
+            'Evening check-in',
+            'Tell Echo what happened so the read can update.',
+            Icons.nights_stay_rounded,
+            const Color(0xFF7A8A9A),
+            () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemRows(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 36),
+      child: Container(
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Column(
+          children: [
+            _toolRow('Memories', 'What Echo remembers.', Icons.grain_rounded,
+                EchoColors.indigo, () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
+            _rowDivider(),
+            _toolRow('Operating system', 'Rules and preferences Echo follows.',
+                Icons.tonality_rounded, const Color(0xFF9A6AB4), () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const OperatingSystemScreen()))),
+            _rowDivider(),
+            _toolRow('Training', 'Clone battles, pairs, and adapter progress.',
+                Icons.model_training_rounded, EchoColors.amber, () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const NightlyTrainingScreen()))),
+            _rowDivider(),
+            _toolRow('Permanent record', 'Long-term evidence and history.',
+                Icons.history_edu_rounded, EchoColors.indigo, () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const PermanentRecordScreen()))),
+            _rowDivider(),
+            _toolRow('Connections', 'External context Echo can use.',
+                Icons.link_rounded, EchoColors.textMuted, () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ConnectionsPage()))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _toolRow(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.08),
+              ),
+              child: Icon(icon, size: 16, color: color.withValues(alpha: 0.78)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: EchoColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5,
+                      color: EchoColors.textGhost,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(Icons.chevron_right_rounded,
+                size: 16, color: EchoColors.textGhost),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rowDivider() {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.only(left: 56),
+      color: EchoColors.borderSubtle,
     );
   }
 

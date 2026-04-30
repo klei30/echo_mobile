@@ -575,6 +575,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   Map<String, dynamic>? _stats;
   Map<String, dynamic>? _insights;
   Map<String, dynamic>? _confidence;
+  Map<String, dynamic>? _trainingSummary;
   List<Map<String, dynamic>> _history = [];
   bool _loading = true;
   bool _pressing = false;
@@ -614,6 +615,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       EchoApiClient().getUserInsights(),
       EchoApiClient().getConfidence(),
       EchoApiClient().getTrainingHistory(),
+      EchoApiClient().getTrainingSummary(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -621,6 +623,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       _insights = results[1] as Map<String, dynamic>?;
       _confidence = results[2] as Map<String, dynamic>?;
       _history = results[3] as List<Map<String, dynamic>>;
+      _trainingSummary = results[4] as Map<String, dynamic>?;
       _loading = false;
     });
   }
@@ -878,10 +881,76 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
           if (_history.isNotEmpty)
             _buildHistoryStrip(),
 
+          if (_trainingSummary != null) ...[
+            const SizedBox(height: 16),
+            _buildBattleSummary(),
+          ],
+
           const SizedBox(height: 8),
 
           // ── Train Now button ───────────────────────────────────────────
           _buildTrainButton(totalPairs),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBattleSummary() {
+    final s = _trainingSummary ?? {};
+    final battles = s['tournament_battles'] as int? ?? 0;
+    final prefs = s['preference_signals'] as int? ?? 0;
+    final untrained = s['untrained_pairs'] as int? ?? 0;
+    final leading = s['leading_style'] as String?;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.military_tech_rounded,
+                  size: 16, color: EchoColors.amber),
+              const SizedBox(width: 8),
+              Text(
+                'SHADOW BATTLES',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                  color: EchoColors.amber,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            leading == null
+                ? 'Run tournaments to teach Echo which shadow helps.'
+                : '$leading is currently winning your shadow tournaments.',
+            style: GoogleFonts.lora(
+              fontSize: 15,
+              height: 1.5,
+              color: EchoColors.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _pill('$battles battles'),
+              _pill('$prefs preference signals'),
+              _pill('$untrained untrained moments'),
+            ],
+          ),
         ],
       ),
     );

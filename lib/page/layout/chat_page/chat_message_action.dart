@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:chatmcp/utils/color.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
 import 'package:chatmcp/echo/echo_client.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
 class MessageActions extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -11,7 +14,13 @@ class MessageActions extends StatefulWidget {
   final Function(String messageId) onSwitch;
   final bool isUser;
 
-  const MessageActions({super.key, required this.messages, required this.onRetry, required this.onSwitch, this.isUser = false});
+  const MessageActions({
+    super.key,
+    required this.messages,
+    required this.onRetry,
+    required this.onSwitch,
+    this.isUser = false,
+  });
 
   @override
   State<MessageActions> createState() => _MessageActionsState();
@@ -28,68 +37,161 @@ class _MessageActionsState extends State<MessageActions> {
 
   @override
   Widget build(BuildContext context) {
-    var t = AppLocalizations.of(context)!;
+    final t = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(left: 8, top: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Copy button
-          IconButton(
-            iconSize: 14,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-            icon: const Icon(Icons.copy_outlined),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: widget.messages.map((m) => m.content ?? '').join('\n')));
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.copiedToClipboard), duration: const Duration(seconds: 2)));
-            },
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                iconSize: 14,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                icon: const Icon(Icons.copy_outlined),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: widget.messages.map((m) => m.content ?? '').join('\n')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(t.copiedToClipboard), duration: const Duration(seconds: 2)),
+                  );
+                },
+              ),
+              if (!widget.isUser) ...[
+                IconButton(
+                  iconSize: 14,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                  icon: Icon(
+                    _thumbState == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
+                    color: _thumbState == 1 ? Colors.green : null,
+                  ),
+                  tooltip: 'Good response',
+                  onPressed: () {
+                    setState(() => _thumbState = _thumbState == 1 ? 0 : 1);
+                    if (_thumbState == 1) _sendFeedback('thumbs_up');
+                  },
+                ),
+                IconButton(
+                  iconSize: 14,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                  icon: Icon(
+                    _thumbState == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
+                    color: _thumbState == -1 ? Colors.red : null,
+                  ),
+                  tooltip: 'Bad response',
+                  onPressed: () {
+                    setState(() => _thumbState = _thumbState == -1 ? 0 : -1);
+                    if (_thumbState == -1) _sendFeedback('thumbs_down');
+                  },
+                ),
+              ],
+              if (!widget.isUser)
+                IconButton(
+                  iconSize: 14,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => widget.onRetry(widget.messages.last),
+                  tooltip: t.retry,
+                ),
+              if (!widget.isUser &&
+                  widget.messages.first.brotherMessageIds != null &&
+                  widget.messages.first.brotherMessageIds!.isNotEmpty)
+                _buildBranchSwitchWidget(widget.messages),
+            ],
           ),
-          // Thumbs up/down — only for assistant messages, sends Echo feedback
-          if (!widget.isUser) ...[
-            IconButton(
-              iconSize: 14,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-              icon: Icon(
-                _thumbState == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
-                color: _thumbState == 1 ? Colors.green : null,
+          if (!widget.isUser) _buildLoopChips(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoopChips(BuildContext context) {
+    final content = widget.messages.last.content ?? '';
+    if (content.isEmpty) return const SizedBox.shrink();
+
+    return AnimatedBuilder(
+      animation: EchoLoopState(),
+      builder: (context, _) {
+        final priority = EchoLoopState().todayPriority;
+        final action = priority?['action'] is Map
+            ? Map<String, dynamic>.from(priority!['action'] as Map)
+            : <String, dynamic>{};
+        final payload = action['payload'] is Map
+            ? Map<String, dynamic>.from(action['payload'] as Map)
+            : <String, dynamic>{};
+        final priorityPrompt = payload['prompt'] as String?;
+        final fallbackPrompt = EchoClient().lastUserMessage;
+        final prompt = priorityPrompt?.isNotEmpty == true
+            ? priorityPrompt!
+            : (fallbackPrompt?.isNotEmpty == true
+                ? fallbackPrompt!
+                : content.substring(0, content.length.clamp(0, 500)));
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 2, bottom: 2),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              if (action['type'] == 'run_tournament')
+                _loopChip(
+                  context,
+                  Icons.military_tech_rounded,
+                  'Run shadows',
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),
+                    ),
+                  ),
+                  filled: true,
+                ),
+              _loopChip(context, Icons.check_circle_outline_rounded, 'This helped', () => _sendFeedback('helped')),
+              _loopChip(context, Icons.cancel_outlined, 'Not true', () => _sendFeedback('not_true')),
+              _loopChip(context, Icons.bookmark_add_outlined, 'Save signal', () => _sendFeedback('saved_signal')),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _loopChip(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool filled = false,
+  }) {
+    final color = filled ? EchoColors.amber : AppColors.getThemeColor(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: filled ? 0.18 : 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: filled ? 0.45 : 0.16)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
-              tooltip: 'Good response',
-              onPressed: () {
-                setState(() => _thumbState = _thumbState == 1 ? 0 : 1);
-                if (_thumbState == 1) _sendFeedback('thumbs_up');
-              },
-            ),
-            IconButton(
-              iconSize: 14,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-              icon: Icon(
-                _thumbState == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
-                color: _thumbState == -1 ? Colors.red : null,
-              ),
-              tooltip: 'Bad response',
-              onPressed: () {
-                setState(() => _thumbState = _thumbState == -1 ? 0 : -1);
-                if (_thumbState == -1) _sendFeedback('thumbs_down');
-              },
             ),
           ],
-          // Retry button
-          if (!widget.isUser)
-            IconButton(
-              iconSize: 14,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-              icon: const Icon(Icons.refresh),
-              onPressed: () => widget.onRetry(widget.messages.last),
-              tooltip: t.retry,
-            ),
-          // Branch switch
-          if (!widget.isUser && widget.messages.first.brotherMessageIds != null && widget.messages.first.brotherMessageIds!.isNotEmpty)
-            _buildBranchSwitchWidget(widget.messages),
-        ],
+        ),
       ),
     );
   }

@@ -36,6 +36,12 @@ class ToolCallResultEvent {
   const ToolCallResultEvent(this.toolName, this.result);
 }
 
+class SubmitPromptEvent {
+  final String text;
+
+  const SubmitPromptEvent(this.text);
+}
+
 /// The global [EventBus] object.
 EventBus eventBus = EventBus();
 

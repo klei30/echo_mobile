@@ -15,9 +15,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getUserStats() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/stats'), headers: _h)
-          .timeout(const Duration(seconds: 10));
+      final resp = await http.get(Uri.parse('$_base/v1/user/stats'), headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getUserStats HTTP ${resp.statusCode}');
     } catch (e) {
@@ -28,9 +26,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getConfidence() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/confidence'), headers: _h)
-          .timeout(const Duration(seconds: 10));
+      final resp = await http.get(Uri.parse('$_base/v1/user/confidence'), headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getConfidence HTTP ${resp.statusCode}');
     } catch (e) {
@@ -41,9 +37,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getUserInsights() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/insights'), headers: _h)
-          .timeout(const Duration(seconds: 30));
+      final resp = await http.get(Uri.parse('$_base/v1/user/insights'), headers: _h).timeout(const Duration(seconds: 30));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getUserInsights HTTP ${resp.statusCode}');
     } catch (e) {
@@ -54,9 +48,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getEmergence() async {
     try {
-      final resp = await http
-          .post(Uri.parse('$_base/v1/emergence'), headers: _h)
-          .timeout(const Duration(seconds: 35));
+      final resp = await http.post(Uri.parse('$_base/v1/emergence'), headers: _h).timeout(const Duration(seconds: 35));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getEmergence HTTP ${resp.statusCode}');
     } catch (e) {
@@ -67,9 +59,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getWeeklyMirror() async {
     try {
-      final resp = await http
-          .post(Uri.parse('$_base/v1/mirror/weekly'), headers: _h)
-          .timeout(const Duration(seconds: 35));
+      final resp = await http.post(Uri.parse('$_base/v1/mirror/weekly'), headers: _h).timeout(const Duration(seconds: 35));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getWeeklyMirror HTTP ${resp.statusCode}');
     } catch (e) {
@@ -80,14 +70,10 @@ class EchoApiClient {
 
   Future<List<Map<String, dynamic>>> getMemories() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/memories'), headers: _h)
-          .timeout(const Duration(seconds: 15));
+      final resp = await http.get(Uri.parse('$_base/v1/user/memories'), headers: _h).timeout(const Duration(seconds: 15));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        return (data['memories'] as List? ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        return (data['memories'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
       _log.warning('getMemories HTTP ${resp.statusCode}');
     } catch (e) {
@@ -98,14 +84,10 @@ class EchoApiClient {
 
   Future<List<Map<String, dynamic>>> getSkills() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/skills'), headers: _h)
-          .timeout(const Duration(seconds: 10));
+      final resp = await http.get(Uri.parse('$_base/v1/user/skills'), headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        return (data['skills'] as List? ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        return (data['skills'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
       _log.warning('getSkills HTTP ${resp.statusCode}');
     } catch (e) {
@@ -116,9 +98,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getTalent() async {
     try {
-      final resp = await http
-          .post(Uri.parse('$_base/v1/user/talent'), headers: _h)
-          .timeout(const Duration(seconds: 45));
+      final resp = await http.post(Uri.parse('$_base/v1/user/talent'), headers: _h).timeout(const Duration(seconds: 45));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getTalent HTTP ${resp.statusCode}');
     } catch (e) {
@@ -129,9 +109,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getNotableQuote() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/notable-quote'), headers: _h)
-          .timeout(const Duration(seconds: 20));
+      final resp = await http.get(Uri.parse('$_base/v1/user/notable-quote'), headers: _h).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getNotableQuote HTTP ${resp.statusCode}');
     } catch (e) {
@@ -142,9 +120,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getExperiment() async {
     try {
-      final resp = await http
-          .post(Uri.parse('$_base/v1/user/experiment'), headers: _h)
-          .timeout(const Duration(seconds: 30));
+      final resp = await http.post(Uri.parse('$_base/v1/user/experiment'), headers: _h).timeout(const Duration(seconds: 30));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getExperiment HTTP ${resp.statusCode}');
     } catch (e) {
@@ -155,14 +131,10 @@ class EchoApiClient {
 
   Future<List<Map<String, dynamic>>> getUserHistory() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/history'), headers: _h)
-          .timeout(const Duration(seconds: 20));
+      final resp = await http.get(Uri.parse('$_base/v1/user/history'), headers: _h).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        return (data['pairs'] as List? ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        return (data['pairs'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
       _log.warning('getUserHistory HTTP ${resp.statusCode}');
     } catch (e) {
@@ -173,9 +145,7 @@ class EchoApiClient {
 
   Future<bool> getCheckinStatus() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/daily/checkin/status'), headers: _h)
-          .timeout(const Duration(seconds: 8));
+      final resp = await http.get(Uri.parse('$_base/v1/daily/checkin/status'), headers: _h).timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         return data['done'] as bool? ?? false;
@@ -188,9 +158,7 @@ class EchoApiClient {
 
   Future<List<String>?> getDailyQuestions() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/daily/questions'), headers: _h)
-          .timeout(const Duration(seconds: 20));
+      final resp = await http.get(Uri.parse('$_base/v1/daily/questions'), headers: _h).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         return (data['questions'] as List? ?? []).map((e) => e.toString()).toList();
@@ -204,9 +172,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getUserReport() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/report'), headers: _h)
-          .timeout(const Duration(seconds: 45));
+      final resp = await http.get(Uri.parse('$_base/v1/user/report'), headers: _h).timeout(const Duration(seconds: 45));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getUserReport HTTP ${resp.statusCode}');
     } catch (e) {
@@ -219,11 +185,7 @@ class EchoApiClient {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       await http
-          .post(
-            Uri.parse('$_base/v1/user/fcm-token'),
-            headers: h,
-            body: jsonEncode({'token': token, 'platform': 'android'}),
-          )
+          .post(Uri.parse('$_base/v1/user/fcm-token'), headers: h, body: jsonEncode({'token': token, 'platform': 'android'}))
           .timeout(const Duration(seconds: 10));
     } catch (e) {
       _log.warning('registerFcmToken error: $e');
@@ -232,9 +194,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getUserSignal() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/user/signal'), headers: _h)
-          .timeout(const Duration(seconds: 20));
+      final resp = await http.get(Uri.parse('$_base/v1/user/signal'), headers: _h).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getUserSignal HTTP ${resp.statusCode}');
     } catch (e) {
@@ -245,9 +205,7 @@ class EchoApiClient {
 
   Future<Map<String, dynamic>?> getPracticeToday() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/practice/today'), headers: _h)
-          .timeout(const Duration(seconds: 30));
+      final resp = await http.get(Uri.parse('$_base/v1/practice/today'), headers: _h).timeout(const Duration(seconds: 30));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getPracticeToday HTTP ${resp.statusCode}');
     } catch (e) {
@@ -260,11 +218,7 @@ class EchoApiClient {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(
-            Uri.parse('$_base/v1/practice/log'),
-            headers: h,
-            body: jsonEncode({'rep_id': repId, 'done': done}),
-          )
+          .post(Uri.parse('$_base/v1/practice/log'), headers: h, body: jsonEncode({'rep_id': repId, 'done': done}))
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('logPractice HTTP ${resp.statusCode}');
@@ -278,11 +232,7 @@ class EchoApiClient {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(
-            Uri.parse('$_base/v1/twin/ask'),
-            headers: h,
-            body: jsonEncode({'question': question}),
-          )
+          .post(Uri.parse('$_base/v1/twin/ask'), headers: h, body: jsonEncode({'question': question}))
           .timeout(const Duration(seconds: 45));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('askTwin HTTP ${resp.statusCode}');
@@ -296,11 +246,7 @@ class EchoApiClient {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(
-            Uri.parse('$_base/v1/twin/choose'),
-            headers: h,
-            body: jsonEncode({'session_id': sessionId, 'chosen': chosen}),
-          )
+          .post(Uri.parse('$_base/v1/twin/choose'), headers: h, body: jsonEncode({'session_id': sessionId, 'chosen': chosen}))
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('chooseTwin HTTP ${resp.statusCode}');
@@ -312,9 +258,7 @@ class EchoApiClient {
 
   Future<String> getTrainingStatus() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/training/status'), headers: _h)
-          .timeout(const Duration(seconds: 5));
+      final resp = await http.get(Uri.parse('$_base/v1/training/status'), headers: _h).timeout(const Duration(seconds: 5));
       if (resp.statusCode == 200) {
         return (jsonDecode(resp.body) as Map<String, dynamic>)['status'] as String? ?? 'idle';
       }
@@ -324,15 +268,162 @@ class EchoApiClient {
     return 'idle';
   }
 
+  Future<Map<String, dynamic>?> getLoopSnapshot() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/loop/snapshot'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getLoopSnapshot HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getLoopSnapshot error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getTodayPriority() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/today/priority'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getTodayPriority HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getTodayPriority error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getCurrentThesis() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/thesis/current'), headers: _h).timeout(const Duration(seconds: 12));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getCurrentThesis HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getCurrentThesis error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getTrainingSummary() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/training/summary'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getTrainingSummary HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getTrainingSummary error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getSystemHealth() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/system/health'), headers: _h).timeout(const Duration(seconds: 8));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getSystemHealth HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getSystemHealth error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getComposioMcpConfig() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/integrations/composio/mcp-config'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getComposioMcpConfig HTTP ${resp.statusCode}: ${resp.body}');
+    } catch (e) {
+      _log.warning('getComposioMcpConfig error: $e');
+    }
+    return null;
+  }
+
+  /// POST /v1/integrations/composio/connect — get OAuth redirect URL.
+  /// Returns data with redirect_url on success, or {use_mcp_fallback: true} when
+  /// COMPOSIO_PROJECT_API_KEY is not configured on the server.
+  Future<Map<String, dynamic>?> createComposioConnection(String toolkit) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/integrations/composio/connect'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: jsonEncode({'toolkit': toolkit}),
+          )
+          .timeout(const Duration(seconds: 20));
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (resp.statusCode == 200) return data;
+      _log.warning('createComposioConnection HTTP ${resp.statusCode}: ${resp.body}');
+      return data; // caller checks use_mcp_fallback
+    } catch (e) {
+      _log.warning('createComposioConnection error: $e');
+    }
+    return null;
+  }
+
+  /// GET /v1/integrations/composio/status — list of active toolkit slugs for this user.
+  Future<List<String>> getComposioStatus() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('$_base/v1/integrations/composio/status'), headers: _h)
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final active = data['active'] as List<dynamic>? ?? [];
+        return active.cast<String>();
+      }
+    } catch (e) {
+      _log.warning('getComposioStatus error: $e');
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> runTournament(String prompt) async {
+    try {
+      final resp = await http
+          .post(Uri.parse('$_base/v1/tournament/run'), headers: {..._h, 'Content-Type': 'application/json'}, body: jsonEncode({'prompt': prompt}))
+          .timeout(const Duration(seconds: 60));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('runTournament HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('runTournament error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> chooseTournamentCandidate(String runId, String candidateId) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/tournament/choose'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: jsonEncode({'run_id': runId, 'candidate_id': candidateId}),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('chooseTournamentCandidate HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('chooseTournamentCandidate error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> recordOutcome({required String subjectType, String? subjectId, required String outcome, double score = 0.5, String note = ''}) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/outcome'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: jsonEncode({'subject_type': subjectType, 'subject_id': subjectId, 'outcome': outcome, 'score': score, 'note': note}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      _log.warning('recordOutcome error: $e');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> triggerTraining(String userId) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(
-            Uri.parse('$_base/trigger-training'),
-            headers: h,
-            body: jsonEncode({'user_id': userId}),
-          )
+          .post(Uri.parse('$_base/trigger-training'), headers: h, body: jsonEncode({'user_id': userId}))
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('triggerTraining HTTP ${resp.statusCode}');
@@ -344,14 +435,10 @@ class EchoApiClient {
 
   Future<List<Map<String, dynamic>>> getTrainingHistory() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/training/history'), headers: _h)
-          .timeout(const Duration(seconds: 10));
+      final resp = await http.get(Uri.parse('$_base/v1/training/history'), headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        return (data['checkpoints'] as List? ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        return (data['checkpoints'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
     } catch (e) {
       _log.warning('getTrainingHistory error: $e');
@@ -365,11 +452,7 @@ class EchoApiClient {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(
-            Uri.parse('$_base/v1/echo/decide'),
-            headers: h,
-            body: jsonEncode({'message': message}),
-          )
+          .post(Uri.parse('$_base/v1/echo/decide'), headers: h, body: jsonEncode({'message': message}))
           .timeout(const Duration(seconds: 40));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('decideState HTTP ${resp.statusCode}');
@@ -384,11 +467,7 @@ class EchoApiClient {
   Future<Map<String, dynamic>?> getSimulation() async {
     try {
       final resp = await http
-          .post(
-            Uri.parse('$_base/v1/echo/simulate'),
-            headers: {..._h, 'Content-Type': 'application/json'},
-            body: '{}',
-          )
+          .post(Uri.parse('$_base/v1/echo/simulate'), headers: {..._h, 'Content-Type': 'application/json'}, body: '{}')
           .timeout(const Duration(seconds: 50));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getSimulation HTTP ${resp.statusCode}');
@@ -406,13 +485,7 @@ class EchoApiClient {
       final body = <String, dynamic>{'question': question};
       if (threadId != null) body['thread_id'] = threadId;
       if (threadContext != null) body['thread_context'] = threadContext;
-      final resp = await http
-          .post(
-            Uri.parse('$_base/v1/council/ask'),
-            headers: h,
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: 90));
+      final resp = await http.post(Uri.parse('$_base/v1/council/ask'), headers: h, body: jsonEncode(body)).timeout(const Duration(seconds: 90));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('askCouncil HTTP ${resp.statusCode}');
     } catch (e) {
@@ -425,9 +498,7 @@ class EchoApiClient {
   /// Returns { active: [...], resolved: [...] }
   Future<Map<String, dynamic>?> getThreads() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/threads'), headers: _h)
-          .timeout(const Duration(seconds: 20));
+      final resp = await http.get(Uri.parse('$_base/v1/threads'), headers: _h).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getThreads HTTP ${resp.statusCode}');
     } catch (e) {
@@ -453,18 +524,14 @@ class EchoApiClient {
     }
   }
 
-  Future<Map<String, dynamic>?> submitDailyCheckin(
-      List<Map<String, String>> qas) async {
+  Future<Map<String, dynamic>?> submitDailyCheckin(List<Map<String, String>> qas) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
           .post(
             Uri.parse('$_base/v1/daily/checkin'),
             headers: h,
-            body: jsonEncode({
-              'qas': qas,
-              'date': DateTime.now().toIso8601String().substring(0, 10),
-            }),
+            body: jsonEncode({'qas': qas, 'date': DateTime.now().toIso8601String().substring(0, 10)}),
           )
           .timeout(const Duration(seconds: 25));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
