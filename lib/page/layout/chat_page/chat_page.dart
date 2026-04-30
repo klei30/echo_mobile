@@ -22,7 +22,6 @@ import 'package:chatmcp/generated/app_localizations.dart';
 import 'dart:convert';
 import 'package:chatmcp/mcp/models/json_rpc_message.dart';
 import 'dart:async';
-import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
@@ -35,13 +34,6 @@ class ChatPage extends StatefulWidget {
 
   @override
   State<ChatPage> createState() => _ChatPageState();
-}
-
-class _ComposioAuthLink {
-  final String toolkit;
-  final String url;
-
-  const _ComposioAuthLink({required this.toolkit, required this.url});
 }
 
 class _ChatPageState extends State<ChatPage> {
@@ -70,7 +62,6 @@ class _ChatPageState extends State<ChatPage> {
 
   final List<RunFunctionEvent> _runFunctionEvents = [];
   bool _isRunningFunction = false;
-  bool _skipNextLlmResponse = false;
 
   num _currentLoop = 0;
 
@@ -113,7 +104,6 @@ class _ChatPageState extends State<ChatPage> {
     _addListeners();
     _initializeHistoryMessages();
     on<RunFunctionEvent>(_onRunFunction);
-    on<SubmitPromptEvent>(_onSubmitPrompt);
   }
 
   Future<void> _onRunFunction(RunFunctionEvent event) async {
@@ -126,16 +116,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _onSubmitPrompt(SubmitPromptEvent event) async {
-    if (!mounted || event.text.trim().isEmpty) return;
-    await _handleSubmitted(SubmitData(event.text.trim(), []));
-  }
-
   Future<bool> _showFunctionApprovalDialog(RunFunctionEvent event) async {
-    if (_shouldAutoApproveComposioHelper(event)) {
-      return true;
-    }
-
     // Determines which MCP server's tool the function belongs to
     final clientName = _findClientName(ProviderManager.mcpServerProvider.tools, event.name);
     if (clientName == null) return false;
@@ -189,32 +170,6 @@ class _ChatPageState extends State<ChatPage> {
           },
         ) ??
         false;
-  }
-
-  bool _shouldAutoApproveComposioHelper(RunFunctionEvent event) {
-    if (event.name == 'COMPOSIO_SEARCH_TOOLS' || event.name == 'COMPOSIO_WAIT_FOR_CONNECTIONS') {
-      return true;
-    }
-
-    if (event.name != 'COMPOSIO_MANAGE_CONNECTIONS') {
-      return false;
-    }
-
-    final toolkits = event.arguments['toolkits'];
-    if (toolkits is! Iterable) {
-      return true;
-    }
-
-    for (final toolkit in toolkits) {
-      if (toolkit is Map) {
-        final action = toolkit['action']?.toString().toLowerCase();
-        if (action != null && action != 'add' && action != 'list') {
-          return false;
-        }
-      }
-    }
-
-    return true;
   }
 
   void _addListeners() {
@@ -529,11 +484,6 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _sendToolCallAndProcessResponse(String toolName, Map<String, dynamic> toolArguments) async {
-    if (toolName == 'COMPOSIO_MANAGE_CONNECTIONS') {
-      final handled = await _tryCreateManagedComposioAuth(toolArguments);
-      if (handled) return;
-    }
-
     final clientName = _findClientName(ProviderManager.mcpServerProvider.tools, toolName);
     if (clientName == null) {
       Logger.root.severe('No MCP server found for tool: $toolName');
@@ -596,23 +546,6 @@ class _ChatPageState extends State<ChatPage> {
 
     Logger.root.info('Tool call success - name: $toolName arguments: $toolArguments response: $response');
 
-    if (toolName == 'COMPOSIO_MANAGE_CONNECTIONS') {
-      final authLinks = _extractComposioAuthLinks(response);
-      if (authLinks.isNotEmpty) {
-        setState(() {
-          _currentResponse = _buildComposioAuthMessage(authLinks);
-          _parentMessageId = _messages.last.messageId;
-          final msgId = Uuid().v4();
-          _messages.add(
-            ChatMessage(messageId: msgId, content: _currentResponse, role: MessageRole.assistant, name: toolName, parentMessageId: _parentMessageId),
-          );
-          _parentMessageId = msgId;
-          _skipNextLlmResponse = true;
-        });
-        return;
-      }
-    }
-
     setState(() {
       _currentResponse = response!.result['content'].toString();
       if (_currentResponse.isNotEmpty) {
@@ -630,211 +563,6 @@ class _ChatPageState extends State<ChatPage> {
         _parentMessageId = msgId;
       }
     });
-  }
-
-  Future<bool> _tryCreateManagedComposioAuth(Map<String, dynamic> toolArguments) async {
-    // Only intercept 'add' action — let 'list', 'rename', 'remove' pass through to MCP.
-    final action = (toolArguments['action'] as String? ?? 'add').toLowerCase();
-    if (action != 'add') return false;
-
-    final toolkits = _extractComposioToolkits(toolArguments);
-    if (toolkits.isEmpty) return false;
-
-    final links = <_ComposioAuthLink>[];
-    final setupErrors = <String>[];
-    final composio = ProviderManager.composioProvider;
-
-    for (final slug in toolkits) {
-      // Resolve display name for the provider (e.g. 'gmail' → 'Gmail').
-      final displayName = _slugToDisplayName(slug);
-      final url = await composio.getConnectionUrl(displayName);
-      if (url != null && url.isNotEmpty) {
-        links.add(_ComposioAuthLink(toolkit: slug, url: url));
-      } else {
-        setupErrors.add(composio.lastError ?? 'Could not get an auth link for $slug.');
-      }
-    }
-
-    setState(() {
-      _parentMessageId = _messages.last.messageId;
-      final msgId = Uuid().v4();
-      _currentResponse = links.isNotEmpty
-          ? _buildComposioAuthMessage(links)
-          : _buildComposioSetupMessage(toolkits.first, setupErrors);
-      _messages.add(
-        ChatMessage(
-          messageId: msgId,
-          content: _currentResponse,
-          role: MessageRole.assistant,
-          name: 'COMPOSIO_MANAGE_CONNECTIONS',
-          parentMessageId: _parentMessageId,
-        ),
-      );
-      _parentMessageId = msgId;
-      _skipNextLlmResponse = true;
-    });
-    return true;
-  }
-
-  String _slugToDisplayName(String slug) {
-    const slugToDisplay = {
-      'gmail': 'Gmail',
-      'googlecalendar': 'Google Calendar',
-      'kindle': 'Kindle / Reading',
-      'spotify': 'Spotify',
-      'notion': 'Notion',
-      'github': 'GitHub',
-      'slack': 'Slack',
-      'twitter': 'Twitter / X',
-    };
-    return slugToDisplay[slug.toLowerCase()] ?? slug;
-  }
-
-  Set<String> _extractComposioToolkits(Map<String, dynamic> toolArguments) {
-    final result = <String>{};
-
-    // Singular 'toolkit' field (COMPOSIO_MANAGE_CONNECTIONS with action: 'add').
-    final single = toolArguments['toolkit'];
-    if (single is String && single.trim().isNotEmpty) {
-      result.add(single.trim().toLowerCase());
-    }
-
-    // Plural 'toolkits' list (legacy / other tools).
-    final toolkits = toolArguments['toolkits'];
-    if (toolkits is Iterable) {
-      for (final toolkit in toolkits) {
-        if (toolkit is String) {
-          result.add(toolkit.trim().toLowerCase());
-        } else if (toolkit is Map) {
-          final name = toolkit['name'] ?? toolkit['toolkit'] ?? toolkit['slug'];
-          if (name != null) result.add(name.toString().trim().toLowerCase());
-        }
-      }
-    }
-    return result;
-  }
-
-  List<_ComposioAuthLink> _extractComposioAuthLinks(JSONRPCMessage response) {
-    final links = <_ComposioAuthLink>[];
-    final seen = <String>{};
-
-    void addLink(String? toolkit, String? url) {
-      if (url == null || url.trim().isEmpty || !_isComposioAuthUrl(url)) return;
-      final normalizedToolkit = (toolkit == null || toolkit.trim().isEmpty) ? 'account' : toolkit.trim().toLowerCase();
-      final key = '$normalizedToolkit|$url';
-      if (seen.add(key)) {
-        links.add(_ComposioAuthLink(toolkit: normalizedToolkit, url: url));
-      }
-    }
-
-    String? toolkitFromMap(Map<dynamic, dynamic> value) {
-      final toolkit = value['toolkit'] ?? value['toolkit_name'] ?? value['toolkitName'] ?? value['name'];
-      return toolkit?.toString();
-    }
-
-    void scan(dynamic value, [String? toolkitHint]) {
-      if (value is Map) {
-        final toolkit = toolkitFromMap(value) ?? toolkitHint;
-        final redirectUrl = value['redirect_url'] ?? value['redirectUrl'] ?? value['auth_url'] ?? value['authUrl'];
-        if (redirectUrl is String) {
-          addLink(toolkit, redirectUrl);
-        }
-
-        final results = value['results'];
-        if (results is Map) {
-          results.forEach((key, entry) => scan(entry, key.toString()));
-        }
-
-        for (final entry in value.entries) {
-          if (entry.key == 'results') continue;
-          scan(entry.value, toolkit);
-        }
-      } else if (value is Iterable) {
-        for (final item in value) {
-          scan(item, toolkitHint);
-        }
-      }
-    }
-
-    void scanText(String text) {
-      try {
-        scan(jsonDecode(text));
-      } catch (_) {
-        final matches = RegExp(r'https://(?:connect|platform)\.composio\.dev/link/[^\s"<>\\]+').allMatches(text);
-        for (final match in matches) {
-          addLink(null, match.group(0));
-        }
-      }
-    }
-
-    final result = response.result;
-    if (result is Map) {
-      final content = result['content'];
-      if (content is Iterable) {
-        for (final item in content) {
-          if (item is Map && item['text'] is String) {
-            scanText(item['text'] as String);
-          } else {
-            scan(item);
-          }
-        }
-      }
-      scan(result);
-    } else {
-      scan(result);
-    }
-
-    return links;
-  }
-
-  bool _isComposioAuthUrl(String value) {
-    final uri = Uri.tryParse(value);
-    if (uri == null || !uri.hasScheme) return false;
-    if ((uri.host == 'connect.composio.dev' || uri.host == 'platform.composio.dev') &&
-        uri.path.startsWith('/link/')) return true;
-    final host = uri.host.toLowerCase();
-    final path = uri.path.toLowerCase();
-    return host.contains('composio') ||
-        path.contains('/oauth') ||
-        path.contains('/auth/') ||
-        (host == 'accounts.google.com' && path.contains('/o/oauth2'));
-  }
-
-  String _buildComposioAuthMessage(List<_ComposioAuthLink> links) {
-    final primaryLabel = _formatToolkitLabel(links.first.toolkit);
-    final lines = <String>['Connect $primaryLabel', ''];
-
-    for (final link in links) {
-      final label = _formatToolkitLabel(link.toolkit);
-      lines.add('[Connect $label](${link.url})');
-    }
-
-    lines.add('');
-    lines.add('After approving access, return to Echo and I will continue automatically.');
-    return lines.join('\n');
-  }
-
-  String _buildComposioSetupMessage(String toolkit, List<String> errors) {
-    final label = _formatToolkitLabel(toolkit);
-    final detail = errors.where((e) => e.trim().isNotEmpty).join('\n');
-    return [
-      'Could not connect $label.',
-      '',
-      'Make sure Echo Tools is running and your Composio API key is configured.',
-      if (detail.isNotEmpty) '',
-      if (detail.isNotEmpty) detail,
-    ].join('\n');
-  }
-
-  String _formatToolkitLabel(String toolkit) {
-    if (toolkit.toLowerCase() == 'gmail') return 'Gmail';
-    return toolkit
-        .replaceAll('-', ' ')
-        .replaceAll('_', ' ')
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .map((part) => part.substring(0, 1).toUpperCase() + part.substring(1))
-        .join(' ');
   }
 
   ChatMessage? _findUserMessage(ChatMessage message) {
@@ -1009,11 +737,6 @@ class _ChatPageState extends State<ChatPage> {
               break;
             }
           }
-        }
-
-        if (_skipNextLlmResponse) {
-          _skipNextLlmResponse = false;
-          break;
         }
 
         await _processLLMResponse();
@@ -1461,7 +1184,6 @@ class _ChatPageState extends State<ChatPage> {
   void _resetState() {
     setState(() {
       _isRunningFunction = false;
-      _skipNextLlmResponse = false;
       _runFunctionEvents.clear();
       _isLoading = false;
       _isCancelled = false;

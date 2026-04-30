@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
-import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 
 // ─── 3D Gyroscope Orb ────────────────────────────────────────────────────────
 
@@ -608,7 +608,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool keepCompleteState = false}) async {
     setState(() => _loading = true);
     final results = await Future.wait([
       EchoApiClient().getUserStats(),
@@ -624,16 +624,21 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       _confidence = results[2] as Map<String, dynamic>?;
       _history = results[3] as List<Map<String, dynamic>>;
       _trainingSummary = results[4] as Map<String, dynamic>?;
+      final status = _trainingSummary?['status'] as String?;
+      if (status == 'running') {
+        _trainingStatus = 'running';
+        _startLogAnimation();
+        _startPolling();
+      } else if (!keepCompleteState && _trainingStatus != 'complete') {
+        _trainingStatus = 'idle';
+      }
       _loading = false;
     });
   }
 
   Future<void> _startTraining() async {
-    final uid = AuthService().userId;
-    if (uid == null) return;
-
     HapticFeedback.mediumImpact();
-    final result = await EchoApiClient().triggerTraining(uid);
+    final result = await EchoApiClient().triggerTraining();
     if (result == null) return;
 
     final status = result['status'] as String? ?? '';
@@ -686,7 +691,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
           _trainingStatus = 'complete';
           _logStep = _logLines.length - 1;
         });
-        await _load();
+        await _load(keepCompleteState: true);
+        await EchoLoopState().refresh();
       }
     });
   }
@@ -889,7 +895,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
           const SizedBox(height: 8),
 
           // ── Train Now button ───────────────────────────────────────────
-          _buildTrainButton(totalPairs),
+          _buildTrainButton(),
         ],
       ),
     );
@@ -948,7 +954,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             children: [
               _pill('$battles battles'),
               _pill('$prefs preference signals'),
-              _pill('$untrained untrained moments'),
+              _pill('$untrained new trainable'),
             ],
           ),
         ],
@@ -1052,15 +1058,23 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     );
   }
 
-  Widget _buildTrainButton(int totalPairs) {
+  Widget _buildTrainButton() {
+    final summary = _trainingSummary ?? {};
+    final untrained = (summary['untrained_pairs'] as num?)?.toInt() ?? 0;
+    final required = (summary['required_pairs'] as num?)?.toInt() ?? 20;
+    final ready = summary['ready_for_training'] as bool? ?? false;
+    final label = ready
+        ? 'Train Your Clone Now'
+        : '$untrained/$required new moments collected';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GestureDetector(
-          onTapDown: (_) => setState(() => _pressing = true),
+          onTapDown: ready ? (_) => setState(() => _pressing = true) : null,
           onTapUp: (_) {
             setState(() => _pressing = false);
-            _startTraining();
+            if (ready) _startTraining();
           },
           onTapCancel: () => setState(() => _pressing = false),
           child: AnimatedScale(
@@ -1074,37 +1088,46 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    _pressing
-                        ? EchoColors.amber.withValues(alpha: 0.80)
-                        : EchoColors.amber.withValues(alpha: 0.92),
-                    _pressing
-                        ? EchoColors.amberDark.withValues(alpha: 0.85)
-                        : EchoColors.amberDark,
+                    ready
+                        ? (_pressing
+                            ? EchoColors.amber.withValues(alpha: 0.80)
+                            : EchoColors.amber.withValues(alpha: 0.92))
+                        : EchoColors.bgSurface,
+                    ready
+                        ? (_pressing
+                            ? EchoColors.amberDark.withValues(alpha: 0.85)
+                            : EchoColors.amberDark)
+                        : EchoColors.bgSurface,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
+                border: ready ? null : Border.all(color: EchoColors.borderSubtle),
                 boxShadow: [
-                  BoxShadow(
-                    color: EchoColors.amber.withValues(
-                        alpha: _pressing ? 0.15 : 0.28),
-                    blurRadius: _pressing ? 10 : 22,
-                    offset: const Offset(0, 4),
-                    spreadRadius: _pressing ? 0 : 2,
-                  ),
+                  if (ready)
+                    BoxShadow(
+                      color: EchoColors.amber.withValues(
+                          alpha: _pressing ? 0.15 : 0.28),
+                      blurRadius: _pressing ? 10 : 22,
+                      offset: const Offset(0, 4),
+                      spreadRadius: _pressing ? 0 : 2,
+                    ),
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.bolt_rounded,
-                      size: 19, color: Color(0xFF0A0800)),
+                  Icon(
+                    ready ? Icons.bolt_rounded : Icons.hourglass_bottom_rounded,
+                    size: 19,
+                    color: ready ? const Color(0xFF0A0800) : EchoColors.textGhost,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    'Train Your Clone Now',
+                    label,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0A0800),
+                      color: ready ? const Color(0xFF0A0800) : EchoColors.textGhost,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -1115,8 +1138,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          totalPairs > 0
-              ? '$totalPairs conversations ready for training'
+          ready
+              ? '$untrained new moments will shape the next adapter'
               : 'Keep chatting — more conversations improve training',
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(

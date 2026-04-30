@@ -7,7 +7,6 @@ import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/auth_service.dart';
-import 'package:chatmcp/page/echo_connections/connections_page.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
@@ -17,6 +16,18 @@ import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
 import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
+import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
+
+// ─── Vault item model ─────────────────────────────────────────────────────────
+
+class _VaultItem {
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _VaultItem(this.label, this.subtitle, this.icon, this.color, this.onTap);
+}
 
 // â”€â”€â”€ Arc painter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -77,6 +88,7 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _experiment;
   Map<String, dynamic>? _thesis;
   Map<String, dynamic>? _trainingSummary;
+  Map<String, dynamic>? _rank;
   bool _loading = true;
   bool _loggedThisSession = false;
 
@@ -97,6 +109,7 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getUserReport(),
       EchoApiClient().getCurrentThesis(),
       EchoApiClient().getTrainingSummary(),
+      EchoApiClient().getUserRank(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -107,6 +120,7 @@ class _YouTabState extends State<YouTab> {
       _report = results[4];
       _thesis = results[5];
       _trainingSummary = results[6];
+      _rank = results[7] as Map<String, dynamic>?;
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
@@ -117,6 +131,30 @@ class _YouTabState extends State<YouTab> {
     final data = await EchoApiClient().getExperiment();
     if (!mounted) return;
     setState(() => _experiment = data);
+  }
+
+  Future<void> _openTrainingScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
+    );
+    if (!mounted) return;
+    await Future.wait([
+      _load(),
+      EchoLoopState().refresh(),
+    ]);
+  }
+
+  Future<void> _openTournamentScreen({String? initialPrompt}) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShadowTournamentScreen(initialPrompt: initialPrompt),
+      ),
+    );
+    if (!mounted) return;
+    await Future.wait([
+      _load(),
+      EchoLoopState().refresh(),
+    ]);
   }
 
   Future<void> _logPractice(bool done) async {
@@ -176,18 +214,11 @@ class _YouTabState extends State<YouTab> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
             children: [
-              _buildYouHeader(),
-              _chapterLabel('CURRENT READ'),
-              if (_thesis != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                  child: _buildThesisCard(context),
-                ),
-
-              _chapterLabel('EVIDENCE'),
+              _buildCloneHero(context),
+              _buildRankBar(),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                child: _buildEvidenceSection(),
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
+                child: _buildSendClonesButton(context),
               ),
 
               _chapterLabel('ACTIVE LOOP'),
@@ -195,138 +226,28 @@ class _YouTabState extends State<YouTab> {
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
                 child: _buildPracticeSection(),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                child: _buildLabTools(context),
-              ),
+
+              _chapterLabel('CURRENT READ'),
+              if (_thesis != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  child: _buildThesisCard(context),
+                ),
 
               _chapterLabel('TRAINING STATE'),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
                 child: _buildTrainingStateSection(context),
+              ),
+
+              _chapterLabel('VAULTS'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                child: _buildVaultsGrid(context),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildYouHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: EchoColors.amber.withValues(alpha: 0.38)),
-            ),
-            child: const Icon(Icons.auto_awesome_rounded, color: EchoColors.amber, size: 17),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'You',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  'Current read, evidence, active loop, training state.',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11.5,
-                    color: EchoColors.textGhost,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEvidenceSection() {
-    final evidence = (_thesis?['evidence'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .take(8)
-        .toList();
-    if (evidence.isEmpty) {
-      return _quietPanel(
-        icon: Icons.fact_check_outlined,
-        title: 'No evidence yet',
-        body: 'Talk normally, choose tournament winners, and log outcomes. Echo will turn those moments into proof.',
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: EchoColors.borderSubtle),
-      ),
-      child: Column(
-        children: [
-          for (int i = 0; i < evidence.length; i++) ...[
-            _evidenceRow(evidence[i]),
-            if (i != evidence.length - 1) _rowDivider(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _evidenceRow(Map<String, dynamic> item) {
-    final source = (item['source'] as String? ?? 'signal').toUpperCase();
-    final summary = item['summary'] as String? ?? '';
-    final weight = (item['weight'] as num?)?.toDouble() ?? 1.0;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.bubble_chart_rounded,
-              size: 17, color: EchoColors.amber.withValues(alpha: weight >= 1.2 ? 0.85 : 0.45)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  source,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.textGhost,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  summary,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5,
-                    height: 1.45,
-                    color: EchoColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -339,9 +260,7 @@ class _YouTabState extends State<YouTab> {
     final lastTrained = _trainedLabel(_stats?['last_trained'] as String?);
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
-      ),
+      onTap: _openTrainingScreen,
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -376,59 +295,13 @@ class _YouTabState extends State<YouTab> {
               runSpacing: 8,
               children: [
                 _loopPill(Icons.chat_bubble_outline_rounded, '$totalPairs moments'),
-                _loopPill(Icons.hourglass_bottom_rounded, '$untrained untrained'),
+                _loopPill(Icons.hourglass_bottom_rounded, '$untrained new trainable'),
                 _loopPill(Icons.military_tech_rounded, '$battles battles'),
                 if (lastTrained.isNotEmpty) _loopPill(Icons.check_circle_outline_rounded, lastTrained),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _quietPanel({
-    required IconData icon,
-    required String title,
-    required String body,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: EchoColors.borderSubtle),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: EchoColors.textGhost),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    height: 1.45,
-                    color: EchoColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -447,8 +320,7 @@ class _YouTabState extends State<YouTab> {
     final firstName = username.isNotEmpty ? username.split(' ').first : '';
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const NightlyTrainingScreen())),
+      onTap: _openTrainingScreen,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(0, 36, 0, 32),
@@ -722,14 +594,7 @@ class _YouTabState extends State<YouTab> {
     HapticFeedback.lightImpact();
 
     if (type == 'run_tournament') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ShadowTournamentScreen(
-            initialPrompt: payload['prompt'] as String?,
-          ),
-        ),
-      );
-      if (mounted) _load();
+      await _openTournamentScreen(initialPrompt: payload['prompt'] as String?);
       return;
     }
 
@@ -1543,9 +1408,7 @@ class _YouTabState extends State<YouTab> {
             'Test the current read against one real situation.',
             Icons.military_tech_rounded,
             EchoColors.amber,
-            () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ShadowTournamentScreen()),
-            ),
+            () => _openTournamentScreen(),
           ),
           if (_experiment != null) ...[
             _rowDivider(),
@@ -1605,19 +1468,13 @@ class _YouTabState extends State<YouTab> {
                         builder: (_) => const OperatingSystemScreen()))),
             _rowDivider(),
             _toolRow('Training', 'Clone battles, pairs, and adapter progress.',
-                Icons.model_training_rounded, EchoColors.amber, () =>
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const NightlyTrainingScreen()))),
+                Icons.model_training_rounded, EchoColors.amber,
+                _openTrainingScreen),
             _rowDivider(),
             _toolRow('Permanent record', 'Long-term evidence and history.',
                 Icons.history_edu_rounded, EchoColors.indigo, () =>
                     Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => const PermanentRecordScreen()))),
-            _rowDivider(),
-            _toolRow('Connections', 'External context Echo can use.',
-                Icons.link_rounded, EchoColors.textMuted, () =>
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const ConnectionsPage()))),
           ],
         ),
       ),
@@ -1704,11 +1561,9 @@ class _YouTabState extends State<YouTab> {
           _archiveChip('Rules', Icons.tonality_rounded, const Color(0xFF9A6AB4),
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
           _archiveChip('Training', Icons.model_training_rounded, EchoColors.amber,
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()))),
+              _openTrainingScreen),
           _archiveChip('Record', Icons.history_edu_rounded, EchoColors.indigo,
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
-          _archiveChip('Connections', Icons.link_rounded, EchoColors.textMuted,
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ConnectionsPage()))),
         ],
       ),
     );
@@ -1731,6 +1586,191 @@ class _YouTabState extends State<YouTab> {
             const SizedBox(width: 6),
             Text(label, style: GoogleFonts.plusJakartaSans(
                 fontSize: 12, color: EchoColors.textGhost)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── RANK BAR ────────────────────────────────────────────────────────────────
+
+  Widget _buildRankBar() {
+    final rankName = _rank?['rank'] as String? ?? 'Genin';
+    final title = _rank?['title'] as String? ?? 'First Clone';
+    final xp = (_rank?['xp'] as num?)?.toInt() ?? 0;
+    final xpToNext = (_rank?['xp_to_next'] as num?)?.toInt() ?? 0;
+    final progress = (_rank?['progress'] as num?)?.toDouble() ?? 0.0;
+    final isKage = rankName == 'Kage';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    rankName,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.amber,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '· $title',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      color: EchoColors.textGhost,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                isKage ? '$xp XP' : '$xp XP · $xpToNext to next',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  color: EchoColors.textVeryGhost,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: _loading ? 0.0 : progress),
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeOut,
+              builder: (_, value, __) => LinearProgressIndicator(
+                value: value,
+                minHeight: 3,
+                backgroundColor: EchoColors.borderSubtle,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  EchoColors.amber.withValues(alpha: 0.80),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── SEND CLONES BUTTON ───────────────────────────────────────────────────────
+
+  Widget _buildSendClonesButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _openTournamentScreen(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: EchoColors.amber.withValues(alpha: 0.09),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.amber.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.military_tech_rounded,
+                size: 18, color: EchoColors.amber.withValues(alpha: 0.90)),
+            const SizedBox(width: 10),
+            Text(
+              'SEND CLONES',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: EchoColors.amber,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── VAULTS GRID ─────────────────────────────────────────────────────────────
+
+  Widget _buildVaultsGrid(BuildContext context) {
+    final vaults = [
+      _VaultItem('Mirror', 'Weekly reflection', Icons.remove_red_eye_rounded, const Color(0xFF9A6AB4),
+          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab()))),
+      _VaultItem('Twin', 'Two paths, one choice', Icons.people_outline_rounded, const Color(0xFF5A8DEE),
+          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TwinScreen()))),
+      _VaultItem('Memories', 'What Echo holds', Icons.grain_rounded, EchoColors.indigo,
+          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
+      _VaultItem('Record', 'Long-term evidence', Icons.history_edu_rounded, EchoColors.indigo,
+          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
+      _VaultItem('Rules', 'Operating system', Icons.tonality_rounded, const Color(0xFF9A6AB4),
+          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
+      _VaultItem('Training', 'Clone sessions', Icons.model_training_rounded, EchoColors.amber,
+          _openTrainingScreen),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 2.4,
+      children: vaults.map(_buildVaultTile).toList(),
+    );
+  }
+
+  Widget _buildVaultTile(_VaultItem v) {
+    return GestureDetector(
+      onTap: v.onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: v.color.withValues(alpha: 0.08),
+              ),
+              child: Icon(v.icon, size: 14, color: v.color.withValues(alpha: 0.80)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    v.label,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: EchoColors.textMuted,
+                    ),
+                  ),
+                  Text(
+                    v.subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      color: EchoColors.textGhost,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

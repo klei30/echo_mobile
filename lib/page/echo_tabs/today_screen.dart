@@ -40,6 +40,10 @@ class _TodayScreenState extends State<TodayScreen>
   Map<String, dynamic>? _practice;
   Map<String, dynamic>? _priority;
 
+  // XP pill
+  String? _xpMessage;
+  late final AnimationController _xpFade;
+
   late final AnimationController _orbPulse;
   late final AnimationController _contentFade;
 
@@ -56,11 +60,29 @@ class _TodayScreenState extends State<TodayScreen>
       duration: const Duration(milliseconds: 600),
     );
 
+    _xpFade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
     _checkState();
+  }
+
+  void _showXp(String message) {
+    if (!mounted) return;
+    setState(() => _xpMessage = message);
+    _xpFade.forward(from: 0);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _xpFade.reverse().then((_) {
+        if (mounted) setState(() => _xpMessage = null);
+      });
+    });
   }
 
   @override
   void dispose() {
+    _xpFade.dispose();
     _orbPulse.dispose();
     _contentFade.dispose();
     super.dispose();
@@ -177,53 +199,88 @@ class _TodayScreenState extends State<TodayScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Orb zone — fixed at ~42% of screen height
-            SizedBox(
-              height: screenHeight * 0.42,
-              child: Stack(
-                children: [
-                  Positioned.fill(child: _buildOrbBackground()),
-                  // Refresh — top right corner
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: GestureDetector(
-                      onTap: () {
-                        _contentFade.value = 0;
-                        _checkState();
-                      },
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.05),
+            Column(
+              children: [
+                // Orb zone — fixed at ~42% of screen height
+                SizedBox(
+                  height: screenHeight * 0.42,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: _buildOrbBackground()),
+                      // Refresh — top right corner
+                      Positioned(
+                        top: 12,
+                        right: 16,
+                        child: GestureDetector(
+                          onTap: () {
+                            _contentFade.value = 0;
+                            _checkState();
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
+                            child: Icon(
+                              Icons.refresh_rounded,
+                              size: 14,
+                              color: Colors.white.withValues(alpha: 0.22),
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          Icons.refresh_rounded,
-                          size: 14,
-                          color: Colors.white.withValues(alpha: 0.22),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content zone — fills remaining space
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: _buildStateContent(),
+                  ),
+                ),
+                // Ask pill — pinned at bottom, only in silence/interruption
+                if (showAsk)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 28, top: 8),
+                    child: Center(child: _buildAskPill()),
+                  ),
+              ],
+            ),
+            // XP feedback pill — floats at top center
+            if (_xpMessage != null)
+              Positioned(
+                top: 16,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: FadeTransition(
+                    opacity: _xpFade,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: EchoColors.amber.withValues(alpha: 0.40),
+                        ),
+                      ),
+                      child: Text(
+                        _xpMessage!,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: EchoColors.amberLight,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            // Content zone — fills remaining space
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                child: _buildStateContent(),
-              ),
-            ),
-            // Ask pill — pinned at bottom, only in silence/interruption
-            if (showAsk)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 28, top: 8),
-                child: Center(child: _buildAskPill()),
+                ),
               ),
           ],
         ),
@@ -384,6 +441,7 @@ class _TodayScreenState extends State<TodayScreen>
                         ),
                       );
                       if (mounted) {
+                        _showXp('+10 XP · Check-in complete');
                         _contentFade.value = 0;
                         _checkState();
                       }
@@ -604,9 +662,9 @@ class _TodayScreenState extends State<TodayScreen>
           opacity: _contentFade,
           key: const ValueKey('revelation'),
           child: GestureDetector(
-            onTap: () {
+            onTap: () async {
               if (letter.isNotEmpty) {
-                Navigator.of(context).push(
+                await Navigator.of(context).push(
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         RevelationScreen(
@@ -620,6 +678,7 @@ class _TodayScreenState extends State<TodayScreen>
                     fullscreenDialog: true,
                   ),
                 );
+                if (mounted) _showXp('+30 XP · Revelation received');
               }
             },
             child: Center(
@@ -750,6 +809,7 @@ class _TodayScreenState extends State<TodayScreen>
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
         );
+        if (mounted) _showXp('+10 XP · Check-in complete');
         break;
       case 'run_tournament':
         await Navigator.of(context).push(
@@ -759,6 +819,7 @@ class _TodayScreenState extends State<TodayScreen>
             ),
           ),
         );
+        if (mounted) _showXp('+15 XP · Clones deployed');
         break;
       case 'open_council':
         await Navigator.of(context).push(
@@ -774,6 +835,7 @@ class _TodayScreenState extends State<TodayScreen>
         final repId = payload['rep_id'] as String?;
         if (repId != null) {
           await EchoApiClient().logPractice(repId, true);
+          if (mounted) _showXp('+20 XP · Rep complete');
         }
         break;
       case 'open_training':

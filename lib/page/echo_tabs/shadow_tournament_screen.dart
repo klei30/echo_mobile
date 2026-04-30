@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 
 enum _TournamentPhase { input, loading, result, saved }
@@ -118,6 +119,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
       _learningSummary = result['learning_summary'] as String?;
       _phase = _TournamentPhase.saved;
     });
+    await EchoLoopState().refresh();
   }
 
   void _reset() {

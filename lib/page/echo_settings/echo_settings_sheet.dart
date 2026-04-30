@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/provider/chat_provider.dart';
-import 'package:chatmcp/provider/composio_provider.dart';
 import 'package:chatmcp/provider/mcp_server_provider.dart';
 import 'package:chatmcp/page/setting/mcp_server.dart';
 import 'package:chatmcp/main.dart';
@@ -161,13 +160,11 @@ class _EchoSettingsSheetState extends State<EchoSettingsSheet> {
 
           // ── Connected Tools ───────────────────────────────────────────────
           _sectionLabel('CONNECTED TOOLS'),
-          _buildEchoToolsTile(context),
-          const SizedBox(height: 8),
           _buildMcpConnections(context),
           const SizedBox(height: 8),
           _settingTile(
             label: 'Add connection',
-            sub: 'Connect Composio, custom APIs, and more',
+            sub: 'Connect custom MCP tools',
             trailing: GestureDetector(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -230,76 +227,13 @@ class _EchoSettingsSheetState extends State<EchoSettingsSheet> {
     );
   }
 
-  Widget _buildEchoToolsTile(BuildContext context) {
-    return Consumer<ComposioProvider>(
-      builder: (context, composio, _) {
-        return FutureBuilder<List<String>>(
-          future: McpServerProvider().mcpServers,
-          builder: (context, snap) {
-            final installed = (snap.data ?? []).contains(ComposioProvider.serverName);
-            final running = McpServerProvider().mcpServerIsRunning(ComposioProvider.serverName);
-            final action = running ? 'Connected' : installed ? 'Start' : 'Install';
-
-            return _settingTile(
-              label: 'Echo Tools',
-              sub: running
-                  ? 'Composio MCP router is active in chat'
-                  : 'One tool router for Gmail, Slack, Calendar, and more',
-              trailing: composio.isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : GestureDetector(
-                      onTap: running
-                          ? null
-                          : () async {
-                              try {
-                                if (installed) {
-                                  await context.read<ComposioProvider>().startEchoTools();
-                                } else {
-                                  await context.read<ComposioProvider>().installEchoTools();
-                                }
-                                if (!mounted) return;
-                                setState(() {});
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Echo Tools connected')),
-                                );
-                              } catch (e) {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Echo Tools failed: $e')),
-                                );
-                              }
-                            },
-                      child: Text(
-                        action,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          color: running ? const Color(0xFF4CAF50) : EchoColors.amber,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildMcpConnections(BuildContext context) {
     return Consumer<McpServerProvider>(
       builder: (context, provider, _) {
         return FutureBuilder<List<String>>(
           future: provider.mcpServers,
           builder: (context, snap) {
-            final servers = (snap.data ?? [])
-                .where((name) =>
-                    name != ComposioProvider.serverName &&
-                    name != ComposioProvider.legacyServerName)
-                .toList();
+            final servers = snap.data ?? [];
             if (servers.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 4),

@@ -300,9 +300,9 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, 'Talk', _EchoTabIcon.echo),
-              _navItem(1, 'Today', _EchoTabIcon.today),
-              _navItem(2, 'You', _EchoTabIcon.you),
+              _navItem(0, 'CHANNEL', _EchoTabIcon.echo),
+              _navItem(1, 'MISSION', _EchoTabIcon.today),
+              _navItem(2, 'DOJO', _EchoTabIcon.you),
             ],
           ),
         ),

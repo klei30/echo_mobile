@@ -44,6 +44,10 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
     _stateSub = VoiceService().stateStream.listen((s) {
       if (!mounted) return;
       setState(() => _voiceState = s);
+      // Agent is active — cancel the "not responding" timeout
+      if (s == VoiceState.speaking || s == VoiceState.listening) {
+        if (s == VoiceState.speaking) _agentJoinTimeout?.cancel();
+      }
       if (s == VoiceState.idle && _error == null) {
         // Session ended cleanly — close screen after brief delay
         Future.delayed(const Duration(milliseconds: 600), () {
@@ -56,6 +60,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       if (!mounted) return;
       _agentJoinTimeout?.cancel(); // Agent is active, cancel timeout
       setState(() {
+        _error = null; // Clear any stale error once transcripts flow
         if (t.role == 'user') _userTranscript = t.text;
         if (t.role == 'agent') _echoTranscript = t.text;
       });
@@ -79,11 +84,16 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       });
     } else {
       setState(() => _connecting = false);
-      // If no agent joins within 20s, show an actionable error.
-      _agentJoinTimeout = Timer(const Duration(seconds: 20), () {
+      // If no agent joins within 35s, show an actionable error.
+      // Only fire if the agent has never spoken AND state is still just listening
+      // (not speaking — which means it IS active, just hasn't sent a transcript yet).
+      _agentJoinTimeout = Timer(const Duration(seconds: 35), () {
         if (!mounted) return;
-        if (_echoTranscript.isEmpty && _voiceState == VoiceState.listening) {
-          setState(() => _error = 'Voice agent not responding.\nMake sure start_voice_agent.bat is running on the server.');
+        final state = VoiceService().state;
+        if (_echoTranscript.isEmpty &&
+            state != VoiceState.speaking &&
+            state != VoiceState.idle) {
+          setState(() => _error = 'Voice agent not responding.\nMake sure the voice agent is running on the server.');
         }
       });
     }

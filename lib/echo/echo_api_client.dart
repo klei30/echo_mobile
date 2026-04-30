@@ -323,56 +323,6 @@ class EchoApiClient {
     return null;
   }
 
-  Future<Map<String, dynamic>?> getComposioMcpConfig() async {
-    try {
-      final resp = await http.get(Uri.parse('$_base/v1/integrations/composio/mcp-config'), headers: _h).timeout(const Duration(seconds: 10));
-      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
-      _log.warning('getComposioMcpConfig HTTP ${resp.statusCode}: ${resp.body}');
-    } catch (e) {
-      _log.warning('getComposioMcpConfig error: $e');
-    }
-    return null;
-  }
-
-  /// POST /v1/integrations/composio/connect — get OAuth redirect URL.
-  /// Returns data with redirect_url on success, or {use_mcp_fallback: true} when
-  /// COMPOSIO_PROJECT_API_KEY is not configured on the server.
-  Future<Map<String, dynamic>?> createComposioConnection(String toolkit) async {
-    try {
-      final resp = await http
-          .post(
-            Uri.parse('$_base/v1/integrations/composio/connect'),
-            headers: {..._h, 'Content-Type': 'application/json'},
-            body: jsonEncode({'toolkit': toolkit}),
-          )
-          .timeout(const Duration(seconds: 20));
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      if (resp.statusCode == 200) return data;
-      _log.warning('createComposioConnection HTTP ${resp.statusCode}: ${resp.body}');
-      return data; // caller checks use_mcp_fallback
-    } catch (e) {
-      _log.warning('createComposioConnection error: $e');
-    }
-    return null;
-  }
-
-  /// GET /v1/integrations/composio/status — list of active toolkit slugs for this user.
-  Future<List<String>> getComposioStatus() async {
-    try {
-      final resp = await http
-          .get(Uri.parse('$_base/v1/integrations/composio/status'), headers: _h)
-          .timeout(const Duration(seconds: 10));
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        final active = data['active'] as List<dynamic>? ?? [];
-        return active.cast<String>();
-      }
-    } catch (e) {
-      _log.warning('getComposioStatus error: $e');
-    }
-    return [];
-  }
-
   Future<Map<String, dynamic>?> runTournament(String prompt) async {
     try {
       final resp = await http
@@ -419,11 +369,11 @@ class EchoApiClient {
     }
   }
 
-  Future<Map<String, dynamic>?> triggerTraining(String userId) async {
+  Future<Map<String, dynamic>?> triggerTraining() async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
       final resp = await http
-          .post(Uri.parse('$_base/trigger-training'), headers: h, body: jsonEncode({'user_id': userId}))
+          .post(Uri.parse('$_base/trigger-training'), headers: h, body: '{}')
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('triggerTraining HTTP ${resp.statusCode}');
@@ -444,6 +394,17 @@ class EchoApiClient {
       _log.warning('getTrainingHistory error: $e');
     }
     return [];
+  }
+
+  Future<Map<String, dynamic>?> getUserRank() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/user/rank'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getUserRank HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getUserRank error: $e');
+    }
+    return null;
   }
 
   /// Timing Engine: which of the 4 Echo states applies right now?
