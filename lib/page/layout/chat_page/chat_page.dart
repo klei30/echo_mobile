@@ -74,6 +74,7 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     _initializeState();
     on<ShareEvent>(_handleShare);
+    EchoLoopState().addListener(_onLoopStateChanged);
     unawaited(EchoLoopState().refresh());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -91,9 +92,14 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  void _onLoopStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
+    EchoLoopState().removeListener(_onLoopStateChanged);
     _removeListeners();
     super.dispose();
   }
@@ -416,7 +422,8 @@ class _ChatPageState extends State<ChatPage> {
         : 'Good evening';
     final headline = firstName != null ? '$greeting, $firstName.' : '$greeting.';
 
-    final starters = ["What's something I've been avoiding?", "Help me think through a decision", "What have you noticed about me lately?"];
+    final loop = EchoLoopState();
+    final starters = _buildPersonalizedStarters(loop);
 
     return Container(
       color: Colors.transparent,
@@ -431,12 +438,72 @@ class _ChatPageState extends State<ChatPage> {
             style: GoogleFonts.lora(fontSize: 22, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, letterSpacing: -0.3, height: 1.3),
           ),
           const SizedBox(height: 6),
-          Text("What's on your mind?", style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.textGhost)),
+          _buildLoopContext(loop),
           const SizedBox(height: 28),
           ...starters.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildStarterPrompt(s))),
         ],
       ),
     );
+  }
+
+  List<String> _buildPersonalizedStarters(EchoLoopState loop) {
+    final starters = <String>[];
+
+    final thesis = loop.thesis;
+    if (thesis != null) {
+      final statement = thesis['statement'] as String?;
+      if (statement != null && statement.isNotEmpty && statement != 'Echo is waiting for enough real moments to form a thesis.') {
+        starters.add('My current thesis: "$statement" — push back on this.');
+      }
+    }
+
+    final priority = loop.todayPriority;
+    if (priority != null) {
+      final title = priority['title'] as String?;
+      final body = priority['body'] as String?;
+      if (title != null && title.isNotEmpty) {
+        starters.add(body != null && body.isNotEmpty ? '$title — $body' : 'Help me work on: $title');
+      }
+    }
+
+    final practice = loop.practice;
+    if (practice != null) {
+      final rep = practice['rep_title'] as String?;
+      if (rep != null && rep.isNotEmpty) {
+        starters.add("Walk me through today's practice: $rep");
+      }
+    }
+
+    if (starters.length < 3) starters.add("What's something I've been avoiding?");
+    if (starters.length < 3) starters.add('Help me think through a decision.');
+    if (starters.length < 3) starters.add('What have you noticed about me lately?');
+
+    return starters.take(3).toList();
+  }
+
+  Widget _buildLoopContext(EchoLoopState loop) {
+    final rank = loop.rank;
+    final rankName = rank?['rank'] as String?;
+    if (rankName != null && rankName.isNotEmpty) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: EchoColors.amber.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: EchoColors.amber.withValues(alpha: 0.25)),
+            ),
+            child: Text(
+              rankName.toUpperCase(),
+              style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w600, color: EchoColors.amber, letterSpacing: 1.2),
+            ),
+          ),
+        ],
+      );
+    }
+    return Text("What's on your mind?", style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.textGhost));
   }
 
   Widget _buildStarterPrompt(String text) {

@@ -14,6 +14,7 @@ import 'package:chatmcp/provider/chat_model_provider.dart';
 import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 
 class EchoMobilePage extends StatefulWidget {
   const EchoMobilePage({super.key});
@@ -28,9 +29,14 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
   bool _showOnboarding = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  void _onLoopStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    EchoLoopState().addListener(_onLoopStateChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ProviderManager.settingsProvider.loadSettings();
       final done = await hasCompletedOnboarding();
@@ -41,6 +47,12 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    EchoLoopState().removeListener(_onLoopStateChanged);
+    super.dispose();
   }
 
   @override
@@ -218,8 +230,13 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                   final firstName = username != null && username.isNotEmpty
                       ? username.split(' ').first
                       : null;
+                  final loop = EchoLoopState();
+                  final rankName = loop.rank?['rank'] as String?;
+                  final subtitle = rankName != null && rankName.isNotEmpty
+                      ? '${rankName.toLowerCase()} · ${firstName != null ? 'hi, $firstName' : 'your shadow clone'}'
+                      : firstName != null ? 'hi, $firstName' : 'your shadow clone';
                   return Text(
-                    firstName != null ? 'hi, $firstName' : 'your shadow clone',
+                    subtitle,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       color: EchoColors.textGhost,

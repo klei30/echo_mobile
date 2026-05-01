@@ -9,6 +9,8 @@ class EchoLoopState extends ChangeNotifier {
   Map<String, dynamic>? snapshot;
   Map<String, dynamic>? todayPriority;
   Map<String, dynamic>? thesis;
+  Map<String, dynamic>? rank;
+  Map<String, dynamic>? practice;
   bool loading = false;
 
   void apply({
@@ -31,10 +33,14 @@ class EchoLoopState extends ChangeNotifier {
         EchoApiClient().getLoopSnapshot(),
         EchoApiClient().getTodayPriority(),
         EchoApiClient().getCurrentThesis(),
+        EchoApiClient().getUserRank(),
+        EchoApiClient().getPracticeToday(),
       ]);
       snapshot = results[0];
       todayPriority = results[1];
       thesis = results[2];
+      rank = results[3];
+      practice = results[4];
     } finally {
       loading = false;
       notifyListeners();
