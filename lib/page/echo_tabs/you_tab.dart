@@ -17,6 +17,7 @@ import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
 import 'package:chatmcp/page/echo_tabs/experiment_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
+import 'package:chatmcp/provider/provider_manager.dart';
 
 // ─── Vault item model ─────────────────────────────────────────────────────────
 
