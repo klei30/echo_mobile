@@ -946,19 +946,33 @@ class _ChatPageState extends State<ChatPage> {
 
     // Route to local model if Echo recommends it, unless active MCP tools need ChatMCP's tool loop.
     final hasEnabledMcpTools = _hasEnabledMcpTools();
+    final selectedModel = ProviderManager.chatModelProvider.currentModel;
+    final selectedModelName = selectedModel.name.toLowerCase().replaceAll('-', '_');
+    final useGemmaLane = selectedModel.providerId == 'echo' && selectedModelName == 'gemma4_e2b' && !hasEnabledMcpTools;
     final useLocalModel = echoCtx != null && echoCtx.recommendedModel == 'local' && echoCtx.loraId != null && !hasEnabledMcpTools;
     final useEchoToolProxy = hasEnabledMcpTools && !_selectedProviderHasApiKey();
-    final activeLlmClient = useLocalModel || useEchoToolProxy ? OpenAIClient(apiKey: 'local', baseUrl: EchoClient().baseUrl + '/v1') : _llmClient!;
-    final activeModel = useLocalModel || useEchoToolProxy ? 'shadow' : ProviderManager.chatModelProvider.currentModel.name;
+    // When logged into Echo but the selected model has no direct API key, route through Echo backend
+    // so the backend's own key is used and the conversation is collected for training.
+    final useEchoFallback = AuthService().isLoggedIn && !_selectedProviderHasApiKey() && !hasEnabledMcpTools;
+    final activeLlmClient = useGemmaLane || useLocalModel || useEchoToolProxy || useEchoFallback
+        ? OpenAIClient(apiKey: 'local', baseUrl: EchoClient().baseUrl + '/v1')
+        : _llmClient!;
+    final activeModel = useGemmaLane
+        ? 'gemma4_e2b'
+        : useLocalModel || useEchoToolProxy || useEchoFallback
+        ? 'shadow'
+        : selectedModel.name;
+    if (useGemmaLane) _lastModelUsed = 'gemma4_e2b';
     if (useLocalModel) _lastModelUsed = 'local';
     if (useEchoToolProxy) _lastModelUsed = 'echo_tool_proxy';
+    if (useEchoFallback && !useGemmaLane && !useLocalModel) _lastModelUsed = 'echo_shadow';
 
     // Echo local path: sidecar owns memory and no-tools guard.
     // Echo tool proxy path: send only the tool prompt; Echo injects tool-safe memory server-side.
     // Direct LLM path: prepend Echo's memory context, but make it tool-safe when tools are enabled.
     final echoInjection = echoCtx?.systemInjection ?? '';
     final safeEchoInjection = hasEnabledMcpTools ? _toolSafeEchoInjection(echoInjection) : echoInjection;
-    final activeSystemPrompt = useLocalModel
+    final activeSystemPrompt = useGemmaLane || useLocalModel || useEchoFallback
         ? ''
         : useEchoToolProxy
         ? systemPrompt
@@ -982,7 +996,7 @@ class _ChatPageState extends State<ChatPage> {
 
     // Echo /save: only needed when NOT routing through Echo (Echo auto-saves in its streaming handler)
     _lastAssistantMessage = _currentResponse;
-    if (!useLocalModel && !useEchoToolProxy && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
+    if (!useLocalModel && !useEchoToolProxy && !useEchoFallback && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
       await EchoClient().savePair(
         userMessage: _lastUserMessage,
         assistantMessage: _lastAssistantMessage,

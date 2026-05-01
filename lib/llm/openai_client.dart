@@ -16,11 +16,23 @@ class OpenAIClient extends BaseLLMClient {
     : baseUrl = (baseUrl == null || baseUrl.isEmpty) ? 'https://api.openai.com/v1' : baseUrl,
       _headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer $apiKey'};
 
+  bool get _isEchoEndpoint => baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
+
+  String? _echoModelLane(String model) {
+    final normalized = model.toLowerCase().replaceAll('-', '_');
+    if (normalized == 'gemma4_e2b' || normalized == 'gemma_4_e2b' || normalized == 'shadow_gemma') {
+      return 'gemma4_e2b';
+    }
+    return null;
+  }
+
   @override
   Future<LLMResponse> chatCompletion(CompletionRequest request) async {
     final httpClient = BaseLLMClient.createHttpClient();
 
     final body = {'model': request.model, 'messages': chatMessageToOpenAIMessage(request.messages)};
+    final echoModelLane = _echoModelLane(request.model);
+    if (_isEchoEndpoint && echoModelLane != null) body['echo_model_lane'] = echoModelLane;
 
     addModelSettingsToBody(body, request.modelSetting);
 
@@ -36,8 +48,7 @@ class OpenAIClient extends BaseLLMClient {
     final endpoint = getEndpoint(baseUrl, "/chat/completions");
     // Attach Echo JWT when calling local Echo server
     final echoToken = AuthService().token;
-    final isEchoEndpoint = baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
-    final headers = (isEchoEndpoint && echoToken != null)
+    final headers = (_isEchoEndpoint && echoToken != null)
         ? {..._headers, 'Authorization': 'Bearer $echoToken'}
         : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
 
@@ -82,6 +93,8 @@ class OpenAIClient extends BaseLLMClient {
     final httpClient = BaseLLMClient.createHttpClient();
 
     final body = {'model': request.model, 'messages': chatMessageToOpenAIMessage(request.messages), 'stream': true};
+    final echoModelLane = _echoModelLane(request.model);
+    if (_isEchoEndpoint && echoModelLane != null) body['echo_model_lane'] = echoModelLane;
 
     addModelSettingsToBody(body, request.modelSetting);
     if (request.userId != null) body['user'] = request.userId!;
@@ -90,8 +103,7 @@ class OpenAIClient extends BaseLLMClient {
 
     final endpoint = getEndpoint(baseUrl, "/chat/completions");
     final echoToken = AuthService().token;
-    final isEchoEndpoint = baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
-    final headers = (isEchoEndpoint && echoToken != null)
+    final headers = (_isEchoEndpoint && echoToken != null)
         ? {..._headers, 'Authorization': 'Bearer $echoToken'}
         : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
 

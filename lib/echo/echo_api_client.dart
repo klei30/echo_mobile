@@ -256,9 +256,12 @@ class EchoApiClient {
     return null;
   }
 
-  Future<String> getTrainingStatus() async {
+  Future<String> getTrainingStatus({String? lane}) async {
     try {
-      final resp = await http.get(Uri.parse('$_base/v1/training/status'), headers: _h).timeout(const Duration(seconds: 5));
+      final uri = Uri.parse('$_base/v1/training/status').replace(
+        queryParameters: lane == null ? null : {'lane': lane},
+      );
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 5));
       if (resp.statusCode == 200) {
         return (jsonDecode(resp.body) as Map<String, dynamic>)['status'] as String? ?? 'idle';
       }
@@ -301,9 +304,12 @@ class EchoApiClient {
     return null;
   }
 
-  Future<Map<String, dynamic>?> getTrainingSummary() async {
+  Future<Map<String, dynamic>?> getTrainingSummary({String? lane}) async {
     try {
-      final resp = await http.get(Uri.parse('$_base/v1/training/summary'), headers: _h).timeout(const Duration(seconds: 10));
+      final uri = Uri.parse('$_base/v1/training/summary').replace(
+        queryParameters: lane == null ? null : {'lane': lane},
+      );
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('getTrainingSummary HTTP ${resp.statusCode}');
     } catch (e) {
@@ -369,11 +375,12 @@ class EchoApiClient {
     }
   }
 
-  Future<Map<String, dynamic>?> triggerTraining() async {
+  Future<Map<String, dynamic>?> triggerTraining({String? lane}) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};
+      final body = lane == null ? <String, dynamic>{} : {'lane': lane};
       final resp = await http
-          .post(Uri.parse('$_base/trigger-training'), headers: h, body: '{}')
+          .post(Uri.parse('$_base/trigger-training'), headers: h, body: jsonEncode(body))
           .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
       _log.warning('triggerTraining HTTP ${resp.statusCode}');
@@ -383,9 +390,12 @@ class EchoApiClient {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>> getTrainingHistory() async {
+  Future<List<Map<String, dynamic>>> getTrainingHistory({String? lane}) async {
     try {
-      final resp = await http.get(Uri.parse('$_base/v1/training/history'), headers: _h).timeout(const Duration(seconds: 10));
+      final uri = Uri.parse('$_base/v1/training/history').replace(
+        queryParameters: lane == null ? null : {'lane': lane},
+      );
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         return (data['checkpoints'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();

@@ -1,4 +1,6 @@
-﻿import 'dart:math' as math;
+// ignore_for_file: unused_element
+
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -130,7 +132,7 @@ class _YouTabState extends State<YouTab> {
       _report = results[4];
       _thesis = results[5];
       _trainingSummary = results[6];
-      _rank = results[7] as Map<String, dynamic>?;
+      _rank = results[7];
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
@@ -249,12 +251,6 @@ class _YouTabState extends State<YouTab> {
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
                 child: _buildTrainingStateSection(context),
               ),
-
-              _chapterLabel('VAULTS'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                child: _buildVaultsGrid(context),
-              ),
             ],
           ),
         ),
@@ -268,6 +264,14 @@ class _YouTabState extends State<YouTab> {
     final battles = (_trainingSummary?['tournament_battles'] as num?)?.toInt() ?? 0;
     final ready = _trainingSummary?['ready_for_training'] as bool? ?? false;
     final lastTrained = _trainedLabel(_stats?['last_trained'] as String?);
+    final adapter = Map<String, dynamic>.from(_trainingSummary?['adapter'] as Map? ?? {});
+    final adapterLoaded = adapter['loaded'] as bool? ?? false;
+    final adapterExists = adapter['exists'] as bool? ?? false;
+    final adapterLabel = adapterLoaded
+        ? 'personal clone live'
+        : adapterExists
+            ? 'adapter waiting'
+            : 'base Gemma';
 
     return GestureDetector(
       onTap: _openTrainingScreen,
@@ -305,8 +309,9 @@ class _YouTabState extends State<YouTab> {
               runSpacing: 8,
               children: [
                 _loopPill(Icons.chat_bubble_outline_rounded, '$totalPairs moments'),
-                _loopPill(Icons.hourglass_bottom_rounded, '$untrained new trainable'),
+                _loopPill(Icons.hourglass_bottom_rounded, '$untrained new since train'),
                 _loopPill(Icons.military_tech_rounded, '$battles battles'),
+                _loopPill(Icons.memory_rounded, adapterLabel),
                 if (lastTrained.isNotEmpty) _loopPill(Icons.check_circle_outline_rounded, lastTrained),
               ],
             ),
@@ -1656,7 +1661,7 @@ class _YouTabState extends State<YouTab> {
               tween: Tween(begin: 0.0, end: _loading ? 0.0 : progress),
               duration: const Duration(milliseconds: 1000),
               curve: Curves.easeOut,
-              builder: (_, value, __) => LinearProgressIndicator(
+              builder: (_, value, child) => LinearProgressIndicator(
                 value: value,
                 minHeight: 3,
                 backgroundColor: EchoColors.borderSubtle,

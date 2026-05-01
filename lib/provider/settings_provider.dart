@@ -194,8 +194,8 @@ final List<LLMProviderSetting> defaultApiSettings = [
     providerName: 'Echo',
     icon: 'ollama',
     custom: false,
-    models: ['shadow'],
-    enabledModels: ['shadow'],
+    models: ['shadow', 'gemma4_e2b'],
+    enabledModels: ['shadow', 'gemma4_e2b'],
   ),
   LLMProviderSetting(
     apiKey: '',
@@ -375,8 +375,29 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     for (var setting in defaultApiSettings) {
-      if (!settings.any((element) => element.providerId == setting.providerId)) {
+      final index = settings.indexWhere((element) => element.providerId == setting.providerId);
+      if (index == -1) {
         settings = [...settings, setting];
+      } else {
+        final existing = settings[index];
+        final mergedModels = {...?existing.models, ...?setting.models}.toList();
+        final mergedEnabledModels = {...?existing.enabledModels, ...?setting.enabledModels}.toList();
+        settings[index] = LLMProviderSetting(
+          apiKey: existing.apiKey,
+          apiEndpoint: existing.apiEndpoint,
+          apiVersion: existing.apiVersion,
+          apiStyle: existing.apiStyle,
+          providerName: existing.providerName,
+          models: mergedModels,
+          enabledModels: mergedEnabledModels,
+          providerId: existing.providerId,
+          custom: existing.custom,
+          icon: existing.icon,
+          genTitleModel: existing.genTitleModel,
+          link: existing.link,
+          priority: existing.priority,
+          enable: existing.enable,
+        );
       }
     }
 

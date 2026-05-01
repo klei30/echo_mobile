@@ -3,18 +3,24 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
+import 'package:chatmcp/echo/auth_service.dart';
 
-const _kOnboardedKey = 'echo_onboarded';
+const _kOnboardedKeyPrefix = 'echo_onboarded';
 
-/// Returns true if the user has completed onboarding.
+String _onboardingKey() {
+  final uid = AuthService().userId;
+  return uid != null && uid.isNotEmpty ? '${_kOnboardedKeyPrefix}_$uid' : _kOnboardedKeyPrefix;
+}
+
+/// Returns true if the current user has completed onboarding.
 Future<bool> hasCompletedOnboarding() async {
   final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool(_kOnboardedKey) ?? false;
+  return prefs.getBool(_onboardingKey()) ?? false;
 }
 
 Future<void> markOnboardingComplete() async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(_kOnboardedKey, true);
+  await prefs.setBool(_onboardingKey(), true);
 }
 
 class OnboardingPage extends StatefulWidget {

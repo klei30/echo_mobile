@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/provider/provider_manager.dart';
 
 // ─── 3D Gyroscope Orb ────────────────────────────────────────────────────────
 
@@ -585,6 +586,15 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   int _logStep = 0;
   Timer? _logTimer;
 
+  String? _trainingLane() {
+    final model = ProviderManager.chatModelProvider.currentModel;
+    final name = model.name.toLowerCase().replaceAll('-', '_');
+    if (model.providerId == 'echo' && name == 'gemma4_e2b') {
+      return 'gemma4_e2b';
+    }
+    return null;
+  }
+
   static const _logLines = [
     'Reading your conversations...',
     'Extracting behavioral patterns...',
@@ -614,8 +624,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       EchoApiClient().getUserStats(),
       EchoApiClient().getUserInsights(),
       EchoApiClient().getConfidence(),
-      EchoApiClient().getTrainingHistory(),
-      EchoApiClient().getTrainingSummary(),
+      EchoApiClient().getTrainingHistory(lane: _trainingLane()),
+      EchoApiClient().getTrainingSummary(lane: _trainingLane()),
     ]);
     if (!mounted) return;
     setState(() {
@@ -629,7 +639,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         _trainingStatus = 'running';
         _startLogAnimation();
         _startPolling();
-      } else if (!keepCompleteState && _trainingStatus != 'complete') {
+      } else if (!keepCompleteState && !_trainingStatus.startsWith('complete')) {
         _trainingStatus = 'idle';
       }
       _loading = false;
@@ -638,7 +648,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
 
   Future<void> _startTraining() async {
     HapticFeedback.mediumImpact();
-    final result = await EchoApiClient().triggerTraining();
+    final lane = _trainingLane();
+    final result = await EchoApiClient().triggerTraining(lane: lane);
     if (result == null) return;
 
     final status = result['status'] as String? ?? '';
@@ -681,14 +692,14 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 4), (t) async {
-      final status = await EchoApiClient().getTrainingStatus();
+      final status = await EchoApiClient().getTrainingStatus(lane: _trainingLane());
       if (!mounted) { t.cancel(); return; }
-      if (status == 'complete') {
+      if (status.startsWith('complete')) {
         t.cancel();
         _logTimer?.cancel();
         HapticFeedback.lightImpact();
         setState(() {
-          _trainingStatus = 'complete';
+          _trainingStatus = status;
           _logStep = _logLines.length - 1;
         });
         await _load(keepCompleteState: true);
@@ -714,7 +725,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   @override
   Widget build(BuildContext context) {
     final isRunning = _trainingStatus == 'running';
-    final isComplete = _trainingStatus == 'complete';
+    final isComplete = _trainingStatus.startsWith('complete');
 
     return Scaffold(
       backgroundColor: EchoColors.bg,
@@ -907,6 +918,14 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final prefs = s['preference_signals'] as int? ?? 0;
     final untrained = s['untrained_pairs'] as int? ?? 0;
     final leading = s['leading_style'] as String?;
+    final adapter = Map<String, dynamic>.from(s['adapter'] as Map? ?? {});
+    final adapterLoaded = adapter['loaded'] as bool? ?? false;
+    final adapterExists = adapter['exists'] as bool? ?? false;
+    final adapterLabel = adapterLoaded
+        ? 'personal clone live'
+        : adapterExists
+            ? 'adapter waiting'
+            : 'base Gemma';
 
     return Container(
       width: double.infinity,
@@ -954,7 +973,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             children: [
               _pill('$battles battles'),
               _pill('$prefs preference signals'),
-              _pill('$untrained new trainable'),
+              _pill('$untrained new since train'),
+              _pill(adapterLabel),
             ],
           ),
         ],
@@ -1065,7 +1085,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final ready = summary['ready_for_training'] as bool? ?? false;
     final label = ready
         ? 'Train Your Clone Now'
-        : '$untrained/$required new moments collected';
+        : '$untrained/$required new since last train';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1140,7 +1160,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         Text(
           ready
               ? '$untrained new moments will shape the next adapter'
-              : 'Keep chatting — more conversations improve training',
+              : 'Keep chatting - each useful turn becomes training signal',
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 11, color: EchoColors.textVeryGhost,
@@ -1153,6 +1173,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   // ─── ACTIVE TRAINING STATE ───────────────────────────────────────────────────
 
   Widget _buildActiveTraining(bool isRunning, bool isComplete) {
+    final adapterLoaded = _trainingStatus != 'complete_adapter_not_loaded';
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 40),
       child: Column(
@@ -1278,12 +1299,17 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline_rounded,
-                      size: 18, color: EchoColors.amber),
+                  Icon(
+                    adapterLoaded ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
+                    size: 18,
+                    color: EchoColors.amber,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'New adapter loaded. Your shadow clone is updated.',
+                      adapterLoaded
+                          ? 'New adapter loaded. Your shadow clone is updated.'
+                          : 'Training finished. Restart Gemma vLLM or reload the adapter to use the new clone.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         color: EchoColors.amberText,
@@ -1343,3 +1369,4 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     }
   }
 }
+
