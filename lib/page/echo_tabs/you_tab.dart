@@ -92,6 +92,15 @@ class _YouTabState extends State<YouTab> {
   bool _loading = true;
   bool _loggedThisSession = false;
 
+  String? _trainingLane() {
+    final model = ProviderManager.chatModelProvider.currentModel;
+    final name = model.name.toLowerCase().replaceAll('-', '_');
+    if (model.providerId == 'echo' && name == 'gemma4_e2b') {
+      return 'gemma4_e2b';
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +117,7 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getUserStats(),
       EchoApiClient().getUserReport(),
       EchoApiClient().getCurrentThesis(),
-      EchoApiClient().getTrainingSummary(),
+      EchoApiClient().getTrainingSummary(lane: _trainingLane()),
       EchoApiClient().getUserRank(),
     ]);
     if (!mounted) return;
