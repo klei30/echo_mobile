@@ -33,6 +33,20 @@ class _MessageActionsState extends State<MessageActions> {
     final content = widget.messages.last.content ?? '';
     if (content.isEmpty) return;
     EchoClient().sendFeedback(assistantMessage: content, signal: signal);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: EchoColors.bgCard,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Text(
+          signal == 'not_true' || signal == 'thumbs_down'
+              ? 'Correction saved. Echo will adjust.'
+              : 'Signal saved. Echo updated the loop.',
+          style: const TextStyle(fontSize: 12.5, color: EchoColors.textMuted),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -141,7 +155,7 @@ class _MessageActionsState extends State<MessageActions> {
                 _loopChip(
                   context,
                   Icons.military_tech_rounded,
-                  'Run shadows',
+                  'Send clones',
                   () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),

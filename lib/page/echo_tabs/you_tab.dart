@@ -107,8 +107,25 @@ class _YouTabState extends State<YouTab> {
   @override
   void initState() {
     super.initState();
+    EchoLoopState().addListener(_onLoopStateChanged);
     _load();
     _loadExperiment();
+  }
+
+  void _onLoopStateChanged() {
+    if (!mounted) return;
+    final loop = EchoLoopState();
+    setState(() {
+      _thesis = loop.thesis ?? _thesis;
+      _practice = loop.practice ?? _practice;
+      _rank = loop.rank ?? _rank;
+    });
+  }
+
+  @override
+  void dispose() {
+    EchoLoopState().removeListener(_onLoopStateChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -179,12 +196,26 @@ class _YouTabState extends State<YouTab> {
     if (result != null) {
       setState(() {
         _practice = {
-          ..._practice ?? {},
+          ...(_practice ?? {}),
           'logged': true,
           'done': done,
           'week_completions': result['week_completions'] ?? _practice?['week_completions'] ?? 0,
         };
       });
+      await EchoLoopState().refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: EchoColors.bgCard,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Text(
+              done ? 'Rep saved. Echo updated your read.' : 'Skipped saved. Echo will adjust.',
+              style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -233,12 +264,6 @@ class _YouTabState extends State<YouTab> {
                 child: _buildSendClonesButton(context),
               ),
 
-              _chapterLabel('ACTIVE LOOP'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildPracticeSection(),
-              ),
-
               _chapterLabel('CURRENT READ'),
               if (_thesis != null)
                 Padding(
@@ -246,7 +271,19 @@ class _YouTabState extends State<YouTab> {
                   child: _buildThesisCard(context),
                 ),
 
-              _chapterLabel('TRAINING STATE'),
+              _chapterLabel('EVIDENCE'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: _buildEvidenceSection(),
+              ),
+
+              _chapterLabel('TODAY\'S REP'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: _buildPracticeSection(),
+              ),
+
+              _chapterLabel('CLONE TRAINING'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
                 child: _buildTrainingStateSection(context),
@@ -254,6 +291,95 @@ class _YouTabState extends State<YouTab> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEvidenceSection() {
+    final evidence = (_thesis?['evidence'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .take(4)
+        .toList();
+    final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? evidence.length;
+
+    if (evidence.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Text(
+          'Keep talking and choosing outcomes. Echo will show the signals behind its read here.',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12.5,
+            height: 1.45,
+            color: EchoColors.textMuted,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.fact_check_rounded, size: 17, color: EchoColors.amber),
+              const SizedBox(width: 8),
+              Text(
+                '$evidenceCount signals behind the read',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: EchoColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...evidence.map((item) {
+            final summary = item['summary'] as String? ?? '';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 9),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(top: 7, right: 9),
+                    decoration: BoxDecoration(
+                      color: EchoColors.amber.withValues(alpha: 0.55),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      summary,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: EchoColors.textMuted,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -268,10 +394,10 @@ class _YouTabState extends State<YouTab> {
     final adapterLoaded = adapter['loaded'] as bool? ?? false;
     final adapterExists = adapter['exists'] as bool? ?? false;
     final adapterLabel = adapterLoaded
-        ? 'personal clone live'
+        ? 'your clone is live'
         : adapterExists
-            ? 'adapter waiting'
-            : 'base Gemma';
+            ? 'clone trained, waiting'
+            : 'learning from scratch';
 
     return GestureDetector(
       onTap: _openTrainingScreen,
@@ -292,7 +418,7 @@ class _YouTabState extends State<YouTab> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    ready ? 'Ready to train' : 'Collecting training signal',
+                    ready ? 'Ready to update your clone' : 'Collecting training signal',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -629,7 +755,23 @@ class _YouTabState extends State<YouTab> {
       score: score,
       note: 'Feedback from Echo current read card',
     );
-    if (mounted) _load();
+    await EchoLoopState().refresh();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: EchoColors.bgCard,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Text(
+            outcome == 'not_true'
+                ? 'Correction saved. Echo will adjust the read.'
+                : 'Signal saved. Echo updated the loop.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
+          ),
+        ),
+      );
+      _load();
+    }
   }
 
   Widget _buildThesisCard(BuildContext context) {
@@ -639,11 +781,6 @@ class _YouTabState extends State<YouTab> {
     final stage = _thesis?['stage'] as String? ?? 'forming';
     final confidence = _thesis?['confidence_label'] as String? ?? 'early';
     final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? 0;
-    final evidence = (_thesis?['evidence'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .take(3)
-        .toList();
     final action = Map<String, dynamic>.from(_thesis?['next_action'] as Map? ?? {});
     final actionLabel = action['label'] as String? ?? 'Open talent';
 
@@ -710,41 +847,6 @@ class _YouTabState extends State<YouTab> {
                 _loopPill(Icons.fact_check_rounded, '$evidenceCount evidence'),
               ],
             ),
-            if (evidence.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              ...evidence.map((item) {
-                final summary = item['summary'] as String? ?? '';
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 7),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 5,
-                        height: 5,
-                        margin: const EdgeInsets.only(top: 7, right: 8),
-                        decoration: BoxDecoration(
-                          color: EchoColors.amber.withValues(alpha: 0.55),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          summary,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11.5,
-                            color: EchoColors.textMuted,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
             const SizedBox(height: 14),
             Row(
               children: [
@@ -1419,7 +1521,7 @@ class _YouTabState extends State<YouTab> {
       child: Column(
         children: [
           _toolRow(
-            'Run your shadows',
+            'Send clones',
             'Test the current read against one real situation.',
             Icons.military_tech_rounded,
             EchoColors.amber,

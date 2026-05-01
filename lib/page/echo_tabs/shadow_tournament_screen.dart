@@ -148,7 +148,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Shadow Tournament',
+          'Send Clones',
           style: GoogleFonts.plusJakartaSans(
             color: EchoColors.textPrimary,
             fontSize: 16,
@@ -223,7 +223,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             ),
           ],
           const SizedBox(height: 18),
-          _primaryButton('Run four shadows', Icons.military_tech_rounded, _run),
+          _primaryButton('Send four clones', Icons.military_tech_rounded, _run),
           const SizedBox(height: 18),
           _hintRow(Icons.psychology_alt_rounded,
               'Pick the answer that actually helps. Echo turns that choice into clone-training signal.'),
@@ -237,7 +237,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Four versions of your shadow will compete.',
+          'Four versions of you will compete.',
           style: GoogleFonts.lora(
             color: EchoColors.textPrimary,
             fontSize: 26,
@@ -289,7 +289,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'The shadows are competing.',
+                  'Your clones are competing.',
                   style: GoogleFonts.plusJakartaSans(
                     color: EchoColors.textPrimary,
                     fontSize: 16,
@@ -484,12 +484,12 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
               ),
             ),
             const SizedBox(height: 28),
-            _primaryButton('Run another battle', Icons.refresh_rounded, _reset),
+            _primaryButton('Send clones again', Icons.refresh_rounded, _reset),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(
-                'Back to Echo',
+                'Back to loop',
                 style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.textGhost,
                   fontSize: 13,

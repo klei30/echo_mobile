@@ -764,7 +764,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                 ? 'TRAINING IN PROGRESS'
                 : isComplete
                     ? 'TRAINING COMPLETE'
-                    : 'SHADOW CLONE',
+                    : 'CLONE TRAINING',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -922,10 +922,10 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final adapterLoaded = adapter['loaded'] as bool? ?? false;
     final adapterExists = adapter['exists'] as bool? ?? false;
     final adapterLabel = adapterLoaded
-        ? 'personal clone live'
+        ? 'your clone is live'
         : adapterExists
-            ? 'adapter waiting'
-            : 'base Gemma';
+            ? 'clone trained, waiting'
+            : 'learning from scratch';
 
     return Container(
       width: double.infinity,
@@ -944,7 +944,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                   size: 16, color: EchoColors.amber),
               const SizedBox(width: 8),
               Text(
-                'SHADOW BATTLES',
+                'CLONE BATTLES',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w800,
@@ -1084,7 +1084,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final required = (summary['required_pairs'] as num?)?.toInt() ?? 20;
     final ready = summary['ready_for_training'] as bool? ?? false;
     final label = ready
-        ? 'Train Your Clone Now'
+        ? 'Update Your Clone Now'
         : '$untrained/$required new since last train';
 
     return Column(
@@ -1308,8 +1308,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                   Expanded(
                     child: Text(
                       adapterLoaded
-                          ? 'New adapter loaded. Your shadow clone is updated.'
-                          : 'Training finished. Restart Gemma vLLM or reload the adapter to use the new clone.',
+                          ? 'Your clone is updated and live.'
+                          : 'Training finished. Your clone is trained, but it is waiting to go live.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         color: EchoColors.amberText,

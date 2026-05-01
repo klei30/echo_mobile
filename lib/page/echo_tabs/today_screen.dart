@@ -65,7 +65,17 @@ class _TodayScreenState extends State<TodayScreen>
       duration: const Duration(milliseconds: 300),
     );
 
+    EchoLoopState().addListener(_onLoopStateChanged);
     _checkState();
+  }
+
+  void _onLoopStateChanged() {
+    if (!mounted) return;
+    final loop = EchoLoopState();
+    setState(() {
+      _priority = loop.todayPriority ?? _priority;
+      _practice = loop.practice ?? _practice;
+    });
   }
 
   void _showXp(String message) {
@@ -82,6 +92,7 @@ class _TodayScreenState extends State<TodayScreen>
 
   @override
   void dispose() {
+    EchoLoopState().removeListener(_onLoopStateChanged);
     _xpFade.dispose();
     _orbPulse.dispose();
     _contentFade.dispose();
@@ -819,6 +830,7 @@ class _TodayScreenState extends State<TodayScreen>
             ),
           ),
         );
+        await EchoLoopState().refresh();
         if (mounted) _showXp('+15 XP · Clones deployed');
         break;
       case 'open_council':
@@ -835,6 +847,7 @@ class _TodayScreenState extends State<TodayScreen>
         final repId = payload['rep_id'] as String?;
         if (repId != null) {
           await EchoApiClient().logPractice(repId, true);
+          await EchoLoopState().refresh();
           if (mounted) _showXp('+20 XP · Rep complete');
         }
         break;
@@ -872,7 +885,11 @@ class _TodayScreenState extends State<TodayScreen>
       score: score,
       note: 'Feedback from Today priority card',
     );
+    await EchoLoopState().refresh();
     if (mounted) {
+      _showXp(outcome == 'not_true'
+          ? 'Correction saved. Echo will adjust.'
+          : 'Signal saved. Echo updated the loop.');
       _contentFade.value = 0;
       _checkState();
     }

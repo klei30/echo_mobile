@@ -317,9 +317,9 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, 'CHANNEL', _EchoTabIcon.echo),
-              _navItem(1, 'MISSION', _EchoTabIcon.today),
-              _navItem(2, 'DOJO', _EchoTabIcon.you),
+              _navItem(0, 'TALK', _EchoTabIcon.echo),
+              _navItem(1, 'TODAY', _EchoTabIcon.today),
+              _navItem(2, 'YOU', _EchoTabIcon.you),
             ],
           ),
         ),
@@ -410,4 +410,3 @@ class _SonarRingsPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SonarRingsPainter old) => old.color != color;
 }
-
