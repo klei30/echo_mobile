@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/echo/echo_loop_state.dart';
 
 const _kOnboardedKeyPrefix = 'echo_onboarded';
 
@@ -33,6 +35,8 @@ class OnboardingPage extends StatefulWidget {
 
 class _OnboardingPageState extends State<OnboardingPage> {
   int _step = 0;
+  bool _submitting = false;
+  Map<String, dynamic>? _firstRead;
 
   // Step 2 toggles
   final Map<String, bool> _connections = {
@@ -51,9 +55,36 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  void _next() async {
+  Future<void> _next() async {
     if (_step < 2) {
       setState(() => _step++);
+    } else if (_step == 2) {
+      final answer = _answerCtrl.text.trim();
+      if (answer.length < 8) return;
+      setState(() => _submitting = true);
+      final result = await EchoApiClient().submitOnboardingFirstRead(answer);
+      if (!mounted) return;
+      if (result != null) {
+        final delta = result['loop_delta'];
+        if (delta is Map) {
+          EchoLoopState().apply(
+            snapshot: delta['snapshot'] is Map ? Map<String, dynamic>.from(delta['snapshot'] as Map) : null,
+            todayPriority: delta['today_priority'] is Map ? Map<String, dynamic>.from(delta['today_priority'] as Map) : null,
+            thesis: delta['thesis'] is Map ? Map<String, dynamic>.from(delta['thesis'] as Map) : null,
+          );
+        } else {
+          await EchoLoopState().refresh();
+        }
+        setState(() {
+          _firstRead = result;
+          _submitting = false;
+          _step = 3;
+        });
+      } else {
+        setState(() => _submitting = false);
+        await markOnboardingComplete();
+        widget.onComplete();
+      }
     } else {
       await markOnboardingComplete();
       widget.onComplete();
@@ -78,7 +109,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return switch (step) {
       0 => _buildPromise(key: const ValueKey(0)),
       1 => _buildConnect(key: const ValueKey(1)),
-      _ => _buildFirstQuestion(key: const ValueKey(2)),
+      2 => _buildFirstQuestion(key: const ValueKey(2)),
+      _ => _buildFirstRead(key: const ValueKey(3)),
     };
   }
 
@@ -123,7 +155,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: _next,
+            onTap: () => _next(),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
               decoration: BoxDecoration(
@@ -203,7 +235,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           }),
           const Spacer(),
           GestureDetector(
-            onTap: _next,
+            onTap: () => _next(),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -285,7 +317,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           Row(children: [
             Expanded(
               child: GestureDetector(
-                onTap: _next,
+                onTap: _submitting ? null : () => _next(),
                 child: Container(
                   padding: const EdgeInsets.all(13),
                   decoration: BoxDecoration(
@@ -296,14 +328,110 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Text('Send',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: EchoColors.bg)),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 19,
+                          width: 19,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: EchoColors.bg),
+                        )
+                      : Text('Send',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14, fontWeight: FontWeight.w600, color: EchoColors.bg)),
                 ),
               ),
             ),
           ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFirstRead({Key? key}) {
+    final title = _firstRead?['title'] as String? ?? 'A first signal is visible.';
+    final read = _firstRead?['read'] as String? ??
+        'Echo has enough of a first signal to begin watching a real pattern.';
+    final nextMove = _firstRead?['next_move'] as String? ?? 'Keep talking until Echo can test this with clones.';
+
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.fromLTRB(32, 18, 32, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Spacer(),
+          Center(child: EchoOrb(size: 62, rings: 3)),
+          const SizedBox(height: 34),
+          Text(
+            title,
+            style: GoogleFonts.lora(
+              fontSize: 26,
+              fontWeight: FontWeight.w500,
+              fontStyle: FontStyle.italic,
+              color: EchoColors.textPrimary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            read,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              color: EchoColors.textMuted,
+              height: 1.65,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: EchoColors.amber.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: EchoColors.amber.withValues(alpha: 0.20)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.bolt_rounded, size: 17, color: EchoColors.amber),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    nextMove,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: EchoColors.amberText,
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _next(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFB46A28), Color(0xFFE0A850)],
+                ),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Text(
+                'Start talking',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: EchoColors.bg,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

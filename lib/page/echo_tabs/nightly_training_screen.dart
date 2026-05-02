@@ -916,6 +916,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final s = _trainingSummary ?? {};
     final battles = s['tournament_battles'] as int? ?? 0;
     final prefs = s['preference_signals'] as int? ?? 0;
+    final dpoReady = (s['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (s['dpo_required_pairs'] as num?)?.toInt() ?? 4;
     final untrained = s['untrained_pairs'] as int? ?? 0;
     final leading = s['leading_style'] as String?;
     final adapter = Map<String, dynamic>.from(s['adapter'] as Map? ?? {});
@@ -957,8 +959,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
           const SizedBox(height: 10),
           Text(
             leading == null
-                ? 'Run tournaments to teach Echo which shadow helps.'
-                : '$leading is currently winning your shadow tournaments.',
+                ? 'Send clones to teach Echo which response actually helps.'
+                : '$leading is currently winning your clone battles.',
             style: GoogleFonts.lora(
               fontSize: 15,
               height: 1.5,
@@ -973,6 +975,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             children: [
               _pill('$battles battles'),
               _pill('$prefs preference signals'),
+              _pill('$dpoReady/$dpoRequired DPO-ready'),
               _pill('$untrained new since train'),
               _pill(adapterLabel),
             ],
@@ -1083,6 +1086,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final untrained = (summary['untrained_pairs'] as num?)?.toInt() ?? 0;
     final required = (summary['required_pairs'] as num?)?.toInt() ?? 20;
     final ready = summary['ready_for_training'] as bool? ?? false;
+    final dpoReady = (summary['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (summary['dpo_required_pairs'] as num?)?.toInt() ?? 4;
     final label = ready
         ? 'Update Your Clone Now'
         : '$untrained/$required new since last train';
@@ -1159,7 +1164,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         const SizedBox(height: 10),
         Text(
           ready
-              ? '$untrained new moments will shape the next adapter'
+              ? '$untrained new moments + $dpoReady/$dpoRequired preference battles will shape the next adapter'
               : 'Keep chatting - each useful turn becomes training signal',
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
@@ -1174,6 +1179,15 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
 
   Widget _buildActiveTraining(bool isRunning, bool isComplete) {
     final adapterLoaded = _trainingStatus != 'complete_adapter_not_loaded';
+    final summary = _trainingSummary ?? {};
+    final leading = summary['leading_style'] as String?;
+    final dpoReady = (summary['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final prefSignals = (summary['preference_signals'] as num?)?.toInt() ?? 0;
+    final completeSummary = leading != null
+        ? 'Your clone learned from $prefSignals preference signals. $leading is the style winning most often.'
+        : dpoReady > 0
+            ? 'Your clone learned from $prefSignals preference signals and $dpoReady preference battles.'
+            : 'Your clone learned your latest style. Send clones to add stronger preference signal.';
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 40),
       child: Column(
@@ -1308,7 +1322,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                   Expanded(
                     child: Text(
                       adapterLoaded
-                          ? 'Your clone is updated and live.'
+                          ? 'Your clone is updated and live. $completeSummary'
                           : 'Training finished. Your clone is trained, but it is waiting to go live.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,

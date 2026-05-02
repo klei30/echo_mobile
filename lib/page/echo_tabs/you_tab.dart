@@ -388,6 +388,8 @@ class _YouTabState extends State<YouTab> {
     final totalPairs = (_stats?['total_pairs'] as num?)?.toInt() ?? 0;
     final untrained = (_trainingSummary?['untrained_pairs'] as num?)?.toInt() ?? 0;
     final battles = (_trainingSummary?['tournament_battles'] as num?)?.toInt() ?? 0;
+    final dpoReady = (_trainingSummary?['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (_trainingSummary?['dpo_required_pairs'] as num?)?.toInt() ?? 4;
     final ready = _trainingSummary?['ready_for_training'] as bool? ?? false;
     final lastTrained = _trainedLabel(_stats?['last_trained'] as String?);
     final adapter = Map<String, dynamic>.from(_trainingSummary?['adapter'] as Map? ?? {});
@@ -437,6 +439,7 @@ class _YouTabState extends State<YouTab> {
                 _loopPill(Icons.chat_bubble_outline_rounded, '$totalPairs moments'),
                 _loopPill(Icons.hourglass_bottom_rounded, '$untrained new since train'),
                 _loopPill(Icons.military_tech_rounded, '$battles battles'),
+                _loopPill(Icons.compare_arrows_rounded, '$dpoReady/$dpoRequired DPO-ready'),
                 _loopPill(Icons.memory_rounded, adapterLabel),
                 if (lastTrained.isNotEmpty) _loopPill(Icons.check_circle_outline_rounded, lastTrained),
               ],

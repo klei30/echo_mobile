@@ -203,6 +203,20 @@ class EchoApiClient {
     return null;
   }
 
+  Future<Map<String, dynamic>?> submitOnboardingFirstRead(String answer) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(Uri.parse('$_base/v1/onboarding/first-read'), headers: h, body: jsonEncode({'answer': answer}))
+          .timeout(const Duration(seconds: 12));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('submitOnboardingFirstRead HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('submitOnboardingFirstRead error: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> getPracticeToday() async {
     try {
       final resp = await http.get(Uri.parse('$_base/v1/practice/today'), headers: _h).timeout(const Duration(seconds: 30));

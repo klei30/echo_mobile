@@ -214,7 +214,16 @@ class ChatUIMessage extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 278),
                 child: Column(
                   crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [_buildMessageGroup(context, messages, isUser)],
+                  children: [
+                    _buildMessageGroup(context, messages, isUser),
+                    if (messages.last.role != MessageRole.loading)
+                      MessageActions(
+                        messages: messages,
+                        onRetry: onRetry,
+                        onSwitch: onSwitch,
+                        isUser: isUser,
+                      ),
+                  ],
                 ),
               ),
             ),

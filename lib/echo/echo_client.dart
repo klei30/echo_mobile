@@ -179,6 +179,9 @@ class EchoClient {
               'subject_type': 'chat_response',
               'outcome': signal,
               'score': scores[signal] ?? 0.5,
+              'user_message': userMsg,
+              'assistant_message': assistantMessage,
+              'model_used': _lastModelUsed.isEmpty ? 'unknown' : _lastModelUsed,
               'note': jsonEncode({
                 'user_preview': userMsg.substring(0, userMsg.length.clamp(0, 240)),
                 'assistant_preview': assistantMessage.substring(0, assistantMessage.length.clamp(0, 240)),
