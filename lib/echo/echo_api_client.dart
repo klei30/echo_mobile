@@ -307,6 +307,88 @@ class EchoApiClient {
     return null;
   }
 
+  Future<Map<String, dynamic>?> getTodayMission() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/today/mission'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getTodayMission HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getTodayMission error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getRealityCheck() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/reality/check'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getRealityCheck HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getRealityCheck error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getGrowthTimeline() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/growth/timeline'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getGrowthTimeline HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getGrowthTimeline error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getRevelationStatus() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/revelation/status'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getRevelationStatus HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getRevelationStatus error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getLatestCloneMission() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/clone-mission/latest'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getLatestCloneMission HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getLatestCloneMission error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getNextIntervention() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/interventions/next'), headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getNextIntervention HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getNextIntervention error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> ackIntervention(String id, {String status = 'acknowledged'}) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/interventions/ack'),
+            headers: {..._h, 'Content-Type': 'application/json'},
+            body: jsonEncode({'id': id, 'status': status}),
+          )
+          .timeout(const Duration(seconds: 8));
+      return resp.statusCode == 200;
+    } catch (e) {
+      _log.warning('ackIntervention error: $e');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> getCurrentThesis() async {
     try {
       final resp = await http.get(Uri.parse('$_base/v1/thesis/current'), headers: _h).timeout(const Duration(seconds: 12));
@@ -328,6 +410,20 @@ class EchoApiClient {
       _log.warning('getTrainingSummary HTTP ${resp.statusCode}');
     } catch (e) {
       _log.warning('getTrainingSummary error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getTrainingEval({String? lane}) async {
+    try {
+      final uri = Uri.parse('$_base/v1/training/eval').replace(
+        queryParameters: lane == null ? null : {'lane': lane},
+      );
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getTrainingEval HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getTrainingEval error: $e');
     }
     return null;
   }

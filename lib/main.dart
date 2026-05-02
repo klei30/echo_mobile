@@ -1,4 +1,5 @@
 import 'package:chatmcp/dao/init_db.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart' as wm;
@@ -11,7 +12,11 @@ import 'utils/platform.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/notification_service.dart';
-import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
+import 'package:chatmcp/page/echo_tabs/today_screen.dart';
+import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
+import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
+import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
+import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'utils/init.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:chatmcp/generated/app_localizations.dart';
@@ -65,11 +70,10 @@ void main() async {
     await ProviderManager.init();
 
     await initNotifications(
-      onTap: () async {
+      onTap: (payload) async {
         await Future.delayed(const Duration(milliseconds: 300));
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
-        );
+        final screen = _screenForNotificationPayload(payload);
+        navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => screen));
       },
     );
 
@@ -84,6 +88,28 @@ void main() async {
   } catch (e, stackTrace) {
     Logger.root.severe('Main error: $e\nStack trace:\n$stackTrace');
   }
+}
+
+Widget _screenForNotificationPayload(String? payload) {
+  try {
+    final data = jsonDecode(payload ?? '{}') as Map<String, dynamic>;
+    final kind = data['kind'] as String? ?? '';
+    final action = data['action'] is Map ? Map<String, dynamic>.from(data['action'] as Map) : {};
+    final actionType = action['type'] as String? ?? '';
+    if (kind == 'training_ready' || actionType == 'open_training') {
+      return const NightlyTrainingScreen();
+    }
+    if (kind == 'growth_proof' || actionType == 'open_growth_timeline') {
+      return const GrowthTimelineScreen();
+    }
+    if (kind == 'talent_revelation' || actionType == 'open_revelation') {
+      return const TalentScreen();
+    }
+    if (kind == 'clone_returned' || actionType == 'open_clone_mission') {
+      return const ShadowTournamentScreen();
+    }
+  } catch (_) {}
+  return const TodayScreen();
 }
 
 class MyApp extends StatelessWidget {

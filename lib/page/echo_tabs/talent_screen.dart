@@ -85,7 +85,7 @@ class _TalentScreenState extends State<TalentScreen> {
     final traitName = _talent?['trait_name'] as String? ?? '';
     final narrative = _talent?['narrative'] as String? ?? '';
     final evidence = (_talent?['evidence'] as List?)?.map((e) => e.toString()).toList() ?? [];
-    final rarityPct = _talent?['rarity_pct'] as int? ?? 5;
+    final rarityPct = _talent?['rarity_pct'] as int?;
     final whatItMeans = _talent?['what_it_means'] as String? ?? '';
     final weeksActive = _talent?['weeks_active'] as int? ?? 1;
     final totalPairs = _talent?['total_pairs'] as int? ?? 0;
@@ -110,6 +110,8 @@ class _TalentScreenState extends State<TalentScreen> {
             const SizedBox(height: 28),
             _buildWhatItMeans(whatItMeans),
           ],
+          const SizedBox(height: 24),
+          _buildCorrectionRow(),
           const SizedBox(height: 32),
           _buildFooter(weeksActive, totalPairs),
         ],
@@ -193,7 +195,7 @@ class _TalentScreenState extends State<TalentScreen> {
     );
   }
 
-  Widget _buildTraitName(String name, int rarityPct) {
+  Widget _buildTraitName(String name, int? rarityPct) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -231,7 +233,7 @@ class _TalentScreenState extends State<TalentScreen> {
                   border: Border.all(color: EchoColors.amber.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  'Top $rarityPct% of users',
+                  rarityPct == null ? 'Personal baseline' : 'Top $rarityPct% signal',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 10, fontWeight: FontWeight.w600,
                     color: EchoColors.amberText,
@@ -362,6 +364,55 @@ class _TalentScreenState extends State<TalentScreen> {
           fontSize: 11, height: 1.6, color: EchoColors.textGhost,
         ),
       ),
+    );
+  }
+
+  Widget _buildCorrectionRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () async {
+              await EchoApiClient().recordOutcome(
+                subjectType: 'talent_read',
+                outcome: 'not_true',
+                score: -0.8,
+                note: 'User rejected talent revelation',
+              );
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: EchoColors.bgCard,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  content: Text(
+                    'Correction saved. Echo will adjust the deeper read.',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                color: EchoColors.bgSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: EchoColors.borderSubtle),
+              ),
+              child: Center(
+                child: Text(
+                  'This does not fit me',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: EchoColors.textGhost,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -39,6 +39,7 @@ class _TodayScreenState extends State<TodayScreen>
   Map<String, dynamic>? _signal;
   Map<String, dynamic>? _practice;
   Map<String, dynamic>? _priority;
+  Map<String, dynamic>? _mission;
 
   // XP pill
   String? _xpMessage;
@@ -75,6 +76,7 @@ class _TodayScreenState extends State<TodayScreen>
     setState(() {
       _priority = loop.todayPriority ?? _priority;
       _practice = loop.practice ?? _practice;
+      _mission = loop.mission ?? _mission;
     });
   }
 
@@ -107,6 +109,7 @@ class _TodayScreenState extends State<TodayScreen>
       EchoApiClient().getCheckinStatus(),
       EchoApiClient().getUserSignal(),
       EchoApiClient().getPracticeToday(),
+      EchoApiClient().getTodayMission(),
     ]);
     if (!mounted) return;
 
@@ -114,8 +117,9 @@ class _TodayScreenState extends State<TodayScreen>
     final checkinDone = results[1] as bool;
     _signal = results[2] as Map<String, dynamic>?;
     _practice = results[3] as Map<String, dynamic>?;
+    _mission = results[4] as Map<String, dynamic>?;
     _priority = await EchoApiClient().getTodayPriority();
-    EchoLoopState().apply(todayPriority: _priority);
+    EchoLoopState().apply(todayPriority: _priority, mission: _mission);
     if (!mounted) return;
 
     // Morning check-in gate: before 14:00 local time and not done today
@@ -581,7 +585,9 @@ class _TodayScreenState extends State<TodayScreen>
 
                 if (hasThread) const SizedBox(height: 10),
 
-                if (_priority != null) _buildPriorityCard(_priority!),
+                if (_mission != null) _buildDailyMissionCard(_mission!),
+
+                if (_priority != null && _mission == null) _buildPriorityCard(_priority!),
 
                 // Practice hint — compact, low-key
                 if (practiceTitle != null)
@@ -893,6 +899,162 @@ class _TodayScreenState extends State<TodayScreen>
       _contentFade.value = 0;
       _checkState();
     }
+  }
+
+  Widget _buildDailyMissionCard(Map<String, dynamic> mission) {
+    final headline = mission['headline'] as String? ?? 'Echo has one mission today.';
+    final why = mission['why'] as String? ?? '';
+    final priority = mission['priority'] is Map
+        ? Map<String, dynamic>.from(mission['priority'] as Map)
+        : <String, dynamic>{};
+    final cloneMission = mission['clone_mission'] is Map
+        ? Map<String, dynamic>.from(mission['clone_mission'] as Map)
+        : null;
+    final reality = mission['reality_check'] is Map
+        ? Map<String, dynamic>.from(mission['reality_check'] as Map)
+        : null;
+    final growth = mission['growth'] is Map
+        ? Map<String, dynamic>.from(mission['growth'] as Map)
+        : null;
+    final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
+    final actionType = action['type'] as String? ?? 'none';
+    final actionLabel = action['label'] as String? ?? 'Start';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.022),
+        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.wb_sunny_outlined,
+                  size: 15, color: EchoColors.amber.withValues(alpha: 0.58)),
+              const SizedBox(width: 8),
+              Text(
+                'DAILY MISSION',
+                style: GoogleFonts.inter(
+                  color: EchoColors.amber.withValues(alpha: 0.42),
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Text(
+            headline,
+            style: GoogleFonts.inter(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
+            ),
+          ),
+          if (why.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              why,
+              style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.36),
+                fontSize: 12.5,
+                height: 1.45,
+              ),
+            ),
+          ],
+          if (cloneMission != null) ...[
+            const SizedBox(height: 12),
+            _missionLine(
+              Icons.military_tech_outlined,
+              'Clone returned',
+              cloneMission['suggested_action'] as String? ?? 'A clone mission is ready.',
+            ),
+          ],
+          if (reality != null) ...[
+            const SizedBox(height: 8),
+            _missionLine(
+              Icons.fact_check_outlined,
+              'Reality check',
+              reality['title'] as String? ?? 'Echo is comparing words and behavior.',
+            ),
+          ],
+          if (growth != null) ...[
+            const SizedBox(height: 8),
+            _missionLine(
+              Icons.timeline_outlined,
+              'Proof',
+              growth['headline'] as String? ?? 'Growth proof is forming.',
+            ),
+          ],
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              if (actionType != 'none')
+                GestureDetector(
+                  onTap: () => _handlePriorityAction(priority),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: EchoColors.amber.withValues(alpha: 0.11),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: EchoColors.amber.withValues(alpha: 0.24)),
+                    ),
+                    child: Text(
+                      actionLabel,
+                      style: GoogleFonts.inter(
+                        color: EchoColors.amber.withValues(alpha: 0.78),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              if (priority.isNotEmpty) ...[
+                _miniOutcome(priority, 'helped', 'Helpful', 1.0),
+                const SizedBox(width: 8),
+                _miniOutcome(priority, 'not_true', 'Not true', -0.5),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _missionLine(IconData icon, String label, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.22)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.30),
+                fontSize: 11.5,
+                height: 1.35,
+              ),
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: TextStyle(color: EchoColors.amber.withValues(alpha: 0.42)),
+                ),
+                TextSpan(text: text),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildPriorityCard(Map<String, dynamic> priority) {

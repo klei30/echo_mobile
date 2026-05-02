@@ -11,16 +11,24 @@ class EchoLoopState extends ChangeNotifier {
   Map<String, dynamic>? thesis;
   Map<String, dynamic>? rank;
   Map<String, dynamic>? practice;
+  Map<String, dynamic>? mission;
+  Map<String, dynamic>? realityCheck;
+  Map<String, dynamic>? growthTimeline;
+  Map<String, dynamic>? intervention;
   bool loading = false;
 
   void apply({
     Map<String, dynamic>? snapshot,
     Map<String, dynamic>? todayPriority,
     Map<String, dynamic>? thesis,
+    Map<String, dynamic>? mission,
+    Map<String, dynamic>? intervention,
   }) {
     if (snapshot != null) this.snapshot = snapshot;
     if (todayPriority != null) this.todayPriority = todayPriority;
     if (thesis != null) this.thesis = thesis;
+    if (mission != null) this.mission = mission;
+    if (intervention != null) this.intervention = intervention;
     notifyListeners();
   }
 
@@ -35,12 +43,22 @@ class EchoLoopState extends ChangeNotifier {
         EchoApiClient().getCurrentThesis(),
         EchoApiClient().getUserRank(),
         EchoApiClient().getPracticeToday(),
+        EchoApiClient().getTodayMission(),
+        EchoApiClient().getRealityCheck(),
+        EchoApiClient().getGrowthTimeline(),
+        EchoApiClient().getNextIntervention(),
       ]);
       snapshot = results[0];
       todayPriority = results[1];
       thesis = results[2];
       rank = results[3];
       practice = results[4];
+      mission = results[5];
+      realityCheck = results[6];
+      growthTimeline = results[7];
+      final interventionData = results[8];
+      final next = interventionData?['intervention'];
+      intervention = next is Map ? Map<String, dynamic>.from(next) : null;
     } finally {
       loading = false;
       notifyListeners();

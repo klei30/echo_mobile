@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:logging/logging.dart';
+import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
 
 final _log = Logger('echo.notifications');
 
@@ -16,7 +19,7 @@ const _notifId = 42;
 /// Initialize and schedule the nightly Evening Signal notification.
 /// Safe to call on all platforms — silently no-ops on desktop/web.
 Future<void> initNotifications({
-  required Future<void> Function() onTap,
+  required Future<void> Function(String? payload) onTap,
 }) async {
   if (kIsWeb || (!_isMobile)) return;
 
@@ -31,7 +34,7 @@ Future<void> initNotifications({
 
   await _plugin.initialize(
     const InitializationSettings(android: android, iOS: ios),
-    onDidReceiveNotificationResponse: (_) async => onTap(),
+    onDidReceiveNotificationResponse: (response) async => onTap(response.payload),
     onDidReceiveBackgroundNotificationResponse: _bgHandler,
   );
 
@@ -41,6 +44,7 @@ Future<void> initNotifications({
       ?.requestNotificationsPermission();
 
   await _scheduleEveningSignal();
+  await syncEchoInterventionNotification();
 }
 
 @pragma('vm:entry-point')
@@ -100,6 +104,69 @@ Future<void> _scheduleEveningSignal() async {
   );
 
   _log.info('Evening Signal scheduled for ${scheduled.hour}:00 daily (exact: ${scheduleMode == AndroidScheduleMode.exactAllowWhileIdle})');
+}
+
+Future<void> syncEchoInterventionNotification() async {
+  if (kIsWeb || (!_isMobile) || !AuthService().isLoggedIn) return;
+  try {
+    final data = await EchoApiClient().getNextIntervention();
+    final intervention = data?['intervention'];
+    if (intervention is! Map) return;
+
+    final id = intervention['id']?.toString();
+    final title = intervention['title']?.toString() ?? 'Echo noticed something';
+    final body = intervention['body']?.toString() ?? 'Open Today to see the next useful move.';
+    final scheduledRaw = intervention['scheduled_for']?.toString();
+    if (id == null || id.isEmpty) return;
+
+    var scheduled = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 2));
+    if (scheduledRaw != null && scheduledRaw.isNotEmpty) {
+      final parsed = DateTime.tryParse(scheduledRaw.replaceFirst(' ', 'T'));
+      if (parsed != null) {
+        scheduled = tz.TZDateTime.from(parsed.toLocal(), tz.local);
+        if (scheduled.isBefore(tz.TZDateTime.now(tz.local))) {
+          scheduled = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 2));
+        }
+      }
+    }
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: 'Trusted Echo interventions with visible reasons',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableLights: true,
+        playSound: true,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    await _plugin.zonedSchedule(
+      id.hashCode & 0x7fffffff,
+      title,
+      body,
+      scheduled,
+      details,
+      payload: jsonEncode({
+        'id': id,
+        'kind': intervention['kind']?.toString(),
+        'action': intervention['action'],
+      }),
+      androidScheduleMode: AndroidScheduleMode.inexact,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+    await EchoApiClient().ackIntervention(id, status: 'delivered');
+    _log.info('Echo intervention scheduled: $title at $scheduled');
+  } catch (e) {
+    _log.warning('syncEchoInterventionNotification error: $e');
+  }
 }
 
 bool get _isMobile {

@@ -166,6 +166,7 @@ class EchoClient {
       'thumbs_up': 1.0,
       'helped': 1.0,
       'saved_signal': 1.2,
+      'practice_request': 1.1,
       'thumbs_down': -1.0,
       'not_true': -0.7,
     };

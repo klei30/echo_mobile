@@ -10,6 +10,8 @@ import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
+import 'package:chatmcp/page/echo_tabs/echo_lab_screen.dart';
+import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
 import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
 import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
@@ -92,6 +94,8 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _thesis;
   Map<String, dynamic>? _trainingSummary;
   Map<String, dynamic>? _rank;
+  Map<String, dynamic>? _growthTimeline;
+  Map<String, dynamic>? _revelationStatus;
   bool _loading = true;
   bool _loggedThisSession = false;
 
@@ -139,6 +143,8 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getCurrentThesis(),
       EchoApiClient().getTrainingSummary(lane: _trainingLane()),
       EchoApiClient().getUserRank(),
+      EchoApiClient().getGrowthTimeline(),
+      EchoApiClient().getRevelationStatus(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -150,6 +156,8 @@ class _YouTabState extends State<YouTab> {
       _thesis = results[5];
       _trainingSummary = results[6];
       _rank = results[7];
+      _growthTimeline = results[8];
+      _revelationStatus = results[9];
       _loggedThisSession = _practice?['logged'] as bool? ?? false;
       _loading = false;
     });
@@ -261,7 +269,7 @@ class _YouTabState extends State<YouTab> {
               _buildRankBar(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
-                child: _buildSendClonesButton(context),
+                child: _buildPrimaryActions(context),
               ),
 
               _chapterLabel('CURRENT READ'),
@@ -271,22 +279,33 @@ class _YouTabState extends State<YouTab> {
                   child: _buildThesisCard(context),
                 ),
 
+              _chapterLabel('REVELATION'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: _buildRevelationReadinessCard(context),
+              ),
+
+              _chapterLabel('GROWTH TIMELINE'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                child: _buildTimelinePreview(context),
+              ),
+
               _chapterLabel('EVIDENCE'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                 child: _buildEvidenceSection(),
               ),
 
-              _chapterLabel('TODAY\'S REP'),
+              _chapterLabel('TRUST'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildPracticeSection(),
+                child: _buildTrustSection(),
               ),
 
-              _chapterLabel('CLONE TRAINING'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
-                child: _buildTrainingStateSection(context),
+                child: _buildLabEntry(context),
               ),
             ],
           ),
@@ -380,6 +399,277 @@ class _YouTabState extends State<YouTab> {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPrimaryActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _buildSendClonesButton(context)),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const EchoLabScreen()),
+          ),
+          child: Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: EchoColors.bgSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: EchoColors.borderSubtle),
+            ),
+            child: const Icon(Icons.science_outlined, color: EchoColors.textMuted, size: 20),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRevelationReadinessCard(BuildContext context) {
+    final status = _revelationStatus ?? {};
+    final state = status['state'] as String? ?? 'watching';
+    final ready = status['ready'] as bool? ?? false;
+    final score = (status['score'] as num?)?.toDouble() ?? 0.0;
+    final headline = status['headline'] as String? ?? 'Echo is still watching for the deeper pattern.';
+    final weeks = (status['weeks_watched'] as num?)?.toInt() ?? 0;
+    final requirements = (status['requirements'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    return GestureDetector(
+      onTap: ready
+          ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen()))
+          : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ready ? const Color(0xFF1A1510) : EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: ready ? EchoColors.amber.withValues(alpha: 0.38) : EchoColors.borderSubtle,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(ready ? Icons.auto_awesome_rounded : Icons.radar_rounded,
+                    size: 17, color: ready ? EchoColors.amber : EchoColors.textGhost),
+                const SizedBox(width: 8),
+                Text(
+                  state == 'revealed'
+                      ? 'REVELATION DELIVERED'
+                      : ready
+                          ? 'REVELATION READY'
+                          : 'REVELATION FORMING',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 9.5,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w800,
+                    color: ready ? EchoColors.amber : EchoColors.textGhost,
+                  ),
+                ),
+                const Spacer(),
+                if (weeks > 0)
+                  Text('$weeks wk',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textVeryGhost)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              headline,
+              style: GoogleFonts.lora(
+                fontSize: 17,
+                height: 1.4,
+                fontStyle: FontStyle.italic,
+                color: EchoColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 13),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: score.clamp(0.0, 1.0),
+                minHeight: 5,
+                backgroundColor: EchoColors.borderSubtle,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  ready ? EchoColors.amber : EchoColors.amber.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: requirements.map((r) {
+                final complete = r['complete'] == true;
+                final label = r['label'] as String? ?? 'Signal';
+                final current = (r['current'] as num?)?.toInt() ?? 0;
+                final target = (r['target'] as num?)?.toInt() ?? 1;
+                return _loopPill(
+                  complete ? Icons.check_circle_outline_rounded : Icons.radio_button_unchecked_rounded,
+                  '$label $current/$target',
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 13),
+            Text(
+              ready ? 'Open Revelation' : 'Echo is waiting for enough signal before naming this.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: ready ? EchoColors.amber : EchoColors.textGhost,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimelinePreview(BuildContext context) {
+    final headline = _growthTimeline?['headline'] as String? ?? 'Proof is still forming.';
+    final stats = Map<String, dynamic>.from(_growthTimeline?['stats'] as Map? ?? {});
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const GrowthTimelineScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.timeline_rounded, size: 17, color: EchoColors.amber),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    headline,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.textPrimary,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _loopPill(Icons.flag_outlined, '${stats['milestones'] ?? 0} milestones'),
+                _loopPill(Icons.bolt_outlined, '${stats['practice_done'] ?? 0} reps'),
+                _loopPill(Icons.military_tech_outlined, '${stats['clone_battles'] ?? 0} battles'),
+                _loopPill(Icons.memory_outlined, '${stats['model_updates'] ?? 0} updates'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrustSection() {
+    final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_user_outlined, size: 17, color: EchoColors.indigo),
+              const SizedBox(width: 8),
+              Text(
+                'You can correct Echo',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: EchoColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Major reads show their evidence and include Not true feedback. Echo should adapt to corrections, not declare identity as fact.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12.3, height: 1.45, color: EchoColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _loopPill(Icons.fact_check_outlined, '$evidenceCount evidence'),
+              _loopPill(Icons.lock_outline_rounded, 'local-first'),
+              _loopPill(Icons.cancel_outlined, 'Not true enabled'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabEntry(BuildContext context) {
+    final ready = _trainingSummary?['ready_for_training'] as bool? ?? false;
+    final dpoReady = (_trainingSummary?['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (_trainingSummary?['dpo_required_pairs'] as num?)?.toInt() ?? 4;
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const EchoLabScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: ready ? EchoColors.amber.withValues(alpha: 0.30) : EchoColors.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.science_outlined, size: 18, color: ready ? EchoColors.amber : EchoColors.textGhost),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ready ? 'Lab has a clone update ready' : 'Open Lab',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Training, DPO $dpoReady/$dpoRequired, memory, system health, and connections.',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
+          ],
+        ),
       ),
     );
   }

@@ -151,21 +151,21 @@ class _MessageActionsState extends State<MessageActions> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              if (action['type'] == 'run_tournament')
-                _loopChip(
-                  context,
-                  Icons.military_tech_rounded,
-                  'Send clones',
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),
-                    ),
+              _loopChip(
+                context,
+                Icons.military_tech_rounded,
+                'Send clones',
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),
                   ),
-                  filled: true,
                 ),
+                filled: action['type'] == 'run_tournament',
+              ),
               _loopChip(context, Icons.check_circle_outline_rounded, 'This helped', () => _sendFeedback('helped')),
               _loopChip(context, Icons.cancel_outlined, 'Not true', () => _sendFeedback('not_true')),
               _loopChip(context, Icons.bookmark_add_outlined, 'Save signal', () => _sendFeedback('saved_signal')),
+              _loopChip(context, Icons.bolt_outlined, 'Turn into rep', () => _sendFeedback('practice_request')),
             ],
           ),
         );
