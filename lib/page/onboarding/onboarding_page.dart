@@ -56,9 +56,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Future<void> _next() async {
-    if (_step < 2) {
+    if (_step < 3) {
       setState(() => _step++);
-    } else if (_step == 2) {
+    } else if (_step == 3) {
       final answer = _answerCtrl.text.trim();
       if (answer.length < 8) return;
       setState(() => _submitting = true);
@@ -78,7 +78,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         setState(() {
           _firstRead = result;
           _submitting = false;
-          _step = 3;
+          _step = 4;
         });
       } else {
         setState(() => _submitting = false);
@@ -109,8 +109,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return switch (step) {
       0 => _buildPromise(key: const ValueKey(0)),
       1 => _buildConnect(key: const ValueKey(1)),
-      2 => _buildFirstQuestion(key: const ValueKey(2)),
-      _ => _buildFirstRead(key: const ValueKey(3)),
+      2 => _buildBrainPicker(key: const ValueKey(2)),
+      3 => _buildFirstQuestion(key: const ValueKey(3)),
+      _ => _buildFirstRead(key: const ValueKey(4)),
     };
   }
 
@@ -204,10 +205,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Step 2 of 3',
+          Text('Step 2 of 4',
               style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF3A3530))),
           const SizedBox(height: 16),
-          _buildStepBar(1),
+          _buildStepBar(1, 4),
           const SizedBox(height: 28),
           Text("To know you, I need\nto see your world.",
               style: GoogleFonts.lora(
@@ -271,10 +272,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Step 3 of 3',
+          Text('Step 4 of 4',
               style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF3A3530))),
           const SizedBox(height: 16),
-          _buildStepBar(2),
+          _buildStepBar(3, 4),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -437,11 +438,146 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  Widget _buildStepBar(int active) {
+  // ─── S3: Brain Picker ────────────────────────────────────────────────────
+
+  Widget _buildBrainPicker({Key? key}) {
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.fromLTRB(28, 10, 28, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Step 3 of 4',
+              style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF3A3530))),
+          const SizedBox(height: 16),
+          _buildStepBar(2, 4),
+          const SizedBox(height: 32),
+          Text("Where should\nEcho think?",
+              style: GoogleFonts.lora(
+                  fontSize: 26, fontWeight: FontWeight.w400,
+                  color: EchoColors.textPrimary, height: 1.4, letterSpacing: -0.3)),
+          const SizedBox(height: 8),
+          Text("You can change this anytime in Lab.",
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13, color: const Color(0xFF4A4540), height: 1.6)),
+          const SizedBox(height: 28),
+          // Echo Cloud card
+          GestureDetector(
+            onTap: () => _next(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              decoration: BoxDecoration(
+                color: EchoColors.amber.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: EchoColors.amber.withValues(alpha: 0.35), width: 1),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 38, height: 38,
+                    decoration: BoxDecoration(
+                      color: EchoColors.amber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.cloud_outlined, size: 19, color: EchoColors.amber),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text('Echo Cloud',
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14, fontWeight: FontWeight.w700,
+                                  color: EchoColors.textPrimary)),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: EchoColors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('Recommended',
+                                style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9.5, fontWeight: FontWeight.w700,
+                                    color: EchoColors.amberText)),
+                          ),
+                        ]),
+                        const SizedBox(height: 4),
+                        Text('Fastest setup. Works everywhere.\nBest for most people.',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12.5, color: const Color(0xFF4A4540), height: 1.5)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: EchoColors.amber),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // My Computer card — coming soon
+          Opacity(
+            opacity: 0.38,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              decoration: BoxDecoration(
+                color: EchoColors.bgSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E1B17)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 38, height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F0D0B),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.computer_outlined, size: 19, color: Color(0xFF4A4540)),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text('My Computer',
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14, fontWeight: FontWeight.w700,
+                                  color: EchoColors.textMuted)),
+                          const SizedBox(width: 8),
+                          Text('(coming soon)',
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11, color: const Color(0xFF3A3530))),
+                        ]),
+                        const SizedBox(height: 4),
+                        Text('Runs on your own device.\nMore private.',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12.5, color: const Color(0xFF3A3530), height: 1.5)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepBar(int active, int total) {
     return Row(
-      children: List.generate(3, (i) => Expanded(
+      children: List.generate(total, (i) => Expanded(
         child: Container(
-          margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
+          margin: EdgeInsets.only(right: i < total - 1 ? 6 : 0),
           height: 3,
           decoration: BoxDecoration(
             color: i <= active ? EchoColors.amber : const Color(0xFF1E1B17),

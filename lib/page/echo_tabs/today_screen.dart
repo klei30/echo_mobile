@@ -110,6 +110,7 @@ class _TodayScreenState extends State<TodayScreen>
       EchoApiClient().getUserSignal(),
       EchoApiClient().getPracticeToday(),
       EchoApiClient().getTodayMission(),
+      EchoApiClient().getTodayPriority(),
     ]);
     if (!mounted) return;
 
@@ -118,7 +119,7 @@ class _TodayScreenState extends State<TodayScreen>
     _signal = results[2] as Map<String, dynamic>?;
     _practice = results[3] as Map<String, dynamic>?;
     _mission = results[4] as Map<String, dynamic>?;
-    _priority = await EchoApiClient().getTodayPriority();
+    _priority = results[5] as Map<String, dynamic>?;
     EchoLoopState().apply(todayPriority: _priority, mission: _mission);
     if (!mounted) return;
 
@@ -407,7 +408,31 @@ class _TodayScreenState extends State<TodayScreen>
   Widget _buildStateContent() {
     switch (_state) {
       case _TodayState.checking:
-        return const SizedBox.shrink();
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.2,
+                  color: EchoColors.amber.withValues(alpha: 0.30),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'echo is reading',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            ],
+          ),
+        );
 
       case _TodayState.morningCheckin:
         return FadeTransition(

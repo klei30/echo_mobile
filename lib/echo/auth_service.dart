@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -20,11 +21,7 @@ class AuthService {
   String? _userId;
   String? _username;
 
-  String get _baseUrl {
-    // Android emulator uses 10.0.2.2 to reach host's localhost
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    return isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
-  }
+  String get _baseUrl => EchoHostService().resolvedUrl;
 
   // Public getter for code that references .baseUrl
   String get baseUrl => _baseUrl;

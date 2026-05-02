@@ -8,6 +8,8 @@ import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
 import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
+import 'package:chatmcp/page/echo_tabs/remote_access_screen.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 
 class EchoLabScreen extends StatefulWidget {
   const EchoLabScreen({super.key});
@@ -79,7 +81,15 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
                 () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
             const SizedBox(height: 16),
             _section('Connections'),
-            _stubRow(),
+            _toolRow(
+              'Remote access',
+              EchoHostService().hasTunnel
+                  ? 'Tunnel active — ${EchoHostService().tunnelUrl}'
+                  : 'Local only — set a Cloudflare tunnel URL',
+              Icons.wifi_tethering_rounded,
+              EchoHostService().hasTunnel ? const Color(0xFF4CAF50) : EchoColors.textGhost,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemoteAccessScreen())),
+            ),
           ],
         ),
       ),
@@ -291,29 +301,6 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _stubRow() {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: EchoColors.borderSubtle),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.hub_outlined, size: 18, color: EchoColors.textGhost.withValues(alpha: 0.8)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Connections will feed the life event ledger after the core loop is stable.',
-              style: GoogleFonts.plusJakartaSans(fontSize: 12.5, height: 1.4, color: EchoColors.textGhost),
-            ),
-          ),
-        ],
       ),
     );
   }

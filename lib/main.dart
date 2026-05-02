@@ -11,6 +11,7 @@ import 'package:logging/logging.dart';
 import 'utils/platform.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/today_screen.dart';
 import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
@@ -66,7 +67,7 @@ void main() async {
     // ProviderManager.init() calls adoptOrphanChats() which stamps chats with
     // the current userId. If AuthService hasn't loaded yet, userId is null and
     // all legacy chats get stamped as 'anonymous', making them invisible.
-    await Future.wait([AuthService().init(), initDb()]);
+    await Future.wait([AuthService().init(), EchoHostService().init(), initDb()]);
     await ProviderManager.init();
 
     await initNotifications(

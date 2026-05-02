@@ -113,8 +113,8 @@ class _LayoutPageState extends State<LayoutPage> {
 
     return Consumer<ChatModelProvider>(
       builder: (context, chatModelProvider, child) {
-        // Mobile gets the full Echo shell (bottom nav + dark theme)
-        if (kIsMobile) return const EchoMobilePage();
+        // Mobile and web both get the full Echo shell (bottom nav + dark theme)
+        if (kIsMobile || kIsWeb) return const EchoMobilePage();
         return _buildLayout();
       },
     );
