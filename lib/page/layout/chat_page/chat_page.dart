@@ -425,23 +425,28 @@ class _ChatPageState extends State<ChatPage> {
     final loop = EchoLoopState();
     final starters = _buildPersonalizedStarters(loop);
 
-    return Container(
-      color: Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset('assets/echo_logo.png', width: 44, height: 44),
-          const SizedBox(height: 18),
-          Text(
-            headline,
-            style: GoogleFonts.lora(fontSize: 22, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, letterSpacing: -0.3, height: 1.3),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 620),
+        child: Container(
+          color: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/echo_logo.png', width: 44, height: 44),
+              const SizedBox(height: 18),
+              Text(
+                headline,
+                style: GoogleFonts.lora(fontSize: 22, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, letterSpacing: -0.3, height: 1.3),
+              ),
+              const SizedBox(height: 6),
+              _buildLoopContext(loop),
+              const SizedBox(height: 28),
+              ...starters.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildStarterPrompt(s))),
+            ],
           ),
-          const SizedBox(height: 6),
-          _buildLoopContext(loop),
-          const SizedBox(height: 28),
-          ...starters.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _buildStarterPrompt(s))),
-        ],
+        ),
       ),
     );
   }
@@ -966,6 +971,10 @@ class _ChatPageState extends State<ChatPage> {
     if (useLocalModel) _lastModelUsed = 'local';
     if (useEchoToolProxy) _lastModelUsed = 'echo_tool_proxy';
     if (useEchoFallback && !useGemmaLane && !useLocalModel) _lastModelUsed = 'echo_shadow';
+    Logger.root.info(
+      'LLM route: gemma=$useGemmaLane local=$useLocalModel toolProxy=$useEchoToolProxy echoFallback=$useEchoFallback '
+      'model=$activeModel endpoint=${EchoClient().baseUrl}/v1',
+    );
 
     // Echo local path: sidecar owns memory and no-tools guard.
     // Echo tool proxy path: send only the tool prompt; Echo injects tool-safe memory server-side.

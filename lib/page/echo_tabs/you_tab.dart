@@ -171,27 +171,15 @@ class _YouTabState extends State<YouTab> {
   }
 
   Future<void> _openTrainingScreen() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()));
     if (!mounted) return;
-    await Future.wait([
-      _load(),
-      EchoLoopState().refresh(),
-    ]);
+    await Future.wait([_load(), EchoLoopState().refresh()]);
   }
 
   Future<void> _openTournamentScreen({String? initialPrompt}) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ShadowTournamentScreen(initialPrompt: initialPrompt),
-      ),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: initialPrompt)));
     if (!mounted) return;
-    await Future.wait([
-      _load(),
-      EchoLoopState().refresh(),
-    ]);
+    await Future.wait([_load(), EchoLoopState().refresh()]);
   }
 
   Future<void> _logPractice(bool done) async {
@@ -243,7 +231,7 @@ class _YouTabState extends State<YouTab> {
       if (diff.inHours < 2) return 'trained just now';
       if (diff.inHours < 12) return 'trained ${diff.inHours}h ago';
       if (diff.inHours < 36) return 'trained last night';
-      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       final dt = DateTime.parse(iso).toLocal();
       return 'trained ${m[dt.month - 1]} ${dt.day}';
     } catch (_) {
@@ -258,56 +246,39 @@ class _YouTabState extends State<YouTab> {
     return Scaffold(
       backgroundColor: EchoColors.bg,
       body: SafeArea(
-        child: RefreshIndicator(
-          color: EchoColors.amber,
-          backgroundColor: EchoColors.bgSurface,
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
-            children: [
-              _buildCloneHero(context),
-              _buildRankBar(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
-                child: _buildPrimaryActions(context),
-              ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: RefreshIndicator(
+              color: EchoColors.amber,
+              backgroundColor: EchoColors.bgSurface,
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 40),
+                children: [
+                  _buildCloneHero(context),
+                  _buildRankBar(),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 16, 18, 4), child: _buildPrimaryActions(context)),
 
-              _chapterLabel('CURRENT READ'),
-              if (_thesis != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                  child: _buildThesisCard(context),
-                ),
+                  _chapterLabel('CURRENT READ'),
+                  if (_thesis != null) Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildThesisCard(context)),
 
-              _chapterLabel('REVELATION'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                child: _buildRevelationReadinessCard(context),
-              ),
+                  _chapterLabel('REVELATION'),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildRevelationReadinessCard(context)),
 
-              _chapterLabel('GROWTH TIMELINE'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                child: _buildTimelinePreview(context),
-              ),
+                  _chapterLabel('GROWTH TIMELINE'),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildTimelinePreview(context)),
 
-              _chapterLabel('EVIDENCE'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                child: _buildEvidenceSection(),
-              ),
+                  _chapterLabel('EVIDENCE'),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildEvidenceSection()),
 
-              _chapterLabel('TRUST'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                child: _buildTrustSection(),
-              ),
+                  _chapterLabel('TRUST'),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 10), child: _buildTrustSection()),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
-                child: _buildLabEntry(context),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 16), child: _buildLabEntry(context)),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -315,11 +286,7 @@ class _YouTabState extends State<YouTab> {
   }
 
   Widget _buildEvidenceSection() {
-    final evidence = (_thesis?['evidence'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .take(4)
-        .toList();
+    final evidence = (_thesis?['evidence'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).take(4).toList();
     final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? evidence.length;
 
     if (evidence.isEmpty) {
@@ -333,11 +300,7 @@ class _YouTabState extends State<YouTab> {
         ),
         child: Text(
           'Keep talking and choosing outcomes. Echo will show the signals behind its read here.',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12.5,
-            height: 1.45,
-            color: EchoColors.textMuted,
-          ),
+          style: GoogleFonts.plusJakartaSans(fontSize: 12.5, height: 1.45, color: EchoColors.textMuted),
         ),
       );
     }
@@ -359,11 +322,7 @@ class _YouTabState extends State<YouTab> {
               const SizedBox(width: 8),
               Text(
                 '$evidenceCount signals behind the read',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: EchoColors.textPrimary,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
               ),
             ],
           ),
@@ -379,20 +338,10 @@ class _YouTabState extends State<YouTab> {
                     width: 5,
                     height: 5,
                     margin: const EdgeInsets.only(top: 7, right: 9),
-                    decoration: BoxDecoration(
-                      color: EchoColors.amber.withValues(alpha: 0.55),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: EchoColors.amber.withValues(alpha: 0.55), shape: BoxShape.circle),
                   ),
                   Expanded(
-                    child: Text(
-                      summary,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: EchoColors.textMuted,
-                        height: 1.4,
-                      ),
-                    ),
+                    child: Text(summary, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textMuted, height: 1.4)),
                   ),
                 ],
               ),
@@ -409,9 +358,7 @@ class _YouTabState extends State<YouTab> {
         Expanded(child: _buildSendClonesButton(context)),
         const SizedBox(width: 10),
         GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const EchoLabScreen()),
-          ),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EchoLabScreen())),
           child: Container(
             height: 52,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -434,38 +381,30 @@ class _YouTabState extends State<YouTab> {
     final score = (status['score'] as num?)?.toDouble() ?? 0.0;
     final headline = status['headline'] as String? ?? 'Echo is still watching for the deeper pattern.';
     final weeks = (status['weeks_watched'] as num?)?.toInt() ?? 0;
-    final requirements = (status['requirements'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    final requirements = (status['requirements'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
 
     return GestureDetector(
-      onTap: ready
-          ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen()))
-          : null,
+      onTap: ready ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen())) : null,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: ready ? const Color(0xFF1A1510) : EchoColors.bgSurface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: ready ? EchoColors.amber.withValues(alpha: 0.38) : EchoColors.borderSubtle,
-          ),
+          border: Border.all(color: ready ? EchoColors.amber.withValues(alpha: 0.38) : EchoColors.borderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(ready ? Icons.auto_awesome_rounded : Icons.radar_rounded,
-                    size: 17, color: ready ? EchoColors.amber : EchoColors.textGhost),
+                Icon(ready ? Icons.auto_awesome_rounded : Icons.radar_rounded, size: 17, color: ready ? EchoColors.amber : EchoColors.textGhost),
                 const SizedBox(width: 8),
                 Text(
                   state == 'revealed'
                       ? 'REVELATION DELIVERED'
                       : ready
-                          ? 'REVELATION READY'
-                          : 'REVELATION FORMING',
+                      ? 'REVELATION READY'
+                      : 'REVELATION FORMING',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 9.5,
                     letterSpacing: 1.2,
@@ -474,20 +413,13 @@ class _YouTabState extends State<YouTab> {
                   ),
                 ),
                 const Spacer(),
-                if (weeks > 0)
-                  Text('$weeks wk',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textVeryGhost)),
+                if (weeks > 0) Text('$weeks wk', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textVeryGhost)),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               headline,
-              style: GoogleFonts.lora(
-                fontSize: 17,
-                height: 1.4,
-                fontStyle: FontStyle.italic,
-                color: EchoColors.textPrimary,
-              ),
+              style: GoogleFonts.lora(fontSize: 17, height: 1.4, fontStyle: FontStyle.italic, color: EchoColors.textPrimary),
             ),
             const SizedBox(height: 13),
             ClipRRect(
@@ -496,9 +428,7 @@ class _YouTabState extends State<YouTab> {
                 value: score.clamp(0.0, 1.0),
                 minHeight: 5,
                 backgroundColor: EchoColors.borderSubtle,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  ready ? EchoColors.amber : EchoColors.amber.withValues(alpha: 0.55),
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(ready ? EchoColors.amber : EchoColors.amber.withValues(alpha: 0.55)),
               ),
             ),
             const SizedBox(height: 12),
@@ -510,20 +440,13 @@ class _YouTabState extends State<YouTab> {
                 final label = r['label'] as String? ?? 'Signal';
                 final current = (r['current'] as num?)?.toInt() ?? 0;
                 final target = (r['target'] as num?)?.toInt() ?? 1;
-                return _loopPill(
-                  complete ? Icons.check_circle_outline_rounded : Icons.radio_button_unchecked_rounded,
-                  '$label $current/$target',
-                );
+                return _loopPill(complete ? Icons.check_circle_outline_rounded : Icons.radio_button_unchecked_rounded, '$label $current/$target');
               }).toList(),
             ),
             const SizedBox(height: 13),
             Text(
               ready ? 'Open Revelation' : 'Echo is waiting for enough signal before naming this.',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-                color: ready ? EchoColors.amber : EchoColors.textGhost,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: ready ? EchoColors.amber : EchoColors.textGhost),
             ),
           ],
         ),
@@ -535,9 +458,7 @@ class _YouTabState extends State<YouTab> {
     final headline = _growthTimeline?['headline'] as String? ?? 'Proof is still forming.';
     final stats = Map<String, dynamic>.from(_growthTimeline?['stats'] as Map? ?? {});
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const GrowthTimelineScreen()),
-      ),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GrowthTimelineScreen())),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -555,11 +476,7 @@ class _YouTabState extends State<YouTab> {
                 Expanded(
                   child: Text(
                     headline,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.textPrimary,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                   ),
                 ),
                 const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
@@ -600,11 +517,7 @@ class _YouTabState extends State<YouTab> {
               const SizedBox(width: 8),
               Text(
                 'You can correct Echo',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w800,
-                  color: EchoColors.textPrimary,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
               ),
             ],
           ),
@@ -633,9 +546,7 @@ class _YouTabState extends State<YouTab> {
     final dpoReady = (_trainingSummary?['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
     final dpoRequired = (_trainingSummary?['dpo_required_pairs'] as num?)?.toInt() ?? 4;
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const EchoLabScreen()),
-      ),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EchoLabScreen())),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -653,11 +564,7 @@ class _YouTabState extends State<YouTab> {
                 children: [
                   Text(
                     ready ? 'Lab has a clone update ready' : 'Open Lab',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.textPrimary,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -688,8 +595,8 @@ class _YouTabState extends State<YouTab> {
     final adapterLabel = adapterLoaded
         ? 'your clone is live'
         : adapterExists
-            ? 'clone trained, waiting'
-            : 'learning from scratch';
+        ? 'clone trained, waiting'
+        : 'learning from scratch';
 
     return GestureDetector(
       onTap: _openTrainingScreen,
@@ -705,17 +612,12 @@ class _YouTabState extends State<YouTab> {
           children: [
             Row(
               children: [
-                Icon(Icons.model_training_rounded,
-                    size: 18, color: ready ? EchoColors.amber : EchoColors.textMuted),
+                Icon(Icons.model_training_rounded, size: 18, color: ready ? EchoColors.amber : EchoColors.textMuted),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     ready ? 'Ready to update your clone' : 'Collecting training signal',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.textPrimary,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                   ),
                 ),
                 Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
@@ -763,10 +665,7 @@ class _YouTabState extends State<YouTab> {
                 gradient: RadialGradient(
                   center: Alignment.topCenter,
                   radius: 1.2,
-                  colors: [
-                    EchoColors.amber.withValues(alpha: 0.04),
-                    Colors.transparent,
-                  ],
+                  colors: [EchoColors.amber.withValues(alpha: 0.04), Colors.transparent],
                 ),
               )
             : null,
@@ -796,22 +695,15 @@ class _YouTabState extends State<YouTab> {
                     Positioned(
                       bottom: 10,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
                           color: EchoColors.bg,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: EchoColors.amber.withValues(alpha: 0.25)),
+                          border: Border.all(color: EchoColors.amber.withValues(alpha: 0.25)),
                         ),
                         child: Text(
                           '$pct% you',
-                          style: GoogleFonts.lora(
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                            color: EchoColors.amber,
-                            letterSpacing: -0.1,
-                          ),
+                          style: GoogleFonts.lora(fontSize: 11, fontStyle: FontStyle.italic, color: EchoColors.amber, letterSpacing: -0.1),
                         ),
                       ),
                     ),
@@ -824,24 +716,14 @@ class _YouTabState extends State<YouTab> {
             // Label
             Text(
               'your shadow clone',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 10.5,
-                letterSpacing: 1.1,
-                color: EchoColors.textGhost,
-                fontWeight: FontWeight.w500,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 10.5, letterSpacing: 1.1, color: EchoColors.textGhost, fontWeight: FontWeight.w500),
             ),
 
             if (firstName.isNotEmpty) ...[
               const SizedBox(height: 3),
               Text(
-                weeks > 0
-                    ? '$firstName Â· week $weeks'
-                    : firstName,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  color: EchoColors.textVeryGhost,
-                ),
+                weeks > 0 ? '$firstName Â· week $weeks' : firstName,
+                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textVeryGhost),
               ),
             ],
 
@@ -854,32 +736,25 @@ class _YouTabState extends State<YouTab> {
                 children: [
                   _statPill('$totalPairs conversations'),
                   const SizedBox(width: 8),
-                  if (lastTrained != null)
-                    _statPill(_trainedLabel(lastTrained),
-                        highlight: recently),
+                  if (lastTrained != null) _statPill(_trainedLabel(lastTrained), highlight: recently),
                 ],
               )
             else if (_loading)
               Container(
                 width: 180,
                 height: 22,
-                decoration: BoxDecoration(
-                  color: EchoColors.bgSurface,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: BoxDecoration(color: EchoColors.bgSurface, borderRadius: BorderRadius.circular(6)),
               ),
 
             // "trained last night" glow pill
             if (!_loading && recently) ...[
               const SizedBox(height: 12),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: EchoColors.amber.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: EchoColors.amber.withValues(alpha: 0.22)),
+                  border: Border.all(color: EchoColors.amber.withValues(alpha: 0.22)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -887,18 +762,12 @@ class _YouTabState extends State<YouTab> {
                     Container(
                       width: 5,
                       height: 5,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: EchoColors.amber.withValues(alpha: 0.9),
-                      ),
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: EchoColors.amber.withValues(alpha: 0.9)),
                     ),
                     const SizedBox(width: 7),
                     Text(
                       'your clone learned something new last night',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: EchoColors.amber.withValues(alpha: 0.85),
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.amber.withValues(alpha: 0.85)),
                     ),
                   ],
                 ),
@@ -914,23 +783,11 @@ class _YouTabState extends State<YouTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: highlight
-            ? EchoColors.amber.withValues(alpha: 0.07)
-            : EchoColors.bgSurface,
+        color: highlight ? EchoColors.amber.withValues(alpha: 0.07) : EchoColors.bgSurface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: highlight
-              ? EchoColors.amber.withValues(alpha: 0.2)
-              : EchoColors.borderSubtle,
-        ),
+        border: Border.all(color: highlight ? EchoColors.amber.withValues(alpha: 0.2) : EchoColors.borderSubtle),
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 11,
-          color: highlight ? EchoColors.amberText : EchoColors.textGhost,
-        ),
-      ),
+      child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: highlight ? EchoColors.amberText : EchoColors.textGhost)),
     );
   }
 
@@ -951,68 +808,41 @@ class _YouTabState extends State<YouTab> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                    height: 22, width: 260,
-                    color: EchoColors.bgSurface,
-                    margin: const EdgeInsets.only(bottom: 8)),
+                Container(height: 22, width: 260, color: EchoColors.bgSurface, margin: const EdgeInsets.only(bottom: 8)),
                 Container(height: 18, width: 200, color: EchoColors.bgSurface),
               ],
             )
           else if (signal != null) ...[
             Text(
               '"$signal"',
-              style: GoogleFonts.lora(
-                fontSize: 20,
-                fontStyle: FontStyle.italic,
-                color: EchoColors.textPrimary,
-                height: 1.5,
-                letterSpacing: -0.3,
-              ),
+              style: GoogleFonts.lora(fontSize: 20, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.3),
             ),
             if (quote != null) ...[
               const SizedBox(height: 14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('"',
-                      style: GoogleFonts.lora(
-                          fontSize: 13, color: EchoColors.amber)),
+                  Text('"', style: GoogleFonts.lora(fontSize: 13, color: EchoColors.amber)),
                   const SizedBox(width: 5),
                   Expanded(
                     child: Text(
                       quote,
-                      style: GoogleFonts.lora(
-                        fontSize: 12.5,
-                        fontStyle: FontStyle.italic,
-                        color: EchoColors.textGhost,
-                        height: 1.6,
-                      ),
+                      style: GoogleFonts.lora(fontSize: 12.5, fontStyle: FontStyle.italic, color: EchoColors.textGhost, height: 1.6),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 5),
-                  Text('"',
-                      style: GoogleFonts.lora(
-                          fontSize: 13, color: EchoColors.amber)),
+                  Text('"', style: GoogleFonts.lora(fontSize: 13, color: EchoColors.amber)),
                 ],
               ),
               const SizedBox(height: 3),
-              Text(
-                'â€” something you said',
-                style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5, color: EchoColors.textVeryGhost),
-              ),
+              Text('â€” something you said', style: GoogleFonts.plusJakartaSans(fontSize: 9.5, color: EchoColors.textVeryGhost)),
             ],
           ] else
             Text(
               'Keep talking.\nEcho is forming your signal.',
-              style: GoogleFonts.lora(
-                fontSize: 18,
-                fontStyle: FontStyle.italic,
-                color: EchoColors.textGhost,
-                height: 1.55,
-              ),
+              style: GoogleFonts.lora(fontSize: 18, fontStyle: FontStyle.italic, color: EchoColors.textGhost, height: 1.55),
             ),
           const SizedBox(height: 22),
           Container(height: 1, color: EchoColors.borderSubtle),
@@ -1032,9 +862,7 @@ class _YouTabState extends State<YouTab> {
       return;
     }
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const TalentScreen()),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen()));
     if (mounted) _load();
   }
 
@@ -1056,9 +884,7 @@ class _YouTabState extends State<YouTab> {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           content: Text(
-            outcome == 'not_true'
-                ? 'Correction saved. Echo will adjust the read.'
-                : 'Signal saved. Echo updated the loop.',
+            outcome == 'not_true' ? 'Correction saved. Echo will adjust the read.' : 'Signal saved. Echo updated the loop.',
             style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
           ),
         ),
@@ -1069,8 +895,7 @@ class _YouTabState extends State<YouTab> {
 
   Widget _buildThesisCard(BuildContext context) {
     final title = _thesis?['title'] as String? ?? 'Still Forming';
-    final statement = _thesis?['statement'] as String? ??
-        'Echo is waiting for enough real moments to form a thesis.';
+    final statement = _thesis?['statement'] as String? ?? 'Echo is waiting for enough real moments to form a thesis.';
     final stage = _thesis?['stage'] as String? ?? 'forming';
     final confidence = _thesis?['confidence_label'] as String? ?? 'early';
     final evidenceCount = (_thesis?['evidence_count'] as num?)?.toInt() ?? 0;
@@ -1091,44 +916,25 @@ class _YouTabState extends State<YouTab> {
           children: [
             Row(
               children: [
-                Icon(Icons.auto_awesome_motion_rounded,
-                    size: 17, color: EchoColors.amber.withValues(alpha: 0.9)),
+                Icon(Icons.auto_awesome_motion_rounded, size: 17, color: EchoColors.amber.withValues(alpha: 0.9)),
                 const SizedBox(width: 8),
                 Text(
                   'ECHO\'S CURRENT READ',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.amber,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.amber),
                 ),
                 const Spacer(),
-                Text(
-                  '$evidenceCount signals',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10.5, color: EchoColors.textVeryGhost),
-                ),
+                Text('$evidenceCount signals', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textVeryGhost)),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               title,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: EchoColors.textPrimary,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
               statement,
-              style: GoogleFonts.lora(
-                fontSize: 16,
-                fontStyle: FontStyle.italic,
-                color: EchoColors.textPrimary,
-                height: 1.35,
-              ),
+              style: GoogleFonts.lora(fontSize: 16, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.35),
             ),
             const SizedBox(height: 14),
             Wrap(
@@ -1143,23 +949,17 @@ class _YouTabState extends State<YouTab> {
             const SizedBox(height: 14),
             Row(
               children: [
-                Icon(Icons.military_tech_rounded,
-                    size: 15, color: EchoColors.amber.withValues(alpha: 0.75)),
+                Icon(Icons.military_tech_rounded, size: 15, color: EchoColors.amber.withValues(alpha: 0.75)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     actionLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.amber.withValues(alpha: 0.86),
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.amber.withValues(alpha: 0.86)),
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    size: 18, color: EchoColors.amber.withValues(alpha: 0.45)),
+                Icon(Icons.chevron_right_rounded, size: 18, color: EchoColors.amber.withValues(alpha: 0.45)),
               ],
             ),
             const SizedBox(height: 14),
@@ -1167,20 +967,12 @@ class _YouTabState extends State<YouTab> {
             const SizedBox(height: 12),
             Text(
               'What would change this read',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-                color: EchoColors.textGhost,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w700, color: EchoColors.textGhost),
             ),
             const SizedBox(height: 6),
             Text(
               'A shadow choice, a completed rep, or a correction from you.',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11.5,
-                color: EchoColors.textMuted,
-                height: 1.4,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textMuted, height: 1.4),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1210,11 +1002,7 @@ class _YouTabState extends State<YouTab> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-            color: EchoColors.textGhost,
-          ),
+          style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: EchoColors.textGhost),
         ),
       ),
     );
@@ -1235,11 +1023,7 @@ class _YouTabState extends State<YouTab> {
           const SizedBox(width: 6),
           Text(
             text,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: EchoColors.textMuted,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: EchoColors.textMuted),
           ),
         ],
       ),
@@ -1276,18 +1060,12 @@ class _YouTabState extends State<YouTab> {
                 Container(
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: EchoColors.amber),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: EchoColors.amber),
                 ),
                 const SizedBox(width: 7),
                 Text(
                   'TODAY\'S REP',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                    color: EchoColors.amber,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: EchoColors.amber),
                 ),
                 const Spacer(),
                 if (thesisTitle != null)
@@ -1296,20 +1074,11 @@ class _YouTabState extends State<YouTab> {
                       'Trains: $thesisTitle',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 9.5,
-                        color: EchoColors.textGhost,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 9.5, color: EchoColors.textGhost),
                     ),
                   )
                 else if (arcLabel != null)
-                  Text(
-                    arcLabel,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5,
-                      color: EchoColors.textGhost,
-                    ),
-                  ),
+                  Text(arcLabel, style: GoogleFonts.plusJakartaSans(fontSize: 9.5, color: EchoColors.textGhost)),
               ],
             ),
           ),
@@ -1333,23 +1102,11 @@ class _YouTabState extends State<YouTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'ECHO OBSERVED',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9,
-                      letterSpacing: 0.8,
-                      color: EchoColors.textGhost,
-                    ),
-                  ),
+                  Text('ECHO OBSERVED', style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 0.8, color: EchoColors.textGhost)),
                   const SizedBox(height: 5),
                   Text(
                     '"$observation"',
-                    style: GoogleFonts.lora(
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                      color: EchoColors.textMuted,
-                      height: 1.55,
-                    ),
+                    style: GoogleFonts.lora(fontSize: 14, fontStyle: FontStyle.italic, color: EchoColors.textMuted, height: 1.55),
                   ),
                 ],
               ),
@@ -1365,23 +1122,11 @@ class _YouTabState extends State<YouTab> {
                   if (repTitle != null)
                     Text(
                       repTitle,
-                      style: GoogleFonts.lora(
-                        fontSize: 18,
-                        fontStyle: FontStyle.italic,
-                        color: EchoColors.textPrimary,
-                        letterSpacing: -0.2,
-                      ),
+                      style: GoogleFonts.lora(fontSize: 18, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, letterSpacing: -0.2),
                     ),
                   if (repInstruction != null) ...[
                     const SizedBox(height: 8),
-                    Text(
-                      repInstruction,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        height: 1.65,
-                        color: EchoColors.textMuted,
-                      ),
-                    ),
+                    Text(repInstruction, style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.65, color: EchoColors.textMuted)),
                   ],
                 ],
               ),
@@ -1398,18 +1143,11 @@ class _YouTabState extends State<YouTab> {
                         onTap: () => _logPractice(true),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 13),
-                          decoration: BoxDecoration(
-                            color: EchoColors.amber,
-                            borderRadius: BorderRadius.circular(40),
-                          ),
+                          decoration: BoxDecoration(color: EchoColors.amber, borderRadius: BorderRadius.circular(40)),
                           child: Center(
                             child: Text(
                               'Done today',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF060504),
-                              ),
+                              style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w600, color: const Color(0xFF060504)),
                             ),
                           ),
                         ),
@@ -1419,19 +1157,12 @@ class _YouTabState extends State<YouTab> {
                     GestureDetector(
                       onTap: () => _logPractice(false),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 13),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(40),
                           border: Border.all(color: EchoColors.border),
                         ),
-                        child: Text(
-                          'Not today',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13.5,
-                            color: EchoColors.textGhost,
-                          ),
-                        ),
+                        child: Text('Not today', style: GoogleFonts.plusJakartaSans(fontSize: 13.5, color: EchoColors.textGhost)),
                       ),
                     ),
                   ],
@@ -1447,48 +1178,28 @@ class _YouTabState extends State<YouTab> {
                       height: 22,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: done == true
-                            ? EchoColors.amber.withValues(alpha: 0.15)
-                            : EchoColors.bgSurface,
-                        border: Border.all(
-                          color: done == true
-                              ? EchoColors.amber
-                              : EchoColors.border,
-                        ),
+                        color: done == true ? EchoColors.amber.withValues(alpha: 0.15) : EchoColors.bgSurface,
+                        border: Border.all(color: done == true ? EchoColors.amber : EchoColors.border),
                       ),
-                      child: done == true
-                          ? const Icon(Icons.check_rounded,
-                              size: 12, color: EchoColors.amber)
-                          : null,
+                      child: done == true ? const Icon(Icons.check_rounded, size: 12, color: EchoColors.amber) : null,
                     ),
                     const SizedBox(width: 10),
                     Text(
                       done == true ? 'Logged today' : 'Skipped today',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5,
-                        color: EchoColors.textGhost,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textGhost),
                     ),
                   ],
                 ),
               ),
             const SizedBox(height: 20),
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _buildWeekDots(weekCompletions),
-            ),
+            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), child: _buildWeekDots(weekCompletions)),
           ] else
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Text(
                 'Keep chatting â€” Echo needs more conversations\nto generate your practice.',
-                style: GoogleFonts.lora(
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
-                  color: EchoColors.textGhost,
-                  height: 1.6,
-                ),
+                style: GoogleFonts.lora(fontSize: 13, fontStyle: FontStyle.italic, color: EchoColors.textGhost, height: 1.6),
               ),
             ),
 
@@ -1520,21 +1231,15 @@ class _YouTabState extends State<YouTab> {
                   color: filled
                       ? EchoColors.amber
                       : isToday
-                          ? EchoColors.amber.withValues(alpha: 0.25)
-                          : const Color(0xFF1A1815),
+                      ? EchoColors.amber.withValues(alpha: 0.25)
+                      : const Color(0xFF1A1815),
                 ),
               ),
             );
           }),
         ),
         const SizedBox(height: 6),
-        Text(
-          '$completions of $total this week',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10.5,
-            color: EchoColors.textGhost,
-          ),
-        ),
+        Text('$completions of $total this week', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
       ],
     );
   }
@@ -1544,8 +1249,7 @@ class _YouTabState extends State<YouTab> {
   Widget _buildTalentSection(BuildContext context) {
     final totalPairs = _signal?['total_pairs'] as int? ?? 0;
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const TalentScreen())),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen())),
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
@@ -1561,40 +1265,25 @@ class _YouTabState extends State<YouTab> {
                 children: [
                   Text(
                     'YOUR HIDDEN TALENT',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                      color: EchoColors.amber,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: EchoColors.amber),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     totalPairs > 40
                         ? '"Something keeps appearing across $totalPairs conversations.\nI want to name it."'
                         : 'Echo is still watching. Keep talking.',
-                    style: GoogleFonts.lora(
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                      color: EchoColors.textPrimary,
-                      height: 1.55,
-                    ),
+                    style: GoogleFonts.lora(fontSize: 14, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.55),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'What Echo found â†’',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: EchoColors.amber,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: EchoColors.amber),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            Icon(Icons.psychology_rounded,
-                color: EchoColors.amber.withValues(alpha: 0.4), size: 28),
+            Icon(Icons.psychology_rounded, color: EchoColors.amber.withValues(alpha: 0.4), size: 28),
           ],
         ),
       ),
@@ -1608,12 +1297,7 @@ class _YouTabState extends State<YouTab> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.6,
-          color: EchoColors.textGhost,
-        ),
+        style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.6, color: EchoColors.textGhost),
       ),
     );
   }
@@ -1632,22 +1316,14 @@ class _YouTabState extends State<YouTab> {
           children: [
             Icon(icon, size: 16, color: color.withValues(alpha: 0.75)),
             const SizedBox(width: 14),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13.5,
-                color: EchoColors.textMuted,
-              ),
-            ),
+            Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13.5, color: EchoColors.textMuted)),
             const Spacer(),
-            const Icon(Icons.chevron_right_rounded,
-                size: 16, color: EchoColors.textGhost),
+            const Icon(Icons.chevron_right_rounded, size: 16, color: EchoColors.textGhost),
           ],
         ),
       ),
     );
   }
-
 
   // ─── WEEKLY CARD ─────────────────────────────────────────────────────────────
 
@@ -1658,8 +1334,7 @@ class _YouTabState extends State<YouTab> {
     final sitWith = _report?['sit_with_this'] as String? ?? '';
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const MirrorTab())),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab())),
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
@@ -1673,55 +1348,60 @@ class _YouTabState extends State<YouTab> {
             Row(
               children: [
                 Container(
-                  width: 6, height: 6,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: EchoColors.amber),
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: EchoColors.amber),
                 ),
                 const SizedBox(width: 7),
                 Text(
                   'THIS WEEK ECHO NOTICED',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 9.5, fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1, color: EchoColors.amber,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: EchoColors.amber),
                 ),
                 const Spacer(),
-                Text('Full report →',
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10, color: EchoColors.textGhost)),
+                Text('Full report →', style: GoogleFonts.plusJakartaSans(fontSize: 10, color: EchoColors.textGhost)),
               ],
             ),
             if (headline.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('"$headline"',
-                  style: GoogleFonts.lora(fontSize: 15, fontStyle: FontStyle.italic,
-                      color: EchoColors.textPrimary, height: 1.55)),
+              Text(
+                '"$headline"',
+                style: GoogleFonts.lora(fontSize: 15, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.55),
+              ),
             ],
             if (observations.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...observations.asMap().entries.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 7),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${e.key + 1}.',
-                      style: GoogleFonts.lora(fontSize: 10.5,
-                          fontStyle: FontStyle.italic, color: EchoColors.amber)),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(e.value,
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12.5, height: 1.6, color: EchoColors.textMuted))),
-                ]),
-              )),
+              ...observations.asMap().entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${e.key + 1}.',
+                        style: GoogleFonts.lora(fontSize: 10.5, fontStyle: FontStyle.italic, color: EchoColors.amber),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(e.value, style: GoogleFonts.plusJakartaSans(fontSize: 12.5, height: 1.6, color: EchoColors.textMuted)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
             if (sitWith.isNotEmpty) ...[
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                decoration: BoxDecoration(color: EchoColors.bgSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: EchoColors.borderSubtle)),
-                child: Text(sitWith,
-                    style: GoogleFonts.lora(fontSize: 12, fontStyle: FontStyle.italic,
-                        color: EchoColors.textGhost, height: 1.6)),
+                decoration: BoxDecoration(
+                  color: EchoColors.bgSurface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: EchoColors.borderSubtle),
+                ),
+                child: Text(
+                  sitWith,
+                  style: GoogleFonts.lora(fontSize: 12, fontStyle: FontStyle.italic, color: EchoColors.textGhost, height: 1.6),
+                ),
               ),
             ],
           ],
@@ -1742,13 +1422,17 @@ class _YouTabState extends State<YouTab> {
     final followup = _experiment?['followup'] as String? ?? '';
 
     final experiment = EchoExperiment(
-      number: number, trigger: trigger, hypothesis: hypothesis,
-      title: title, body: body, followup: followup, durationDays: days,
+      number: number,
+      trigger: trigger,
+      hypothesis: hypothesis,
+      title: title,
+      body: body,
+      followup: followup,
+      durationDays: days,
     );
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ExperimentProposalScreen(experiment: experiment))),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentProposalScreen(experiment: experiment))),
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
@@ -1762,40 +1446,48 @@ class _YouTabState extends State<YouTab> {
             Row(
               children: [
                 Container(
-                  width: 22, height: 22,
+                  width: 22,
+                  height: 22,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFF131009),
                     border: Border.all(color: EchoColors.amber.withValues(alpha: 0.25)),
                   ),
-                  child: Center(child: Text('$number',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11, fontWeight: FontWeight.w700,
-                          color: EchoColors.amber))),
+                  child: Center(
+                    child: Text(
+                      '$number',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: EchoColors.amber),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                Text('EXPERIMENT · $days DAYS',
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 9.5, fontWeight: FontWeight.w700,
-                        letterSpacing: 1.0, color: const Color(0xFF4A4038))),
+                Text(
+                  'EXPERIMENT · $days DAYS',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: const Color(0xFF4A4038)),
+                ),
                 const Spacer(),
-                Text('See details →',
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10, color: EchoColors.textGhost)),
+                Text('See details →', style: GoogleFonts.plusJakartaSans(fontSize: 10, color: EchoColors.textGhost)),
               ],
             ),
             if (title.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(title,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15, fontWeight: FontWeight.w500,
-                      color: EchoColors.textPrimary, height: 1.45, letterSpacing: -0.2)),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: EchoColors.textPrimary,
+                  height: 1.45,
+                  letterSpacing: -0.2,
+                ),
+              ),
             ],
             if (body.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text(body.length > 120 ? '${body.substring(0, 120)}…' : body,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5, height: 1.65, color: EchoColors.textGhost)),
+              Text(
+                body.length > 120 ? '${body.substring(0, 120)}…' : body,
+                style: GoogleFonts.plusJakartaSans(fontSize: 12.5, height: 1.65, color: EchoColors.textGhost),
+              ),
             ],
           ],
         ),
@@ -1837,8 +1529,7 @@ class _YouTabState extends State<YouTab> {
                   followup: _experiment?['followup'] as String? ?? '',
                   durationDays: (_experiment?['duration_days'] as num?)?.toInt() ?? 7,
                 );
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => ExperimentProposalScreen(experiment: experiment)));
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentProposalScreen(experiment: experiment)));
               },
             ),
           ],
@@ -1848,9 +1539,7 @@ class _YouTabState extends State<YouTab> {
             'Tell Echo what happened so the read can update.',
             Icons.nights_stay_rounded,
             const Color(0xFF7A8A9A),
-            () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
-            ),
+            () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen())),
           ),
         ],
       ),
@@ -1868,36 +1557,38 @@ class _YouTabState extends State<YouTab> {
         ),
         child: Column(
           children: [
-            _toolRow('Memories', 'What Echo remembers.', Icons.grain_rounded,
-                EchoColors.indigo, () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
+            _toolRow(
+              'Memories',
+              'What Echo remembers.',
+              Icons.grain_rounded,
+              EchoColors.indigo,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen())),
+            ),
             _rowDivider(),
-            _toolRow('Operating system', 'Rules and preferences Echo follows.',
-                Icons.tonality_rounded, const Color(0xFF9A6AB4), () =>
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const OperatingSystemScreen()))),
+            _toolRow(
+              'Operating system',
+              'Rules and preferences Echo follows.',
+              Icons.tonality_rounded,
+              const Color(0xFF9A6AB4),
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen())),
+            ),
             _rowDivider(),
-            _toolRow('Training', 'Clone battles, pairs, and adapter progress.',
-                Icons.model_training_rounded, EchoColors.amber,
-                _openTrainingScreen),
+            _toolRow('Training', 'Clone battles, pairs, and adapter progress.', Icons.model_training_rounded, EchoColors.amber, _openTrainingScreen),
             _rowDivider(),
-            _toolRow('Permanent record', 'Long-term evidence and history.',
-                Icons.history_edu_rounded, EchoColors.indigo, () =>
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const PermanentRecordScreen()))),
+            _toolRow(
+              'Permanent record',
+              'Long-term evidence and history.',
+              Icons.history_edu_rounded,
+              EchoColors.indigo,
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen())),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _toolRow(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
+  Widget _toolRow(String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -1907,10 +1598,7 @@ class _YouTabState extends State<YouTab> {
             Container(
               width: 30,
               height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.08),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.08)),
               child: Icon(icon, size: 16, color: color.withValues(alpha: 0.78)),
             ),
             const SizedBox(width: 12),
@@ -1922,28 +1610,20 @@ class _YouTabState extends State<YouTab> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: EchoColors.textMuted,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w700, color: EchoColors.textMuted),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11.5,
-                      color: EchoColors.textGhost,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.chevron_right_rounded,
-                size: 16, color: EchoColors.textGhost),
+            const Icon(Icons.chevron_right_rounded, size: 16, color: EchoColors.textGhost),
           ],
         ),
       ),
@@ -1951,11 +1631,7 @@ class _YouTabState extends State<YouTab> {
   }
 
   Widget _rowDivider() {
-    return Container(
-      height: 1,
-      margin: const EdgeInsets.only(left: 56),
-      color: EchoColors.borderSubtle,
-    );
+    return Container(height: 1, margin: const EdgeInsets.only(left: 56), color: EchoColors.borderSubtle);
   }
 
   // ─── ARCHIVE CHIPS ───────────────────────────────────────────────────────────
@@ -1964,16 +1640,28 @@ class _YouTabState extends State<YouTab> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 36),
       child: Wrap(
-        spacing: 8, runSpacing: 8,
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          _archiveChip('Memory', Icons.grain_rounded, EchoColors.indigo,
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
-          _archiveChip('Rules', Icons.tonality_rounded, const Color(0xFF9A6AB4),
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
-          _archiveChip('Training', Icons.model_training_rounded, EchoColors.amber,
-              _openTrainingScreen),
-          _archiveChip('Record', Icons.history_edu_rounded, EchoColors.indigo,
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
+          _archiveChip(
+            'Memory',
+            Icons.grain_rounded,
+            EchoColors.indigo,
+            () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen())),
+          ),
+          _archiveChip(
+            'Rules',
+            Icons.tonality_rounded,
+            const Color(0xFF9A6AB4),
+            () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen())),
+          ),
+          _archiveChip('Training', Icons.model_training_rounded, EchoColors.amber, _openTrainingScreen),
+          _archiveChip(
+            'Record',
+            Icons.history_edu_rounded,
+            EchoColors.indigo,
+            () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen())),
+          ),
         ],
       ),
     );
@@ -1994,8 +1682,7 @@ class _YouTabState extends State<YouTab> {
           children: [
             Icon(icon, size: 13, color: color.withValues(alpha: 0.70)),
             const SizedBox(width: 6),
-            Text(label, style: GoogleFonts.plusJakartaSans(
-                fontSize: 12, color: EchoColors.textGhost)),
+            Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost)),
           ],
         ),
       ),
@@ -2023,29 +1710,15 @@ class _YouTabState extends State<YouTab> {
                 children: [
                   Text(
                     rankName,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.amber,
-                      letterSpacing: 0.4,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.amber, letterSpacing: 0.4),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    '· $title',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: EchoColors.textGhost,
-                    ),
-                  ),
+                  Text('· $title', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost)),
                 ],
               ),
               Text(
                 isKage ? '$xp XP' : '$xp XP · $xpToNext to next',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  color: EchoColors.textVeryGhost,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textVeryGhost),
               ),
             ],
           ),
@@ -2060,9 +1733,7 @@ class _YouTabState extends State<YouTab> {
                 value: value,
                 minHeight: 3,
                 backgroundColor: EchoColors.borderSubtle,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  EchoColors.amber.withValues(alpha: 0.80),
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(EchoColors.amber.withValues(alpha: 0.80)),
               ),
             ),
           ),
@@ -2087,17 +1758,11 @@ class _YouTabState extends State<YouTab> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.military_tech_rounded,
-                size: 18, color: EchoColors.amber.withValues(alpha: 0.90)),
+            Icon(Icons.military_tech_rounded, size: 18, color: EchoColors.amber.withValues(alpha: 0.90)),
             const SizedBox(width: 10),
             Text(
               'SEND CLONES',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: EchoColors.amber,
-                letterSpacing: 1.2,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: EchoColors.amber, letterSpacing: 1.2),
             ),
           ],
         ),
@@ -2109,18 +1774,42 @@ class _YouTabState extends State<YouTab> {
 
   Widget _buildVaultsGrid(BuildContext context) {
     final vaults = [
-      _VaultItem('Mirror', 'Weekly reflection', Icons.remove_red_eye_rounded, const Color(0xFF9A6AB4),
-          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab()))),
-      _VaultItem('Twin', 'Two paths, one choice', Icons.people_outline_rounded, const Color(0xFF5A8DEE),
-          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TwinScreen()))),
-      _VaultItem('Memories', 'What Echo holds', Icons.grain_rounded, EchoColors.indigo,
-          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
-      _VaultItem('Record', 'Long-term evidence', Icons.history_edu_rounded, EchoColors.indigo,
-          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
-      _VaultItem('Rules', 'Operating system', Icons.tonality_rounded, const Color(0xFF9A6AB4),
-          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
-      _VaultItem('Training', 'Clone sessions', Icons.model_training_rounded, EchoColors.amber,
-          _openTrainingScreen),
+      _VaultItem(
+        'Mirror',
+        'Weekly reflection',
+        Icons.remove_red_eye_rounded,
+        const Color(0xFF9A6AB4),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab())),
+      ),
+      _VaultItem(
+        'Twin',
+        'Two paths, one choice',
+        Icons.people_outline_rounded,
+        const Color(0xFF5A8DEE),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TwinScreen())),
+      ),
+      _VaultItem(
+        'Memories',
+        'What Echo holds',
+        Icons.grain_rounded,
+        EchoColors.indigo,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen())),
+      ),
+      _VaultItem(
+        'Record',
+        'Long-term evidence',
+        Icons.history_edu_rounded,
+        EchoColors.indigo,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen())),
+      ),
+      _VaultItem(
+        'Rules',
+        'Operating system',
+        Icons.tonality_rounded,
+        const Color(0xFF9A6AB4),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen())),
+      ),
+      _VaultItem('Training', 'Clone sessions', Icons.model_training_rounded, EchoColors.amber, _openTrainingScreen),
     ];
 
     return GridView.count(
@@ -2149,10 +1838,7 @@ class _YouTabState extends State<YouTab> {
             Container(
               width: 28,
               height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: v.color.withValues(alpha: 0.08),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: v.color.withValues(alpha: 0.08)),
               child: Icon(v.icon, size: 14, color: v.color.withValues(alpha: 0.80)),
             ),
             const SizedBox(width: 10),
@@ -2163,18 +1849,11 @@ class _YouTabState extends State<YouTab> {
                 children: [
                   Text(
                     v.label,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: EchoColors.textMuted,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textMuted),
                   ),
                   Text(
                     v.subtitle,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10,
-                      color: EchoColors.textGhost,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 10, color: EchoColors.textGhost),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

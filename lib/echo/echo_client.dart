@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:logging/logging.dart';
 
@@ -36,13 +36,8 @@ class EchoClient {
 
   static final _log = Logger('echo.client');
 
-  String get _baseUrl {
-    // Android emulator uses 10.0.2.2 to reach host's localhost
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    return isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
-  }
-
-  // Public getter for code that references .baseUrl
+  // Single source of truth — EchoHostService handles tunnel vs local vs Android emulator
+  String get _baseUrl => EchoHostService().resolvedUrl;
   String get baseUrl => _baseUrl;
 
   String? _lastUserMessage;
@@ -62,7 +57,7 @@ class EchoClient {
   Future<EchoContext?> fetchContext(String message) async {
     _lastUserMessage = message;
     if (!AuthService().isLoggedIn) return _cachedContext;
-    _log.info('Echo /context msg="${message.substring(0, message.length.clamp(0, 60))}"');
+    _log.info('Echo /context base=$_baseUrl msg="${message.substring(0, message.length.clamp(0, 60))}"');
     try {
       final uid = AuthService().userId!;
       final resp = await http
@@ -88,9 +83,27 @@ class EchoClient {
       _log.warning('Echo /context HTTP ${resp.statusCode}');
     } catch (e) {
       _log.warning('Echo /context failed (using cache): $e');
+      _clearDeadTunnelIfDnsError(e.toString());
       return _cachedContext;
     }
     return _cachedContext;
+  }
+
+  /// If a request fails with a DNS error on the tunnel URL, clear it so subsequent
+  /// calls fall back to local. Quick tunnels die when cloudflared stops.
+  void _clearDeadTunnelIfDnsError(String err) {
+    if (!EchoHostService().hasTunnel) return;
+    // Only clear on DNS resolution failures — not on connection refused / timeout,
+    // which can be transient and would incorrectly remove a valid tunnel URL.
+    final isDnsError = err.contains('host lookup') ||
+        err.contains('errno = 7') ||
+        err.contains('errno = 11001') ||
+        err.contains('No address associated') ||
+        err.contains('Failed host lookup');
+    if (isDnsError) {
+      _log.warning('Tunnel DNS error — clearing dead tunnel URL');
+      EchoHostService().clearTunnel();
+    }
   }
 
   /// Call after every LLM response. Fire-and-forget.
@@ -154,6 +167,7 @@ class EchoClient {
       }
     } catch (e) {
       _log.warning('Echo /save failed: $e');
+      _clearDeadTunnelIfDnsError(e.toString());
     }
     return null;
   }

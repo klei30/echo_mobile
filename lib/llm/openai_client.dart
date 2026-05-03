@@ -6,6 +6,7 @@ import 'model.dart';
 import 'package:logging/logging.dart';
 import 'package:chatmcp/utils/file_content.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 
 class OpenAIClient extends BaseLLMClient {
   final String apiKey;
@@ -16,7 +17,12 @@ class OpenAIClient extends BaseLLMClient {
     : baseUrl = (baseUrl == null || baseUrl.isEmpty) ? 'https://api.openai.com/v1' : baseUrl,
       _headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer $apiKey'};
 
-  bool get _isEchoEndpoint => baseUrl.contains('8002') || baseUrl.contains('10.0.2.2');
+  // Matches localhost Echo, Android emulator alias, and Cloudflare quick tunnels
+  bool get _isEchoEndpoint =>
+      baseUrl.contains('8002') ||
+      baseUrl.contains('10.0.2.2') ||
+      baseUrl.contains('trycloudflare.com') ||
+      baseUrl.contains('cfargotunnel.com');
 
   String? _echoModelLane(String model) {
     final normalized = model.toLowerCase().replaceAll('-', '_');
@@ -161,6 +167,19 @@ class OpenAIClient extends BaseLLMClient {
         }
       }
     } catch (e) {
+      // Auto-clear a dead tunnel URL so subsequent calls fall back to local
+      final errStr = e.toString();
+      if (_isEchoEndpoint && EchoHostService().hasTunnel) {
+        final isDnsError = errStr.contains('host lookup') ||
+            errStr.contains('errno = 7') ||
+            errStr.contains('errno = 11001') ||
+            errStr.contains('No address associated') ||
+            errStr.contains('Failed host lookup');
+        if (isDnsError) {
+          Logger.root.warning('OpenAI: tunnel DNS error — clearing dead tunnel URL');
+          EchoHostService().clearTunnel();
+        }
+      }
       throw await handleError(e, 'OpenAI', endpoint, jsonEncode(body));
     } finally {
       httpClient.close();

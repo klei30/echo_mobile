@@ -130,14 +130,15 @@ class _MessageListState extends State<MessageList> {
           groupedMessages.add(currentGroup);
         }
 
+        final width = MediaQuery.sizeOf(context).width;
+        final sidePadding = kIsMobile ? 16.0 : (width > 980 ? ((width - 920) / 2).clamp(24.0, 280.0) : 24.0);
+
         return Stack(
           children: [
             ListView.builder(
               reverse: true,
               controller: _scrollController,
-              padding: kIsMobile
-                  ? const EdgeInsets.fromLTRB(16, 8, 16, 8)
-                  : const EdgeInsets.all(16.0),
+              padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 12),
               itemCount: groupedMessages.length,
               itemBuilder: (context, index) {
                 final group = groupedMessages[index];
@@ -161,12 +162,7 @@ class _MessageListState extends State<MessageList> {
                           ),
                         ),
                       ),
-                    ChatUIMessage(
-                      key: ValueKey(group.first.messageId),
-                      messages: group,
-                      onRetry: widget.onRetry,
-                      onSwitch: widget.onSwitch,
-                    ),
+                    ChatUIMessage(key: ValueKey(group.first.messageId), messages: group, onRetry: widget.onRetry, onSwitch: widget.onSwitch),
                   ],
                 );
               },

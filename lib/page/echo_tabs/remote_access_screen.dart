@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -67,7 +68,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       content: Text(
-        url.isEmpty ? 'Switched back to local connection.' : 'Tunnel saved. Echo will use this URL.',
+        url.isEmpty ? 'Switched back to local connection.' : 'Remote URL saved. Echo will use this connection.',
         style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
       ),
     ));
@@ -94,7 +95,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
             // Header
             Row(children: [
               Expanded(
-                child: Text('Remote Access',
+                child: Text('Advanced Remote Access',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 18, fontWeight: FontWeight.w900,
                         color: EchoColors.textPrimary)),
@@ -106,7 +107,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
             ]),
             const SizedBox(height: 4),
             Text(
-              'Connect your phone to Echo running on your home PC from anywhere.',
+              'Developer setup for entering a remote Echo URL manually. Most people should pair Echo Desktop instead.',
               style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textGhost, height: 1.5),
             ),
             const SizedBox(height: 22),
@@ -131,7 +132,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(
-                      hasTunnel ? 'Tunnel active' : 'Local only',
+                      hasTunnel ? 'Remote URL active' : 'Using local Echo',
                       style: GoogleFonts.plusJakartaSans(
                           fontSize: 12, fontWeight: FontWeight.w700,
                           color: EchoColors.textMuted),
@@ -152,7 +153,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
             const SizedBox(height: 20),
 
             // Tunnel URL input
-            Text('Cloudflare Tunnel URL',
+            Text('Remote Echo URL',
                 style: GoogleFonts.plusJakartaSans(
                     fontSize: 9, letterSpacing: 1.5, fontWeight: FontWeight.w800,
                     color: EchoColors.textGhost)),
@@ -182,6 +183,25 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
                 onChanged: (_) => setState(() { _testResult = null; _testError = null; }),
               ),
             ),
+            // Android emulator shortcut — 10.0.2.2 routes to host machine
+            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () {
+                  _urlCtrl.text = 'http://10.0.2.2:8002';
+                  setState(() { _testResult = null; _testError = null; });
+                },
+                child: Row(children: [
+                  const Icon(Icons.computer_rounded, size: 13, color: EchoColors.amber),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Use emulator local address  (http://10.0.2.2:8002)',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11, color: EchoColors.amberText, fontWeight: FontWeight.w600),
+                  ),
+                ]),
+              ),
+            ],
             const SizedBox(height: 10),
 
             // Test + Save buttons
@@ -275,7 +295,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
                   const Icon(Icons.help_outline_rounded, size: 16, color: EchoColors.textGhost),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text('How to set up Cloudflare Tunnel',
+                    child: Text('Manual setup notes',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 13, fontWeight: FontWeight.w600, color: EchoColors.textMuted)),
                   ),

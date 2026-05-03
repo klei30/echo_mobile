@@ -414,6 +414,22 @@ class EchoApiClient {
     return null;
   }
 
+  Future<List<Map<String, dynamic>>> getTrainingRuns({String? lane}) async {
+    try {
+      final uri = Uri.parse('$_base/v1/training/runs').replace(
+        queryParameters: lane == null ? null : {'lane': lane},
+      );
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 10));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return (data['runs'] as List? ?? []).whereType<Map<String, dynamic>>().toList();
+      }
+    } catch (e) {
+      _log.warning('getTrainingRuns error: $e');
+    }
+    return [];
+  }
+
   Future<Map<String, dynamic>?> getTrainingEval({String? lane}) async {
     try {
       final uri = Uri.parse('$_base/v1/training/eval').replace(

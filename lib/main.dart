@@ -68,6 +68,8 @@ void main() async {
     // the current userId. If AuthService hasn't loaded yet, userId is null and
     // all legacy chats get stamped as 'anonymous', making them invisible.
     await Future.wait([AuthService().init(), EchoHostService().init(), initDb()]);
+    // Quick tunnels die when cloudflared stops — verify before any API calls.
+    await EchoHostService().verifyTunnel();
     await ProviderManager.init();
 
     await initNotifications(

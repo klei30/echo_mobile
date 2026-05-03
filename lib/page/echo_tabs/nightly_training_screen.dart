@@ -704,6 +704,14 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         });
         await _load(keepCompleteState: true);
         await EchoLoopState().refresh();
+      } else if (status == 'failed' || status == 'idle') {
+        // Training died or was never picked up — stop the spinner.
+        t.cancel();
+        _logTimer?.cancel();
+        if (mounted) {
+          setState(() => _trainingStatus = status == 'failed' ? 'failed' : 'idle');
+          await _load();
+        }
       }
     });
   }

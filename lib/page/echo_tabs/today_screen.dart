@@ -20,8 +20,7 @@ class TodayScreen extends StatefulWidget {
 
 enum _TodayState { silence, checking, morningCheckin, interruption, council, revelation }
 
-class _TodayScreenState extends State<TodayScreen>
-    with TickerProviderStateMixin {
+class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin {
   _TodayState _state = _TodayState.checking;
 
   // Content fields
@@ -51,20 +50,11 @@ class _TodayScreenState extends State<TodayScreen>
   @override
   void initState() {
     super.initState();
-    _orbPulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3400),
-    )..repeat(reverse: true);
+    _orbPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 3400))..repeat(reverse: true);
 
-    _contentFade = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _contentFade = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
-    _xpFade = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
+    _xpFade = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
     EchoLoopState().addListener(_onLoopStateChanged);
     _checkState();
@@ -215,90 +205,83 @@ class _TodayScreenState extends State<TodayScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: Stack(
               children: [
-                // Orb zone — fixed at ~42% of screen height
-                SizedBox(
-                  height: screenHeight * 0.42,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: _buildOrbBackground()),
-                      // Refresh — top right corner
-                      Positioned(
-                        top: 12,
-                        right: 16,
-                        child: GestureDetector(
-                          onTap: () {
-                            _contentFade.value = 0;
-                            _checkState();
-                          },
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.05),
+                Column(
+                  children: [
+                    // Orb zone — fixed at ~42% of screen height
+                    SizedBox(
+                      height: screenHeight * 0.42,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(child: _buildOrbBackground()),
+                          // Refresh — top right corner
+                          Positioned(
+                            top: 12,
+                            right: 16,
+                            child: GestureDetector(
+                              onTap: () {
+                                _contentFade.value = 0;
+                                _checkState();
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)),
+                                child: Icon(Icons.refresh_rounded, size: 14, color: Colors.white.withValues(alpha: 0.22)),
+                              ),
                             ),
-                            child: Icon(
-                              Icons.refresh_rounded,
-                              size: 14,
-                              color: Colors.white.withValues(alpha: 0.22),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Content zone — fills remaining space
+                    Expanded(
+                      child: AnimatedSwitcher(duration: const Duration(milliseconds: 500), child: _buildStateContent()),
+                    ),
+                    // Ask pill — pinned at bottom, only in silence/interruption
+                    if (showAsk)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 28, top: 8),
+                        child: Center(child: _buildAskPill()),
+                      ),
+                  ],
+                ),
+                // XP feedback pill — floats at top center
+                if (_xpMessage != null)
+                  Positioned(
+                    top: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: FadeTransition(
+                        opacity: _xpFade,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: EchoColors.amber.withValues(alpha: 0.40)),
+                          ),
+                          child: Text(
+                            _xpMessage!,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: EchoColors.amberLight,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                // Content zone — fills remaining space
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    child: _buildStateContent(),
-                  ),
-                ),
-                // Ask pill — pinned at bottom, only in silence/interruption
-                if (showAsk)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 28, top: 8),
-                    child: Center(child: _buildAskPill()),
+                    ),
                   ),
               ],
             ),
-            // XP feedback pill — floats at top center
-            if (_xpMessage != null)
-              Positioned(
-                top: 16,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: FadeTransition(
-                    opacity: _xpFade,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: EchoColors.amber.withValues(alpha: 0.40),
-                        ),
-                      ),
-                      child: Text(
-                        _xpMessage!,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: EchoColors.amberLight,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -339,13 +322,8 @@ class _TodayScreenState extends State<TodayScreen>
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: EchoColors.amber.withValues(
-                        alpha: (_escalationLevel >= 2 ? 0.04 : 0.02) + t * 0.03),
-                    border: Border.all(
-                      color: EchoColors.amber.withValues(
-                          alpha: (_escalationLevel >= 2 ? 0.14 : 0.06) + t * 0.10),
-                      width: 1.0,
-                    ),
+                    color: EchoColors.amber.withValues(alpha: (_escalationLevel >= 2 ? 0.04 : 0.02) + t * 0.03),
+                    border: Border.all(color: EchoColors.amber.withValues(alpha: (_escalationLevel >= 2 ? 0.14 : 0.06) + t * 0.10), width: 1.0),
                   ),
                 ),
                 // Second ring at level 4+
@@ -355,10 +333,7 @@ class _TodayScreenState extends State<TodayScreen>
                     height: 155,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: EchoColors.amber.withValues(alpha: 0.06 + t * 0.08),
-                        width: 0.5,
-                      ),
+                      border: Border.all(color: EchoColors.amber.withValues(alpha: 0.06 + t * 0.08), width: 0.5),
                     ),
                   ),
                 // Core
@@ -367,8 +342,7 @@ class _TodayScreenState extends State<TodayScreen>
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: EchoColors.amber.withValues(
-                        alpha: (_escalationLevel >= 3 ? 0.10 : 0.06) + t * 0.08),
+                    color: EchoColors.amber.withValues(alpha: (_escalationLevel >= 3 ? 0.10 : 0.06) + t * 0.08),
                     boxShadow: [
                       BoxShadow(
                         color: EchoColors.amber.withValues(alpha: p.base + t * p.pulse),
@@ -393,12 +367,7 @@ class _TodayScreenState extends State<TodayScreen>
       children: [
         Text(
           'Day $_threadDay',
-          style: GoogleFonts.inter(
-            color: EchoColors.amber.withValues(alpha: 0.45),
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.5,
-          ),
+          style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5),
         ),
         const SizedBox(height: 6),
       ],
@@ -412,23 +381,11 @@ class _TodayScreenState extends State<TodayScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.2,
-                  color: EchoColors.amber.withValues(alpha: 0.30),
-                ),
-              ),
+              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.2, color: EchoColors.amber.withValues(alpha: 0.30))),
               const SizedBox(height: 12),
               Text(
                 'echo is reading',
-                style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                  fontWeight: FontWeight.w300,
-                ),
+                style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.12), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w300),
               ),
             ],
           ),
@@ -471,11 +428,8 @@ class _TodayScreenState extends State<TodayScreen>
                       HapticFeedback.lightImpact();
                       await Navigator.of(context).push(
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) =>
-                              const DailyCheckinScreen(),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) =>
-                                  FadeTransition(opacity: animation, child: child),
+                          pageBuilder: (context, animation, secondaryAnimation) => const DailyCheckinScreen(),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
                           transitionDuration: const Duration(milliseconds: 500),
                           fullscreenDialog: true,
                         ),
@@ -495,12 +449,7 @@ class _TodayScreenState extends State<TodayScreen>
                       ),
                       child: Text(
                         'Begin',
-                        style: GoogleFonts.inter(
-                          color: EchoColors.amber,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
-                        ),
+                        style: GoogleFonts.inter(color: EchoColors.amber, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.5),
                       ),
                     ),
                   ),
@@ -536,23 +485,12 @@ class _TodayScreenState extends State<TodayScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '— what echo sees',
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      fontSize: 10,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  Text('— what echo sees', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.16), fontSize: 10, letterSpacing: 0.5)),
                   const SizedBox(height: 30),
                 ] else ...[
                   Text(
                     hasThread ? 'Still watching.' : 'Nothing yet.',
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      fontSize: 13,
-                      letterSpacing: 0.3,
-                    ),
+                    style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.18), fontSize: 13, letterSpacing: 0.3),
                   ),
                   const SizedBox(height: 30),
                 ],
@@ -562,9 +500,7 @@ class _TodayScreenState extends State<TodayScreen>
                   GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => AskScreen(threadId: _threadId),
-                      ));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => AskScreen(threadId: _threadId)));
                     },
                     child: Container(
                       width: double.infinity,
@@ -579,29 +515,18 @@ class _TodayScreenState extends State<TodayScreen>
                           Container(
                             width: 5,
                             height: 5,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: EchoColors.amber.withValues(alpha: 0.50),
-                            ),
+                            decoration: BoxDecoration(shape: BoxShape.circle, color: EchoColors.amber.withValues(alpha: 0.50)),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               _threadName!,
-                              style: GoogleFonts.inter(
-                                color: Colors.white.withValues(alpha: 0.42),
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w300,
-                              ),
+                              style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.42), fontSize: 12.5, fontWeight: FontWeight.w300),
                             ),
                           ),
                           Text(
                             _threadDay >= 2 ? 'Day $_threadDay' : 'lv $_escalationLevel',
-                            style: GoogleFonts.inter(
-                              color: EchoColors.amber.withValues(alpha: 0.28),
-                              fontSize: 10,
-                              letterSpacing: 0.4,
-                            ),
+                            style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.28), fontSize: 10, letterSpacing: 0.4),
                           ),
                         ],
                       ),
@@ -639,10 +564,7 @@ class _TodayScreenState extends State<TodayScreen>
                         Expanded(
                           child: Text(
                             practiceTitle,
-                            style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: 0.32),
-                              fontSize: 12,
-                            ),
+                            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.32), fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -653,14 +575,7 @@ class _TodayScreenState extends State<TodayScreen>
 
                 if (!hasThread && signal == null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    'Keep talking.',
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      fontSize: 12,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                  Text('Keep talking.', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.10), fontSize: 12, letterSpacing: 0.3)),
                 ],
               ],
             ),
@@ -708,14 +623,8 @@ class _TodayScreenState extends State<TodayScreen>
               if (letter.isNotEmpty) {
                 await Navigator.of(context).push(
                   PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        RevelationScreen(
-                          letter: letter,
-                          threadId: _threadId,
-                        ),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) =>
-                            FadeTransition(opacity: animation, child: child),
+                    pageBuilder: (context, animation, secondaryAnimation) => RevelationScreen(letter: letter, threadId: _threadId),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
                     transitionDuration: const Duration(milliseconds: 700),
                     fullscreenDialog: true,
                   ),
@@ -743,22 +652,10 @@ class _TodayScreenState extends State<TodayScreen>
                     Text(
                       'Echo has something to tell you.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.65),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
-                        height: 1.5,
-                      ),
+                      style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.65), fontSize: 16, fontWeight: FontWeight.w300, height: 1.5),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Tap to read',
-                      style: GoogleFonts.inter(
-                        color: EchoColors.amber.withValues(alpha: 0.45),
-                        fontSize: 12,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    Text('Tap to read', style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 12, letterSpacing: 0.5)),
                   ],
                 ),
               ),
@@ -778,27 +675,16 @@ class _TodayScreenState extends State<TodayScreen>
                 children: [
                   _buildThreadLabel(),
                   Text(
-                    _threadContext != null
-                        ? 'Echo called the council.'
-                        : 'The council is ready.',
+                    _threadContext != null ? 'Echo called the council.' : 'The council is ready.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.70),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w300,
-                      height: 1.5,
-                    ),
+                    style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.70), fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
                   ),
                   if (_threadContext != null) ...[
                     const SizedBox(height: 10),
                     Text(
                       _threadContext!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        fontSize: 12,
-                        height: 1.5,
-                      ),
+                      style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.35), fontSize: 12, height: 1.5),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -807,10 +693,7 @@ class _TodayScreenState extends State<TodayScreen>
                       HapticFeedback.lightImpact();
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => AskScreen(
-                            threadId: _threadId,
-                            threadContext: _threadContext,
-                          ),
+                          builder: (_) => AskScreen(threadId: _threadId, threadContext: _threadContext),
                         ),
                       );
                     },
@@ -819,16 +702,11 @@ class _TodayScreenState extends State<TodayScreen>
                       decoration: BoxDecoration(
                         color: EchoColors.amber.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                            color: EchoColors.amber.withValues(alpha: 0.30)),
+                        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.30)),
                       ),
                       child: Text(
                         _threadContext != null ? 'Enter the council' : 'Bring your question',
-                        style: GoogleFonts.inter(
-                          color: EchoColors.amber,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: GoogleFonts.inter(color: EchoColors.amber, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ),
@@ -848,29 +726,18 @@ class _TodayScreenState extends State<TodayScreen>
 
     switch (type) {
       case 'daily_checkin':
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const DailyCheckinScreen()),
-        );
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen()));
         if (mounted) _showXp('+10 XP · Check-in complete');
         break;
       case 'run_tournament':
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ShadowTournamentScreen(
-              initialPrompt: payload['prompt'] as String?,
-            ),
-          ),
-        );
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: payload['prompt'] as String?)));
         await EchoLoopState().refresh();
         if (mounted) _showXp('+15 XP · Clones deployed');
         break;
       case 'open_council':
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => AskScreen(
-              threadId: payload['thread_id'] as String?,
-              threadContext: payload['thread_context'] as String?,
-            ),
+            builder: (_) => AskScreen(threadId: payload['thread_id'] as String?, threadContext: payload['thread_context'] as String?),
           ),
         );
         break;
@@ -883,14 +750,10 @@ class _TodayScreenState extends State<TodayScreen>
         }
         break;
       case 'open_training':
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()),
-        );
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()));
         break;
       case 'open_mirror':
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const MirrorTab()),
-        );
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab()));
         break;
       default:
         await _recordPriorityOutcome(priority, 'acknowledged', 0.5);
@@ -903,12 +766,9 @@ class _TodayScreenState extends State<TodayScreen>
     }
   }
 
-  Future<void> _recordPriorityOutcome(
-      Map<String, dynamic> priority, String outcome, double score) async {
+  Future<void> _recordPriorityOutcome(Map<String, dynamic> priority, String outcome, double score) async {
     HapticFeedback.selectionClick();
-    final subjectType = (priority['subject_type'] as String?) ??
-        (priority['kind'] as String?) ??
-        'today_priority';
+    final subjectType = (priority['subject_type'] as String?) ?? (priority['kind'] as String?) ?? 'today_priority';
     await EchoApiClient().recordOutcome(
       subjectType: subjectType,
       subjectId: priority['subject_id'] as String?,
@@ -918,9 +778,7 @@ class _TodayScreenState extends State<TodayScreen>
     );
     await EchoLoopState().refresh();
     if (mounted) {
-      _showXp(outcome == 'not_true'
-          ? 'Correction saved. Echo will adjust.'
-          : 'Signal saved. Echo updated the loop.');
+      _showXp(outcome == 'not_true' ? 'Correction saved. Echo will adjust.' : 'Signal saved. Echo updated the loop.');
       _contentFade.value = 0;
       _checkState();
     }
@@ -929,18 +787,10 @@ class _TodayScreenState extends State<TodayScreen>
   Widget _buildDailyMissionCard(Map<String, dynamic> mission) {
     final headline = mission['headline'] as String? ?? 'Echo has one mission today.';
     final why = mission['why'] as String? ?? '';
-    final priority = mission['priority'] is Map
-        ? Map<String, dynamic>.from(mission['priority'] as Map)
-        : <String, dynamic>{};
-    final cloneMission = mission['clone_mission'] is Map
-        ? Map<String, dynamic>.from(mission['clone_mission'] as Map)
-        : null;
-    final reality = mission['reality_check'] is Map
-        ? Map<String, dynamic>.from(mission['reality_check'] as Map)
-        : null;
-    final growth = mission['growth'] is Map
-        ? Map<String, dynamic>.from(mission['growth'] as Map)
-        : null;
+    final priority = mission['priority'] is Map ? Map<String, dynamic>.from(mission['priority'] as Map) : <String, dynamic>{};
+    final cloneMission = mission['clone_mission'] is Map ? Map<String, dynamic>.from(mission['clone_mission'] as Map) : null;
+    final reality = mission['reality_check'] is Map ? Map<String, dynamic>.from(mission['reality_check'] as Map) : null;
+    final growth = mission['growth'] is Map ? Map<String, dynamic>.from(mission['growth'] as Map) : null;
     final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
     final actionType = action['type'] as String? ?? 'none';
     final actionLabel = action['label'] as String? ?? 'Start';
@@ -959,8 +809,7 @@ class _TodayScreenState extends State<TodayScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.wb_sunny_outlined,
-                  size: 15, color: EchoColors.amber.withValues(alpha: 0.58)),
+              Icon(Icons.wb_sunny_outlined, size: 15, color: EchoColors.amber.withValues(alpha: 0.58)),
               const SizedBox(width: 8),
               Text(
                 'DAILY MISSION',
@@ -976,47 +825,23 @@ class _TodayScreenState extends State<TodayScreen>
           const SizedBox(height: 11),
           Text(
             headline,
-            style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.72),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
+            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.72), fontSize: 16, fontWeight: FontWeight.w500, height: 1.35),
           ),
           if (why.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              why,
-              style: GoogleFonts.inter(
-                color: Colors.white.withValues(alpha: 0.36),
-                fontSize: 12.5,
-                height: 1.45,
-              ),
-            ),
+            Text(why, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.36), fontSize: 12.5, height: 1.45)),
           ],
           if (cloneMission != null) ...[
             const SizedBox(height: 12),
-            _missionLine(
-              Icons.military_tech_outlined,
-              'Clone returned',
-              cloneMission['suggested_action'] as String? ?? 'A clone mission is ready.',
-            ),
+            _missionLine(Icons.military_tech_outlined, 'Clone returned', cloneMission['suggested_action'] as String? ?? 'A clone mission is ready.'),
           ],
           if (reality != null) ...[
             const SizedBox(height: 8),
-            _missionLine(
-              Icons.fact_check_outlined,
-              'Reality check',
-              reality['title'] as String? ?? 'Echo is comparing words and behavior.',
-            ),
+            _missionLine(Icons.fact_check_outlined, 'Reality check', reality['title'] as String? ?? 'Echo is comparing words and behavior.'),
           ],
           if (growth != null) ...[
             const SizedBox(height: 8),
-            _missionLine(
-              Icons.timeline_outlined,
-              'Proof',
-              growth['headline'] as String? ?? 'Growth proof is forming.',
-            ),
+            _missionLine(Icons.timeline_outlined, 'Proof', growth['headline'] as String? ?? 'Growth proof is forming.'),
           ],
           const SizedBox(height: 14),
           Row(
@@ -1033,11 +858,7 @@ class _TodayScreenState extends State<TodayScreen>
                     ),
                     child: Text(
                       actionLabel,
-                      style: GoogleFonts.inter(
-                        color: EchoColors.amber.withValues(alpha: 0.78),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.78), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1063,11 +884,7 @@ class _TodayScreenState extends State<TodayScreen>
         Expanded(
           child: RichText(
             text: TextSpan(
-              style: GoogleFonts.inter(
-                color: Colors.white.withValues(alpha: 0.30),
-                fontSize: 11.5,
-                height: 1.35,
-              ),
+              style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.30), fontSize: 11.5, height: 1.35),
               children: [
                 TextSpan(
                   text: '$label: ',
@@ -1096,9 +913,7 @@ class _TodayScreenState extends State<TodayScreen>
       icon = Icons.bolt_rounded;
     } else if (kind == 'training_ready') {
       icon = Icons.model_training_rounded;
-    } else if (kind == 'tournament' ||
-        kind == 'thread_tournament' ||
-        kind == 'tournament_result') {
+    } else if (kind == 'tournament' || kind == 'thread_tournament' || kind == 'tournament_result') {
       icon = Icons.military_tech_rounded;
     } else if (kind == 'council') {
       icon = Icons.forum_rounded;
@@ -1134,36 +949,17 @@ class _TodayScreenState extends State<TodayScreen>
                 ),
               ),
               const Spacer(),
-              if (evidence > 0)
-                Text(
-                  '$evidence signals',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    fontSize: 10,
-                  ),
-                ),
+              if (evidence > 0) Text('$evidence signals', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.18), fontSize: 10)),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             title,
-            style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.68),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
+            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.68), fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
           ),
           if (body.isNotEmpty) ...[
             const SizedBox(height: 7),
-            Text(
-              body,
-              style: GoogleFonts.inter(
-                color: Colors.white.withValues(alpha: 0.34),
-                fontSize: 12,
-                height: 1.45,
-              ),
-            ),
+            Text(body, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.34), fontSize: 12, height: 1.45)),
           ],
           const SizedBox(height: 13),
           Row(
@@ -1176,16 +972,11 @@ class _TodayScreenState extends State<TodayScreen>
                     decoration: BoxDecoration(
                       color: EchoColors.amber.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: EchoColors.amber.withValues(alpha: 0.22)),
+                      border: Border.all(color: EchoColors.amber.withValues(alpha: 0.22)),
                     ),
                     child: Text(
                       actionLabel,
-                      style: GoogleFonts.inter(
-                        color: EchoColors.amber.withValues(alpha: 0.74),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.74), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1200,17 +991,10 @@ class _TodayScreenState extends State<TodayScreen>
     );
   }
 
-  Widget _miniOutcome(
-      Map<String, dynamic> priority, String outcome, String label, double score) {
+  Widget _miniOutcome(Map<String, dynamic> priority, String outcome, String label, double score) {
     return GestureDetector(
       onTap: () => _recordPriorityOutcome(priority, outcome, score),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          color: Colors.white.withValues(alpha: 0.24),
-          fontSize: 11,
-        ),
-      ),
+      child: Text(label, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.24), fontSize: 11)),
     );
   }
 
@@ -1229,13 +1013,7 @@ class _TodayScreenState extends State<TodayScreen>
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
-            child: Text(
-              'I need to think about this',
-              style: GoogleFonts.inter(
-                color: Colors.white.withValues(alpha: 0.80),
-                fontSize: 13,
-              ),
-            ),
+            child: Text('I need to think about this', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.80), fontSize: 13)),
           ),
         ),
         const SizedBox(height: 12),
@@ -1244,13 +1022,7 @@ class _TodayScreenState extends State<TodayScreen>
             HapticFeedback.lightImpact();
             setState(() => _state = _TodayState.silence);
           },
-          child: Text(
-            'Dismiss',
-            style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.25),
-              fontSize: 12,
-            ),
-          ),
+          child: Text('Dismiss', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.25), fontSize: 12)),
         ),
       ],
     );
@@ -1260,9 +1032,7 @@ class _TodayScreenState extends State<TodayScreen>
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AskScreen()),
-        );
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AskScreen()));
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
@@ -1271,14 +1041,7 @@ class _TodayScreenState extends State<TodayScreen>
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
-        child: Text(
-          'Ask Echo',
-          style: GoogleFonts.inter(
-            color: Colors.white.withValues(alpha: 0.40),
-            fontSize: 13,
-            letterSpacing: 0.3,
-          ),
-        ),
+        child: Text('Ask Echo', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.40), fontSize: 13, letterSpacing: 0.3)),
       ),
     );
   }

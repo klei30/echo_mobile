@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 
@@ -41,15 +42,12 @@ class VoiceService {
     _log.info('Voice state: $s');
   }
 
-  String get _echoBase {
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    return isAndroid ? 'http://10.0.2.2:8002' : 'http://localhost:8002';
-  }
+  String get _echoBase => EchoHostService().resolvedUrl;
 
-  /// On Android the emulator's localhost ≠ the host machine.
-  /// Rewrite any localhost LiveKit URL to 10.0.2.2 so WebRTC can reach the host.
+  /// When using local URL, rewrite localhost → 10.0.2.2 for Android emulator WebRTC.
   String _fixLiveKitUrl(String url) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
+    if (!EchoHostService().hasTunnel &&
+        defaultTargetPlatform == TargetPlatform.android) {
       return url.replaceFirst('localhost', '10.0.2.2');
     }
     return url;

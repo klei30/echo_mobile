@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class EchoHostService {
@@ -48,6 +49,23 @@ class EchoHostService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyTunnelUrl);
     await prefs.setString(_keyMode, 'auto');
+  }
+
+  /// Pings the saved tunnel URL and clears it if unreachable.
+  /// Quick tunnels die when cloudflared stops — always verify on startup.
+  /// Skips verification for the local emulator address (10.0.2.2) because
+  /// that address is always valid — Echo just needs to be started separately.
+  Future<void> verifyTunnel() async {
+    if (!hasTunnel) return;
+    if (_tunnelUrl.contains('10.0.2.2')) return; // local emulator — never auto-clear
+    try {
+      final resp = await http
+          .get(Uri.parse('$_tunnelUrl/health'))
+          .timeout(const Duration(seconds: 5));
+      if (resp.statusCode != 200) await clearTunnel();
+    } catch (_) {
+      await clearTunnel();
+    }
   }
 
   Future<void> markConfigured() async {

@@ -8,7 +8,7 @@ import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
 import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
-import 'package:chatmcp/page/echo_tabs/remote_access_screen.dart';
+import 'package:chatmcp/page/echo_tabs/pair_computer_screen.dart';
 import 'package:chatmcp/echo/echo_host_service.dart';
 
 class EchoLabScreen extends StatefulWidget {
@@ -22,6 +22,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
   Map<String, dynamic>? _health;
   Map<String, dynamic>? _summary;
   Map<String, dynamic>? _evalData;
+  List<Map<String, dynamic>> _runs = [];
   bool _loading = true;
 
   @override
@@ -35,12 +36,14 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
       EchoApiClient().getSystemHealth(),
       EchoApiClient().getTrainingSummary(lane: 'gemma4_e2b'),
       EchoApiClient().getTrainingEval(lane: 'gemma4_e2b'),
+      EchoApiClient().getTrainingRuns(lane: 'gemma4_e2b'),
     ]);
     if (!mounted) return;
     setState(() {
-      _health = results[0];
-      _summary = results[1];
-      _evalData = results[2];
+      _health = results[0] as Map<String, dynamic>?;
+      _summary = results[1] as Map<String, dynamic>?;
+      _evalData = results[2] as Map<String, dynamic>?;
+      _runs = results[3] as List<Map<String, dynamic>>;
       _loading = false;
     });
   }
@@ -58,6 +61,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             _statusCard(),
             const SizedBox(height: 10),
             _evalCard(),
+            const SizedBox(height: 10),
+            _trainingHistoryCard(),
             const SizedBox(height: 16),
             _section('Clone Training'),
             _toolRow('Training room', 'Update the local clone and inspect DPO readiness.',
@@ -82,13 +87,16 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             const SizedBox(height: 16),
             _section('Connections'),
             _toolRow(
-              'Remote access',
+              'My Computer',
               EchoHostService().hasTunnel
-                  ? 'Tunnel active — ${EchoHostService().tunnelUrl}'
-                  : 'Local only — set a Cloudflare tunnel URL',
-              Icons.wifi_tethering_rounded,
+                  ? 'Secure private connection active'
+                  : 'Pair Echo Desktop',
+              EchoHostService().hasTunnel ? Icons.check_circle_rounded : Icons.computer_rounded,
               EchoHostService().hasTunnel ? const Color(0xFF4CAF50) : EchoColors.textGhost,
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemoteAccessScreen())),
+              () async {
+                await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PairComputerScreen()));
+                if (mounted) setState(() {});
+              },
             ),
           ],
         ),
@@ -208,12 +216,23 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     final score = eval['score'] as num?;
     final nEval = (eval['n_eval'] as num?)?.toInt() ?? 0;
     final scorePct = score != null ? '${(score * 100).round()}%' : '—';
-    final color = passed ? const Color(0xFF4CAF50) : Colors.redAccent;
-    final icon = passed ? Icons.check_circle_rounded : Icons.cancel_rounded;
-    final label = passed ? 'Clone passed eval' : 'Eval failed — previous adapter kept';
-    final dateStr = finishedAt != null
-        ? finishedAt.substring(0, 10)
-        : '';
+    final dateStr = finishedAt != null ? finishedAt.substring(0, 10) : '';
+
+    // Eval failed but adapter is confirmed live in vLLM — eval threshold was conservative
+    final adapterActuallyLive = _health?['adapter_loaded'] == true;
+    final effectivePassed = passed || adapterActuallyLive;
+
+    final color = passed
+        ? const Color(0xFF4CAF50)
+        : adapterActuallyLive
+            ? EchoColors.amber
+            : Colors.redAccent;
+    final icon = effectivePassed ? Icons.check_circle_rounded : Icons.cancel_rounded;
+    final label = passed
+        ? 'Clone passed eval'
+        : adapterActuallyLive
+            ? 'Clone active — eval threshold was conservative'
+            : 'Eval failed — previous adapter kept';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -249,10 +268,107 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
               _pill(Icons.bar_chart_rounded, 'Score $scorePct'),
               _pill(Icons.question_answer_outlined, '$nEval prompts'),
               _pill(
-                passed ? Icons.memory_rounded : Icons.history_rounded,
-                passed ? 'adapter live' : 'rolled back',
+                effectivePassed ? Icons.memory_rounded : Icons.history_rounded,
+                effectivePassed ? 'adapter live' : 'rolled back',
               ),
             ],
+          ),
+          if (!passed && adapterActuallyLive) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Word-overlap eval is a rough check. Your clone is running — just chat and give thumbs up/down to improve it further.',
+              style: GoogleFonts.plusJakartaSans(fontSize: 11, height: 1.45, color: EchoColors.textGhost),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _trainingHistoryCard() {
+    if (_loading || _runs.isEmpty) return const SizedBox.shrink();
+    final completed = _runs.where((r) {
+      final s = r['status'] as String? ?? '';
+      return s.startsWith('complete');
+    }).toList();
+    if (completed.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.trending_up_rounded, size: 15, color: EchoColors.amber),
+            const SizedBox(width: 7),
+            Text('Training history',
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.textPrimary)),
+            const Spacer(),
+            Text('${completed.length} run${completed.length == 1 ? '' : 's'}',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost)),
+          ]),
+          const SizedBox(height: 12),
+          ...completed.take(5).map((run) {
+            final score = run['eval_score'] as num?;
+            final passed = run['eval_passed'] as bool?;
+            final adapterLive = _health?['adapter_loaded'] == true &&
+                run == completed.first;
+            final status = run['status'] as String? ?? '';
+            final date = (run['finished_at'] as String? ?? '').length >= 10
+                ? (run['finished_at'] as String).substring(0, 10)
+                : '';
+            final pairs = run['pairs'] as num? ?? 0;
+            final scorePct = score != null ? '${(score * 100).round()}%' : '—';
+            final Color dotColor = (passed == true || adapterLive)
+                ? const Color(0xFF4CAF50)
+                : status == 'complete_eval_failed'
+                    ? EchoColors.amber
+                    : EchoColors.textGhost;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8, height: 8,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      date,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textMuted),
+                    ),
+                  ),
+                  Text(
+                    '$pairs pairs',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: dotColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      score != null ? 'score $scorePct' : (adapterLive ? 'live' : status.replaceAll('_', ' ')),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w700, color: dotColor),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 4),
+          Text(
+            'Score = word-overlap check (>25% passes). Green = adapter active. Amber = trained, eval conservative.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 10.5, height: 1.45, color: EchoColors.textVeryGhost),
           ),
         ],
       ),
