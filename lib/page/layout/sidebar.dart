@@ -70,11 +70,11 @@ class _SidebarPanelState extends State<SidebarPanel> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  // On desktop show ChatMCP branding; on mobile Echo manages the header
+                  // On desktop show Echo branding; on mobile Echo manages the header
                   if (kIsDesktop) ...[
-                    Image.asset('assets/logo.png', width: 24, height: 24),
+                    Image.asset('assets/echo_logo.png', width: 24, height: 24),
                     const Gap(size: 8),
-                    CText(text: 'ChatMCP', size: 12, fontWeight: FontWeight.w700),
+                    CText(text: 'Echo', size: 12, fontWeight: FontWeight.w700),
                   ],
                   if (kIsMobile) ...[
                     Padding(

@@ -8,7 +8,7 @@ import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
 
-// ─── 3D Gyroscope Orb ────────────────────────────────────────────────────────
+// ─── Gyroscope Orb ───────────────────────────────────────────────────────────
 
 class _GyroOrb extends StatefulWidget {
   final bool active;
@@ -74,133 +74,99 @@ class _GyroOrbState extends State<_GyroOrb> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final s = widget.size;
     final coreSize = s * 0.38;
-
     return AnimatedBuilder(
       animation: Listenable.merge([_pulseCtrl, _ringYCtrl, _ringXCtrl, _ring2YCtrl]),
-      builder: (context2, child2) {
+      builder: (ctx, _) {
         final pulse = math.sin(_pulseCtrl.value * 2 * math.pi).abs();
         final glowAlpha = widget.active ? 0.55 + 0.30 * pulse : 0.22 + 0.12 * pulse;
         final glowRadius = widget.active ? s * 0.55 + s * 0.15 * pulse : s * 0.28;
-
         final angleY = _ringYCtrl.value * 2 * math.pi;
         final angleX = _ringXCtrl.value * 2 * math.pi;
         final angle2Y = _ring2YCtrl.value * math.pi;
-
         return SizedBox(
-          width: s,
-          height: s,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Ambient glow behind everything
-              Container(
-                width: s,
-                height: s,
+          width: s, height: s,
+          child: Stack(alignment: Alignment.center, children: [
+            Container(
+              width: s, height: s,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  EchoColors.amber.withValues(alpha: glowAlpha * 0.18),
+                  Colors.transparent,
+                ]),
+              ),
+            ),
+            Transform(
+              transform: Matrix4.identity()..setEntry(3, 2, 0.0008)..rotateY(angleY),
+              alignment: Alignment.center,
+              child: Container(
+                width: s * 0.92, height: s * 0.92,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      EchoColors.amber.withValues(alpha: glowAlpha * 0.18),
-                      Colors.transparent,
-                    ],
+                  border: Border.all(
+                    color: EchoColors.amber.withValues(alpha: widget.active ? 0.40 : 0.14),
+                    width: widget.active ? 1.4 : 1.0,
                   ),
                 ),
               ),
-
-              // Outer ring — Y axis rotation (gyroscope ring 1)
-              Transform(
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0008)
-                  ..rotateY(angleY),
-                alignment: Alignment.center,
-                child: Container(
-                  width: s * 0.92,
-                  height: s * 0.92,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: EchoColors.amber.withValues(
-                          alpha: widget.active ? 0.40 : 0.14),
-                      width: widget.active ? 1.4 : 1.0,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Middle ring — X axis rotation (gyroscope ring 2)
-              Transform(
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0008)
-                  ..rotateX(angleX),
-                alignment: Alignment.center,
-                child: Container(
-                  width: s * 0.72,
-                  height: s * 0.72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: EchoColors.amber.withValues(
-                          alpha: widget.active ? 0.30 : 0.10),
-                      width: 1.0,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Inner ring — diagonal Y rotation (gyroscope ring 3)
-              Transform(
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0008)
-                  ..rotateY(angle2Y)
-                  ..rotateX(math.pi / 4),
-                alignment: Alignment.center,
-                child: Container(
-                  width: s * 0.54,
-                  height: s * 0.54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: EchoColors.amber.withValues(
-                          alpha: widget.active ? 0.22 : 0.07),
-                      width: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Core orb
-              Container(
-                width: coreSize,
-                height: coreSize,
+            ),
+            Transform(
+              transform: Matrix4.identity()..setEntry(3, 2, 0.0008)..rotateX(angleX),
+              alignment: Alignment.center,
+              child: Container(
+                width: s * 0.72, height: s * 0.72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    center: Alignment(-0.3, -0.4),
-                    colors: [
-                      EchoColors.amberGlow,
-                      EchoColors.amber,
-                      EchoColors.amberDark,
-                    ],
-                    stops: [0.0, 0.55, 1.0],
+                  border: Border.all(
+                    color: EchoColors.amber.withValues(alpha: widget.active ? 0.30 : 0.10),
+                    width: 1.0,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: EchoColors.amber.withValues(alpha: glowAlpha),
-                      blurRadius: glowRadius,
-                      spreadRadius: widget.active ? 3 : 0,
-                    ),
-                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0008)
+                ..rotateY(angle2Y)
+                ..rotateX(math.pi / 4),
+              alignment: Alignment.center,
+              child: Container(
+                width: s * 0.54, height: s * 0.54,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: EchoColors.amber.withValues(alpha: widget.active ? 0.22 : 0.07),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: coreSize, height: coreSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const RadialGradient(
+                  center: Alignment(-0.3, -0.4),
+                  colors: [EchoColors.amberGlow, EchoColors.amber, EchoColors.amberDark],
+                  stops: [0.0, 0.55, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: EchoColors.amber.withValues(alpha: glowAlpha),
+                    blurRadius: glowRadius,
+                    spreadRadius: widget.active ? 3 : 0,
+                  ),
+                ],
+              ),
+            ),
+          ]),
         );
       },
     );
   }
 }
 
-// ─── Radar Spider Chart ───────────────────────────────────────────────────────
+// ─── Radar Chart ─────────────────────────────────────────────────────────────
 
 class _RadarPainter extends CustomPainter {
   final Map<String, double> scores;
@@ -223,14 +189,11 @@ class _RadarPainter extends CustomPainter {
     final cy = size.height / 2;
     final center = Offset(cx, cy);
     final maxR = math.min(cx, cy) - 32;
-
     final topics = scores.keys.toList();
     final n = topics.length;
     if (n < 3) return;
-
     final angles = List.generate(n, (i) => -math.pi / 2 + 2 * math.pi * i / n);
 
-    // Faint grid rings
     for (int ring = 1; ring <= 4; ring++) {
       final r = maxR * ring / 4;
       final path = Path();
@@ -240,34 +203,24 @@ class _RadarPainter extends CustomPainter {
         if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
       }
       path.close();
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = EchoColors.amber.withValues(alpha: ring == 4 ? 0.08 : 0.05)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.7,
-      );
+      canvas.drawPath(path, Paint()
+        ..color = EchoColors.amber.withValues(alpha: ring == 4 ? 0.08 : 0.05)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7);
     }
 
-    // Spokes
     for (int i = 0; i < n; i++) {
       final x = cx + maxR * math.cos(angles[i]);
       final y = cy + maxR * math.sin(angles[i]);
-      canvas.drawLine(
-        center,
-        Offset(x, y),
-        Paint()
-          ..color = EchoColors.amber.withValues(alpha: 0.08)
-          ..strokeWidth = 0.7,
-      );
+      canvas.drawLine(center, Offset(x, y), Paint()
+        ..color = EchoColors.amber.withValues(alpha: 0.08)
+        ..strokeWidth = 0.7);
     }
 
-    // Filled radar polygon
     final fillPath = Path();
     final strokePath = Path();
     for (int i = 0; i < n; i++) {
       final rawScore = (scores[topics[i]] ?? 0.0).clamp(0.0, 1.0);
-      // Ensure at least a tiny dot even at 0 so shape is visible
       final score = (rawScore * animValue).clamp(0.03, 1.0) * animValue;
       final r = maxR * score;
       final x = cx + r * math.cos(angles[i]);
@@ -283,28 +236,19 @@ class _RadarPainter extends CustomPainter {
     fillPath.close();
     strokePath.close();
 
-    canvas.drawPath(
-      fillPath,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            EchoColors.amber.withValues(alpha: 0.12),
-            EchoColors.amber.withValues(alpha: 0.04),
-          ],
-        ).createShader(Rect.fromCircle(center: center, radius: maxR))
-        ..style = PaintingStyle.fill,
-    );
+    canvas.drawPath(fillPath, Paint()
+      ..shader = RadialGradient(colors: [
+        EchoColors.amber.withValues(alpha: 0.12),
+        EchoColors.amber.withValues(alpha: 0.04),
+      ]).createShader(Rect.fromCircle(center: center, radius: maxR))
+      ..style = PaintingStyle.fill);
 
-    canvas.drawPath(
-      strokePath,
-      Paint()
-        ..color = EchoColors.amber.withValues(alpha: 0.65)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6
-        ..strokeJoin = StrokeJoin.round,
-    );
+    canvas.drawPath(strokePath, Paint()
+      ..color = EchoColors.amber.withValues(alpha: 0.65)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeJoin = StrokeJoin.round);
 
-    // Dots on each vertex
     for (int i = 0; i < n; i++) {
       final rawScore = (scores[topics[i]] ?? 0.0).clamp(0.0, 1.0);
       final score = (rawScore * animValue).clamp(0.03, 1.0) * animValue;
@@ -312,56 +256,48 @@ class _RadarPainter extends CustomPainter {
       final x = cx + r * math.cos(angles[i]);
       final y = cy + r * math.sin(angles[i]);
       final dotColor = _topicColors[topics[i]] ?? EchoColors.amber;
-      canvas.drawCircle(
-        Offset(x, y),
-        3.5,
-        Paint()..color = dotColor.withValues(alpha: 0.9 * animValue),
-      );
+      canvas.drawCircle(Offset(x, y), 3.5,
+          Paint()..color = dotColor.withValues(alpha: 0.9 * animValue));
     }
 
-    // Topic labels
     final tp = TextPainter(textDirection: TextDirection.ltr);
     for (int i = 0; i < n; i++) {
       final labelR = maxR + 22;
       final x = cx + labelR * math.cos(angles[i]);
       final y = cy + labelR * math.sin(angles[i]);
-      final score = (scores[topics[i]] ?? 0.0);
+      final score = scores[topics[i]] ?? 0.0;
       final pct = (score * 100).round();
       final dotColor = _topicColors[topics[i]] ?? EchoColors.amber;
-
-      tp.text = TextSpan(
-        children: [
-          TextSpan(
-            text: '${topics[i]}\n',
-            style: TextStyle(
-              fontSize: 9.0,
-              color: EchoColors.textGhost.withValues(alpha: 0.8 * animValue),
-              fontFamily: 'PlusJakartaSans',
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-            ),
+      tp.text = TextSpan(children: [
+        TextSpan(
+          text: '${topics[i]}\n',
+          style: TextStyle(
+            fontSize: 9.0,
+            color: EchoColors.textGhost.withValues(alpha: 0.8 * animValue),
+            fontFamily: 'PlusJakartaSans',
+            fontWeight: FontWeight.w500,
+            height: 1.3,
           ),
-          TextSpan(
-            text: '$pct%',
-            style: TextStyle(
-              fontSize: 8.5,
-              color: dotColor.withValues(alpha: 0.75 * animValue),
-              fontFamily: 'PlusJakartaSans',
-            ),
+        ),
+        TextSpan(
+          text: '$pct%',
+          style: TextStyle(
+            fontSize: 8.5,
+            color: dotColor.withValues(alpha: 0.75 * animValue),
+            fontFamily: 'PlusJakartaSans',
           ),
-        ],
-      );
+        ),
+      ]);
       tp.layout();
       tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
     }
   }
 
   @override
-  bool shouldRepaint(_RadarPainter old) =>
-      old.animValue != animValue || old.scores != scores;
+  bool shouldRepaint(_RadarPainter old) => old.animValue != animValue || old.scores != scores;
 }
 
-// ─── Step Arc Progress ───────────────────────────────────────────────────────
+// ─── Step Arc ────────────────────────────────────────────────────────────────
 
 class _StepArc extends StatelessWidget {
   final int step;
@@ -377,9 +313,8 @@ class _StepArc extends StatelessWidget {
       tween: Tween(begin: 0.0, end: progress),
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeOut,
-      builder: (context2, value, child2) => SizedBox(
-        width: 52,
-        height: 52,
+      builder: (_, value, __) => SizedBox(
+        width: 52, height: 52,
         child: CustomPaint(
           painter: _StepArcPainter(progress: value, step: step, total: total),
         ),
@@ -392,22 +327,16 @@ class _StepArcPainter extends CustomPainter {
   final double progress;
   final int step;
   final int total;
-
   const _StepArcPainter({required this.progress, required this.step, required this.total});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 4;
-
-    canvas.drawCircle(
-      center, radius,
-      Paint()
-        ..color = EchoColors.amber.withValues(alpha: 0.10)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0,
-    );
-
+    canvas.drawCircle(center, radius, Paint()
+      ..color = EchoColors.amber.withValues(alpha: 0.10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0);
     if (progress > 0) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
@@ -421,27 +350,21 @@ class _StepArcPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round,
       );
     }
-
     final tp = TextPainter(
       text: TextSpan(
         text: '$step/$total',
         style: const TextStyle(
-          fontSize: 9.5,
-          color: EchoColors.amberText,
-          fontFamily: 'PlusJakartaSans',
-          fontWeight: FontWeight.w600,
+          fontSize: 9.5, color: EchoColors.amberText,
+          fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w600,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(canvas, Offset(
-      center.dx - tp.width / 2,
-      center.dy - tp.height / 2,
-    ));
+    tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
   }
 
   @override
-  bool shouldRepaint(_StepArcPainter old) => old.progress != progress || old.step != old.step;
+  bool shouldRepaint(_StepArcPainter old) => old.progress != progress;
 }
 
 // ─── Log Line ─────────────────────────────────────────────────────────────────
@@ -450,7 +373,6 @@ class _LogLine extends StatefulWidget {
   final String text;
   final int delayMs;
   final bool done;
-
   const _LogLine({required this.text, required this.delayMs, this.done = false});
 
   @override
@@ -472,10 +394,7 @@ class _LogLineState extends State<_LogLine> with SingleTickerProviderStateMixin 
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -529,21 +448,17 @@ class _DotLoaderState extends State<_DotLoader> with SingleTickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (context2, child2) => Row(
+      builder: (_, __) => Row(
         children: List.generate(3, (i) {
           final t = (_ctrl.value - i / 3).clamp(0.0, 1.0);
           final alpha = math.sin(t * math.pi).clamp(0.0, 1.0);
@@ -577,7 +492,8 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   Map<String, dynamic>? _insights;
   Map<String, dynamic>? _confidence;
   Map<String, dynamic>? _trainingSummary;
-  List<Map<String, dynamic>> _history = [];
+  Map<String, dynamic>? _rank;
+  List<Map<String, dynamic>> _runs = [];
   bool _loading = true;
   bool _pressing = false;
 
@@ -586,22 +502,16 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   int _logStep = 0;
   Timer? _logTimer;
 
-  String? _trainingLane() {
-    final model = ProviderManager.chatModelProvider.currentModel;
-    final name = model.name.toLowerCase().replaceAll('-', '_');
-    if (model.providerId == 'echo' && name == 'gemma4_e2b') {
-      return 'gemma4_e2b';
-    }
-    return null;
-  }
+  String _trainingLane() => 'gemma4_e2b';
 
   static const _logLines = [
     'Reading your conversations...',
     'Extracting behavioral patterns...',
     'Preparing training dataset...',
-    'Fine-tuning shadow clone weights...',
+    'Fine-tuning personal model weights...',
     'Merging LoRA adapter...',
-    'Loading updated clone...',
+    'Restarting your personal model...',
+    'Loading updated model...',
     'Verifying personality alignment...',
   ];
 
@@ -624,21 +534,36 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       EchoApiClient().getUserStats(),
       EchoApiClient().getUserInsights(),
       EchoApiClient().getConfidence(),
-      EchoApiClient().getTrainingHistory(lane: _trainingLane()),
       EchoApiClient().getTrainingSummary(lane: _trainingLane()),
+      EchoApiClient().getTrainingRuns(lane: _trainingLane()),
+      EchoApiClient().getUserRank(),
     ]);
     if (!mounted) return;
     setState(() {
       _stats = results[0] as Map<String, dynamic>?;
       _insights = results[1] as Map<String, dynamic>?;
       _confidence = results[2] as Map<String, dynamic>?;
-      _history = results[3] as List<Map<String, dynamic>>;
-      _trainingSummary = results[4] as Map<String, dynamic>?;
+      _trainingSummary = results[3] as Map<String, dynamic>?;
+      _runs = results[4] as List<Map<String, dynamic>>;
+      _rank = results[5] as Map<String, dynamic>?;
       final status = _trainingSummary?['status'] as String?;
-      if (status == 'running') {
+      if (status == 'running' || status == 'loading_adapter') {
         _trainingStatus = 'running';
-        _startLogAnimation();
+        if (status == 'loading_adapter') {
+          _logStep = _logLines.indexOf('Restarting your personal model...');
+        } else {
+          _startLogAnimation();
+        }
         _startPolling();
+      } else if (status != null && status.startsWith('complete')) {
+        _pollTimer?.cancel();
+        _logTimer?.cancel();
+        if (keepCompleteState) {
+          _trainingStatus = status;
+          _logStep = _logLines.length - 1;
+        } else {
+          _trainingStatus = 'idle';
+        }
       } else if (!keepCompleteState && !_trainingStatus.startsWith('complete')) {
         _trainingStatus = 'idle';
       }
@@ -669,10 +594,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     }
 
     HapticFeedback.heavyImpact();
-    setState(() {
-      _trainingStatus = 'running';
-      _logStep = 0;
-    });
+    setState(() { _trainingStatus = 'running'; _logStep = 0; });
     _startLogAnimation();
     _startPolling();
   }
@@ -680,12 +602,18 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   void _startLogAnimation() {
     _logTimer?.cancel();
     _logStep = 0;
+    // Once the animation reaches the last two steps, oscillate between them
+    // so the UI never freezes while the backend is still evaluating.
+    const loopFrom = 6; // 'Loading updated model...'
     _logTimer = Timer.periodic(const Duration(seconds: 11), (t) {
       if (!mounted) { t.cancel(); return; }
       setState(() {
-        if (_logStep < _logLines.length - 1) _logStep++;
+        if (_logStep < _logLines.length - 1) {
+          _logStep++;
+        } else {
+          _logStep = loopFrom;
+        }
       });
-      if (_logStep >= _logLines.length - 1) t.cancel();
     });
   }
 
@@ -704,8 +632,13 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         });
         await _load(keepCompleteState: true);
         await EchoLoopState().refresh();
+      } else if (status == 'loading_adapter') {
+        _logTimer?.cancel();
+        setState(() {
+          _trainingStatus = 'running';
+          _logStep = _logLines.indexOf('Restarting your personal model...');
+        });
       } else if (status == 'failed' || status == 'idle') {
-        // Training died or was never picked up — stop the spinner.
         t.cancel();
         _logTimer?.cancel();
         if (mounted) {
@@ -723,9 +656,15 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
       final h = dt.hour.toString().padLeft(2, '0');
       final min = dt.minute.toString().padLeft(2, '0');
       return '${m[dt.month - 1]} ${dt.day} · $h:$min';
-    } catch (_) {
-      return '—';
-    }
+    } catch (_) { return '—'; }
+  }
+
+  String _shortDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${m[dt.month - 1]} ${dt.day}';
+    } catch (_) { return '—'; }
   }
 
   // ─── BUILD ──────────────────────────────────────────────────────────────────
@@ -743,7 +682,7 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             _buildHeader(isRunning, isComplete),
             Expanded(
               child: _loading
-                  ? _buildLoadingState()
+                  ? const Center(child: _GyroOrb(active: false, size: 80))
                   : isRunning || isComplete
                       ? _buildActiveTraining(isRunning, isComplete)
                       : _buildIdleState(),
@@ -763,39 +702,19 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back_ios_rounded,
-                size: 16, color: EchoColors.textMuted),
+            child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
           ),
           const SizedBox(width: 12),
           Text(
-            isRunning
-                ? 'TRAINING IN PROGRESS'
-                : isComplete
-                    ? 'TRAINING COMPLETE'
-                    : 'CLONE TRAINING',
+            isRunning ? 'TRAINING IN PROGRESS' : isComplete ? 'TRAINING COMPLETE' : 'CLONE TRAINING',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.3,
-              color: isRunning
-                  ? EchoColors.amber.withValues(alpha: 0.75)
-                  : EchoColors.textVeryGhost,
+              fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.3,
+              color: isRunning ? EchoColors.amber.withValues(alpha: 0.75) : EchoColors.textVeryGhost,
             ),
           ),
-          if (isRunning) ...[
-            const SizedBox(width: 10),
-            _DotLoader(),
-          ],
+          if (isRunning) ...[const SizedBox(width: 10), _DotLoader()],
         ],
       ),
-    );
-  }
-
-  // ─── Loading state ───────────────────────────────────────────────────────────
-
-  Widget _buildLoadingState() {
-    return const Center(
-      child: _GyroOrb(active: false, size: 80),
     );
   }
 
@@ -804,192 +723,546 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
   Widget _buildIdleState() {
     final totalPairs = _stats?['total_pairs'] as int? ?? 0;
     final lastTrained = _stats?['last_trained'] as String?;
-    final checkpointCount = _history.length;
     final topics = (_confidence?['topics'] as List? ?? [])
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
     final pattern = _insights?['latest_pattern'] as String? ?? '';
+    final rankName = _rank?['rank'] as String? ?? '';
+    final xp = _rank?['xp'] as int? ?? 0;
+    final xpToNext = _rank?['xp_to_next'] as int? ?? 0;
+    final progress = (_rank?['progress'] as num?)?.toDouble() ?? 0.0;
+
+    final completedRuns = _runs.where((r) {
+      final s = r['status'] as String? ?? '';
+      return s.startsWith('complete') || s == 'failed';
+    }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(22, 8, 22, 40),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+      physics: const BouncingScrollPhysics(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Orb + stats ────────────────────────────────────────────────
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 28),
-              child: Column(
-                children: [
-                  const _GyroOrb(active: false, size: 120),
-                  const SizedBox(height: 18),
-                  Text(
-                    'your shadow clone',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11, letterSpacing: 0.9,
-                      color: EchoColors.textGhost,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8, runSpacing: 6,
-                    children: [
-                      if (totalPairs > 0)
-                        _pill('$totalPairs conversations'),
-                      if (checkpointCount > 0)
-                        _pill('$checkpointCount training runs'),
-                      if (lastTrained != null)
-                        _pill(_formatDate(lastTrained),
-                            color: EchoColors.amber.withValues(alpha: 0.75)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // ── Hero Section ──
+          _buildHeroSection(totalPairs, lastTrained, rankName, xp, xpToNext, progress, completedRuns),
+          
+          const SizedBox(height: 32),
+          
+          // ── Train Now CTA ──
+          _buildTrainButton(),
+          
+          const SizedBox(height: 32),
 
-          // ── Cognitive fingerprint (radar chart) ────────────────────────
-          if (topics.isNotEmpty) ...[
-            _sectionLabel('COGNITIVE FINGERPRINT'),
-            const SizedBox(height: 4),
-            Text(
-              'The shape of what your clone knows about you',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11.5, color: EchoColors.textGhost, height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildRadarChart(topics),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Latest pattern ─────────────────────────────────────────────
+          // ── Dashboard Grid ──
           if (pattern.isNotEmpty) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: BoxDecoration(
-                color: EchoColors.bgSurface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border(
-                  left: BorderSide(color: EchoColors.amber, width: 2),
-                  right: BorderSide(color: EchoColors.borderSubtle),
-                  top: BorderSide(color: EchoColors.borderSubtle),
-                  bottom: BorderSide(color: EchoColors.borderSubtle),
+            _buildCard(
+              title: 'LATEST PATTERN',
+              icon: Icons.psychology_rounded,
+              borderColor: EchoColors.amber.withValues(alpha: 0.3),
+              child: Text(
+                pattern,
+                style: GoogleFonts.lora(
+                  fontSize: 14, fontStyle: FontStyle.italic,
+                  height: 1.6, color: EchoColors.textMuted,
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          if (topics.isNotEmpty) ...[
+            _buildCard(
+              title: 'COGNITIVE FINGERPRINT',
+              icon: Icons.radar_rounded,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LATEST PATTERN',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9.5, fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0, color: EchoColors.amberText,
-                    ),
+                    'Topics Echo has learned most about you',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost, height: 1.4),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    pattern,
-                    style: GoogleFonts.lora(
-                      fontSize: 13.5, fontStyle: FontStyle.italic,
-                      height: 1.65, color: EchoColors.textMuted,
-                    ),
-                  ),
+                  const SizedBox(height: 20),
+                  _buildRadarChart(topics),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
           ],
-
-          // ── Training history strip ─────────────────────────────────────
-          if (_history.isNotEmpty)
-            _buildHistoryStrip(),
 
           if (_trainingSummary != null) ...[
+            _buildBattleSummaryCard(),
             const SizedBox(height: 16),
-            _buildBattleSummary(),
           ],
 
-          const SizedBox(height: 8),
-
-          // ── Train Now button ───────────────────────────────────────────
-          _buildTrainButton(),
+          if (completedRuns.isNotEmpty) ...[
+            _buildEvolutionRoadmap(completedRuns),
+            const SizedBox(height: 32),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildBattleSummary() {
-    final s = _trainingSummary ?? {};
-    final battles = s['tournament_battles'] as int? ?? 0;
-    final prefs = s['preference_signals'] as int? ?? 0;
-    final dpoReady = (s['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
-    final dpoRequired = (s['dpo_required_pairs'] as num?)?.toInt() ?? 4;
-    final untrained = s['untrained_pairs'] as int? ?? 0;
-    final leading = s['leading_style'] as String?;
-    final adapter = Map<String, dynamic>.from(s['adapter'] as Map? ?? {});
-    final adapterLoaded = adapter['loaded'] as bool? ?? false;
-    final adapterExists = adapter['exists'] as bool? ?? false;
-    final adapterLabel = adapterLoaded
-        ? 'your clone is live'
-        : adapterExists
-            ? 'clone trained, waiting'
-            : 'learning from scratch';
+  Widget _buildHeroSection(int totalPairs, String? lastTrained, String rankName, int xp, int xpToNext, double progress, List<Map<String, dynamic>> completedRuns) {
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          const _GyroOrb(active: false, size: 120),
+          const SizedBox(height: 24),
+          if (rankName.isNotEmpty) ...[
+            Text(
+              rankName.toUpperCase(),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14, fontWeight: FontWeight.w800,
+                letterSpacing: 2.0, color: EchoColors.amber,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // XP progress bar
+            SizedBox(
+              width: 220,
+              child: Column(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: progress),
+                      duration: const Duration(milliseconds: 1200),
+                      curve: Curves.easeOut,
+                      builder: (_, v, __) => LinearProgressIndicator(
+                        value: v,
+                        minHeight: 6,
+                        backgroundColor: EchoColors.amber.withValues(alpha: 0.10),
+                        valueColor: const AlwaysStoppedAnimation(EchoColors.amber),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$xp XP',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11, color: EchoColors.amberText, fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '$xpToNext to next rank',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11, color: EchoColors.textVeryGhost,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8, runSpacing: 8,
+            children: [
+              if (totalPairs > 0) _pill('$totalPairs pairs', icon: Icons.chat_bubble_outline_rounded),
+              if (completedRuns.isNotEmpty) _pill('${completedRuns.length} runs', icon: Icons.memory_rounded),
+              if (lastTrained != null) _pill(_formatDate(lastTrained), icon: Icons.access_time_rounded, color: EchoColors.amber.withValues(alpha: 0.8)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
+  // ─── Dashboard Components ────────────────────────────────────────────────────
+
+  Widget _buildCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+    Color? borderColor,
+    Widget? trailing,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: EchoColors.amber.withValues(alpha: 0.14)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor ?? EchoColors.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.military_tech_rounded,
-                  size: 16, color: EchoColors.amber),
+              Icon(icon, size: 16, color: EchoColors.amber),
               const SizedBox(width: 8),
               Text(
-                'CLONE BATTLES',
+                title,
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
+                  letterSpacing: 1.2,
                   color: EchoColors.amber,
                 ),
               ),
+              if (trailing != null) ...[
+                const Spacer(),
+                trailing,
+              ],
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBattleSummaryCard() {
+    final s = _trainingSummary ?? {};
+    final battles = s['tournament_battles'] as int? ?? 0;
+    final prefs = s['preference_signals'] as int? ?? 0;
+    final dpoReady = (s['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (s['dpo_required_pairs'] as num?)?.toInt() ?? 4;
+    final untrained = s['untrained_pairs'] as int? ?? 0;
+    final required = (s['required_pairs'] as num?)?.toInt() ?? 20;
+    final leading = s['leading_style'] as String?;
+    final adapter = Map<String, dynamic>.from(s['adapter'] as Map? ?? {});
+    final adapterLoaded = adapter['loaded'] as bool? ?? false;
+    final styleWins = Map<String, dynamic>.from(s['style_wins'] as Map? ?? {});
+
+    return _buildCard(
+      title: 'PREFERENCE SIGNAL',
+      icon: Icons.psychology_alt_rounded,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8, height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: adapterLoaded ? const Color(0xFF4CAF50) : EchoColors.textGhost,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            adapterLoaded ? 'live' : 'offline',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10.5, fontWeight: FontWeight.w600,
+              color: adapterLoaded ? const Color(0xFF4CAF50) : EchoColors.textGhost,
+            ),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             leading == null
-                ? 'Send clones to teach Echo which response actually helps.'
-                : '$leading is currently winning your clone battles.',
+                ? 'Run a comparison to see which guidance style fits you best.'
+                : '$leading is the guidance style helping most often.',
             style: GoogleFonts.lora(
-              fontSize: 15,
-              height: 1.5,
+              fontSize: 14, height: 1.5,
               color: EchoColors.textSecondary,
               fontStyle: FontStyle.italic,
             ),
           ),
+          if (styleWins.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildStyleBars(styleWins),
+          ],
+          const SizedBox(height: 20),
+          _buildProgressRow('Pairs ready', untrained, required, EchoColors.amber),
           const SizedBox(height: 12),
+          _buildProgressRow('Preference pairs', dpoReady, dpoRequired, const Color(0xFF8A92D8)),
+          const SizedBox(height: 18),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 8, runSpacing: 8,
             children: [
-              _pill('$battles battles'),
-              _pill('$prefs preference signals'),
-              _pill('$dpoReady/$dpoRequired DPO-ready'),
-              _pill('$untrained new since train'),
-              _pill(adapterLabel),
+              _pill('$battles comparisons', icon: Icons.compare_arrows_rounded),
+              _pill('$prefs preference signals', icon: Icons.thumbs_up_down_rounded),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEvolutionRoadmap(List<Map<String, dynamic>> completedRuns) {
+    if (completedRuns.isEmpty) return const SizedBox.shrink();
+
+    final runs = completedRuns.take(5).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.route_rounded, size: 16, color: EchoColors.amber),
+            const SizedBox(width: 8),
+            Text(
+              'EVOLUTION ROADMAP',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                color: EchoColors.amber,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            children: List.generate(runs.length, (index) {
+              return _buildRoadmapNode(
+                run: runs[index],
+                isFirst: index == 0,
+                isLast: index == runs.length - 1,
+                isLatest: index == 0,
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoadmapNode({
+    required Map<String, dynamic> run,
+    required bool isFirst,
+    required bool isLast,
+    required bool isLatest,
+  }) {
+    final status = run['status'] as String? ?? '';
+    final score = run['eval_score'] as num?;
+    final date = (run['finished_at'] as String? ?? '');
+    final pairs = run['pairs'] as num? ?? 0;
+    final isFailed = status == 'failed';
+
+    final String scoreLabel = isFailed
+        ? 'Failed'
+        : score != null
+            ? '${(score * 100).round()}% alignment'
+            : 'Unrated';
+
+    final String dateLabel = date.length >= 16 ? _formatDate(date) : (date.length >= 10 ? _shortDate(date) : '—');
+    
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Timeline Stem
+          SizedBox(
+            width: 32,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Vertical Line
+                Positioned(
+                  top: isFirst ? 24 : 0,
+                  bottom: isLast ? null : 0,
+                  height: isLast ? 24 : null,
+                  child: Container(
+                    width: 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          if (isFirst) EchoColors.amber.withValues(alpha: 0.5) else EchoColors.borderSubtle.withValues(alpha: 0.3),
+                          if (isLast) Colors.transparent else EchoColors.borderSubtle.withValues(alpha: 0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Glowing Node or Simple Dot
+                Positioned(
+                  top: 20,
+                  child: Container(
+                    width: isLatest ? 12 : 8,
+                    height: isLatest ? 12 : 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isLatest ? EchoColors.amber : EchoColors.bg,
+                      border: Border.all(
+                        color: isLatest ? EchoColors.amber : EchoColors.borderSubtle,
+                        width: isLatest ? 0 : 2,
+                      ),
+                      boxShadow: isLatest ? [
+                        BoxShadow(
+                          color: EchoColors.amber.withValues(alpha: 0.6),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ] : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        isLatest ? 'Latest Evolution' : 'Previous State',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14, fontWeight: FontWeight.w700,
+                          color: isLatest ? EchoColors.amberText : EchoColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        dateLabel,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10.5, color: EchoColors.textVeryGhost, fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$pairs memories integrated • $scoreLabel',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5, color: EchoColors.textMuted, height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleBars(Map<String, dynamic> wins) {
+    final entries = wins.entries.toList()
+      ..sort((a, b) => (b.value as int).compareTo(a.value as int));
+    final total = entries.fold<int>(0, (s, e) => s + (e.value as int));
+    if (total == 0) return const SizedBox.shrink();
+
+    const styleColors = {
+      'Challenger': Color(0xFFF5A623),
+      'Mirror': Color(0xFF8A92D8),
+      'Builder': Color(0xFF6A9A7A),
+      'Strategist': Color(0xFF9A6AB4),
+      'Creative': Color(0xFF7A8A9A),
+    };
+
+    return Column(
+      children: entries.take(5).map((e) {
+        final count = e.value as int;
+        final frac = (count / total).clamp(0.0, 1.0);
+        final color = styleColors[e.key] ?? EchoColors.amber;
+        final pct = (frac * 100).round();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 76,
+                child: Text(
+                  e.key,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5, color: color.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: frac),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOut,
+                    builder: (_, v, __) => LinearProgressIndicator(
+                      value: v,
+                      minHeight: 5,
+                      backgroundColor: color.withValues(alpha: 0.08),
+                      valueColor: AlwaysStoppedAnimation(color.withValues(alpha: 0.65)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 34,
+                child: Text(
+                  '$pct%',
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11, color: EchoColors.textGhost,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildProgressRow(String label, int current, int required, Color color) {
+    final frac = (current / required).clamp(0.0, 1.0);
+    final ready = current >= required;
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(label, style: GoogleFonts.plusJakartaSans(
+            fontSize: 11.5, color: EchoColors.textGhost,
+          )),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: frac),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOut,
+              builder: (_, v, __) => LinearProgressIndicator(
+                value: v,
+                minHeight: 4,
+                backgroundColor: color.withValues(alpha: 0.08),
+                valueColor: AlwaysStoppedAnimation(color.withValues(alpha: ready ? 0.9 : 0.5)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          '$current/$required',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11.5,
+            color: ready ? color : EchoColors.textGhost,
+            fontWeight: ready ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1007,84 +1280,12 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
         tween: Tween(begin: 0.0, end: 1.0),
         duration: const Duration(milliseconds: 1400),
         curve: Curves.easeOut,
-        builder: (context2, value, child2) => SizedBox(
-          width: 260,
-          height: 260,
+        builder: (_, value, __) => SizedBox(
+          width: 260, height: 260,
           child: CustomPaint(
             painter: _RadarPainter(scores: scores, animValue: value),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryStrip() {
-    final Map<String, int> byDay = {};
-    for (final c in _history) {
-      final iso = c['created_at'] as String? ?? '';
-      try {
-        final day = iso.substring(0, 10);
-        byDay[day] = (byDay[day] ?? 0) + 1;
-      } catch (_) {}
-    }
-    if (byDay.isEmpty) return const SizedBox.shrink();
-
-    final days = byDay.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-    final maxCount = byDay.values.reduce(math.max);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionLabel('TRAINING HISTORY'),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 28,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: days.map((entry) {
-                final count = entry.value;
-                final frac = count / maxCount;
-                final isLast = entry == days.last;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 3),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOut,
-                      height: 4 + (24 * frac),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(2),
-                        color: isLast
-                            ? EchoColors.amber.withValues(alpha: 0.80)
-                            : EchoColors.amber.withValues(alpha: 0.18 + 0.28 * frac),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _shortDate(days.first.key),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9.5, color: EchoColors.textVeryGhost,
-                ),
-              ),
-              Text(
-                _shortDate(days.last.key),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9.5, color: EchoColors.amberText,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -1096,54 +1297,39 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final ready = summary['ready_for_training'] as bool? ?? false;
     final dpoReady = (summary['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
     final dpoRequired = (summary['dpo_required_pairs'] as num?)?.toInt() ?? 4;
-    final label = ready
-        ? 'Update Your Clone Now'
-        : '$untrained/$required new since last train';
+    final label = ready ? 'Update Personal Model' : '$untrained/$required new since last train';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GestureDetector(
           onTapDown: ready ? (_) => setState(() => _pressing = true) : null,
-          onTapUp: (_) {
-            setState(() => _pressing = false);
-            if (ready) _startTraining();
-          },
+          onTapUp: (_) { setState(() => _pressing = false); if (ready) _startTraining(); },
           onTapCancel: () => setState(() => _pressing = false),
           child: AnimatedScale(
             scale: _pressing ? 0.97 : 1.0,
             duration: const Duration(milliseconds: 100),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    ready
-                        ? (_pressing
-                            ? EchoColors.amber.withValues(alpha: 0.80)
-                            : EchoColors.amber.withValues(alpha: 0.92))
-                        : EchoColors.bgSurface,
-                    ready
-                        ? (_pressing
-                            ? EchoColors.amberDark.withValues(alpha: 0.85)
-                            : EchoColors.amberDark)
-                        : EchoColors.bgSurface,
+                    ready ? (_pressing ? EchoColors.amber.withValues(alpha: 0.80) : EchoColors.amber.withValues(alpha: 0.95)) : EchoColors.bgSurface,
+                    ready ? (_pressing ? EchoColors.amberDark.withValues(alpha: 0.85) : EchoColors.amberDark) : EchoColors.bgSurface,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: ready ? null : Border.all(color: EchoColors.borderSubtle),
                 boxShadow: [
-                  if (ready)
-                    BoxShadow(
-                      color: EchoColors.amber.withValues(
-                          alpha: _pressing ? 0.15 : 0.28),
-                      blurRadius: _pressing ? 10 : 22,
-                      offset: const Offset(0, 4),
-                      spreadRadius: _pressing ? 0 : 2,
-                    ),
+                  if (ready) BoxShadow(
+                    color: EchoColors.amber.withValues(alpha: _pressing ? 0.15 : 0.30),
+                    blurRadius: _pressing ? 10 : 24,
+                    offset: const Offset(0, 6),
+                    spreadRadius: _pressing ? 0 : 2,
+                  ),
                 ],
               ),
               child: Row(
@@ -1151,17 +1337,16 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                 children: [
                   Icon(
                     ready ? Icons.bolt_rounded : Icons.hourglass_bottom_rounded,
-                    size: 19,
+                    size: 20,
                     color: ready ? const Color(0xFF0A0800) : EchoColors.textGhost,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Text(
                     label,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16, fontWeight: FontWeight.w800,
                       color: ready ? const Color(0xFF0A0800) : EchoColors.textGhost,
-                      letterSpacing: 0.2,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -1169,15 +1354,13 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Text(
           ready
-              ? '$untrained new moments + $dpoReady/$dpoRequired preference battles will shape the next adapter'
+              ? '$untrained new moments + $dpoReady/$dpoRequired preference pairs'
               : 'Keep chatting - each useful turn becomes training signal',
           textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11, color: EchoColors.textVeryGhost,
-          ),
+          style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textVeryGhost),
         ),
       ],
     );
@@ -1192,32 +1375,28 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
     final dpoReady = (summary['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
     final prefSignals = (summary['preference_signals'] as num?)?.toInt() ?? 0;
     final completeSummary = leading != null
-        ? 'Your clone learned from $prefSignals preference signals. $leading is the style winning most often.'
+        ? 'Echo learned from $prefSignals preference signals. $leading is the style helping most often.'
         : dpoReady > 0
-            ? 'Your clone learned from $prefSignals preference signals and $dpoReady preference battles.'
-            : 'Your clone learned your latest style. Send clones to add stronger preference signal.';
+            ? 'Echo learned from $prefSignals preference signals and $dpoReady preference pairs.'
+            : 'Echo learned your latest style. Run a comparison to add stronger preference signal.';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 40),
       child: Column(
         children: [
-          // Big pulsing orb
-          Center(
-            child: _GyroOrb(active: isRunning, size: 150),
-          ),
-          const SizedBox(height: 22),
+          Center(child: _GyroOrb(active: isRunning, size: 150)),
+          const SizedBox(height: 32),
 
-          // Status label
           if (isRunning)
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.5, end: 1.0),
               duration: const Duration(milliseconds: 900),
-              builder: (context2, v, child2) => Opacity(
+              builder: (_, v, __) => Opacity(
                 opacity: v,
                 child: Text(
-                  'training your shadow clone...',
+                  'updating your personal model...',
                   style: GoogleFonts.lora(
-                    fontSize: 15,
-                    fontStyle: FontStyle.italic,
+                    fontSize: 16, fontStyle: FontStyle.italic,
                     color: EchoColors.amber.withValues(alpha: 0.85),
                     letterSpacing: -0.2,
                   ),
@@ -1229,40 +1408,31 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 20, height: 20,
+                  width: 24, height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: EchoColors.amber.withValues(alpha: 0.15),
-                    border: Border.all(
-                        color: EchoColors.amber.withValues(alpha: 0.5)),
+                    border: Border.all(color: EchoColors.amber.withValues(alpha: 0.5)),
                   ),
-                  child: const Icon(Icons.check_rounded,
-                      size: 11, color: EchoColors.amber),
+                  child: const Icon(Icons.check_rounded, size: 14, color: EchoColors.amber),
                 ),
-                const SizedBox(width: 9),
+                const SizedBox(width: 12),
                 Text(
-                  'Clone updated',
+                  'Model updated',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: EchoColors.amber,
+                    fontSize: 16, fontWeight: FontWeight.w600, color: EchoColors.amber,
                   ),
                 ),
               ],
             ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 36),
 
-          // Step arc + label row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _StepArc(
-                step: _logStep + 1,
-                total: _logLines.length,
-                complete: isComplete,
-              ),
-              const SizedBox(width: 16),
+              _StepArc(step: _logStep + 1, total: _logLines.length, complete: isComplete),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1270,18 +1440,14 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
                     Text(
                       isComplete ? 'Complete' : 'Step ${_logStep + 1} of ${_logLines.length}',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: EchoColors.amberText,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12, color: EchoColors.amberText, fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
                       _logLines[_logStep],
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: EchoColors.textGhost,
-                        height: 1.4,
+                        fontSize: 13, color: EchoColors.textGhost, height: 1.4,
                       ),
                     ),
                   ],
@@ -1290,56 +1456,72 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             ],
           ),
 
-          const SizedBox(height: 30),
-
-          // Divider
+          const SizedBox(height: 32),
           Container(height: 1, color: EchoColors.borderSubtle),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // Log lines
           ...(_logLines.sublist(0, _logStep + 1).asMap().entries.map((e) =>
-              _LogLine(
-                text: e.value,
-                delayMs: 0,
-                done: isComplete || e.key < _logStep,
-              ))),
+              _LogLine(text: e.value, delayMs: 0, done: isComplete || e.key < _logStep))),
 
-          if (isRunning) ...[
-            const SizedBox(height: 8),
-            _DotLoader(),
-          ],
+          if (isRunning) ...[const SizedBox(height: 12), _DotLoader()],
 
           if (isComplete) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               decoration: BoxDecoration(
                 color: EchoColors.amber.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: EchoColors.amber.withValues(alpha: 0.20)),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: EchoColors.amber.withValues(alpha: 0.20)),
               ),
               child: Row(
                 children: [
                   Icon(
                     adapterLoaded ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
-                    size: 18,
-                    color: EchoColors.amber,
+                    size: 20, color: EchoColors.amber,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Text(
                       adapterLoaded
-                          ? 'Your clone is updated and live. $completeSummary'
-                          : 'Training finished. Your clone is trained, but it is waiting to go live.',
+                          ? 'Your personal model is updated and live. $completeSummary'
+                          : 'Training finished. Your personal model is trained but waiting to go live.',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        color: EchoColors.amberText,
-                        height: 1.45,
+                        fontSize: 13.5, color: EchoColors.amberText, height: 1.45,
                       ),
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Show latest run score after completion
+            if (_runs.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _buildRoadmapNode(
+                run: _runs.first,
+                isFirst: true,
+                isLast: true,
+                isLatest: true,
+              ),
+            ],
+            const SizedBox(height: 28),
+            GestureDetector(
+              onTap: () => setState(() => _trainingStatus = 'idle'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: EchoColors.amber.withValues(alpha: 0.35)),
+                  color: EchoColors.amber.withValues(alpha: 0.07),
+                ),
+                child: Text(
+                  'Train Again',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5, fontWeight: FontWeight.w600,
+                    color: EchoColors.amber.withValues(alpha: 0.85),
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ),
             ),
           ],
@@ -1350,45 +1532,116 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  Widget _sectionLabel(String label) {
-    return Text(
-      label,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 9.5,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.2,
-        color: EchoColors.textGhost,
-      ),
-    );
-  }
-
-  Widget _pill(String text, {Color? color}) {
+  Widget _pill(String text, {IconData? icon, Color? color}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(8),
+        color: EchoColors.bgSurface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: EchoColors.borderSubtle),
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 11,
-          color: color ?? EchoColors.textGhost,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: color ?? EchoColors.textGhost),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            text,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11, fontWeight: FontWeight.w600, color: color ?? EchoColors.textGhost,
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  String _shortDate(String iso) {
-    try {
-      final dt = DateTime.parse(iso);
-      const m = ['Jan','Feb','Mar','Apr','May','Jun',
-                 'Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${m[dt.month - 1]} ${dt.day}';
-    } catch (_) {
-      return iso;
-    }
   }
 }
 
+// ─── Sparkline Painter ────────────────────────────────────────────────────────
+
+class _SparklinePainter extends CustomPainter {
+  final List<double> scores;
+  final double minScore;
+  final double range;
+
+  const _SparklinePainter({required this.scores, required this.minScore, required this.range});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (scores.length < 2) return;
+
+    final n = scores.length;
+    final xStep = size.width / (n - 1);
+
+    // Gradient fill
+    final fillPath = Path();
+    final points = <Offset>[];
+    for (int i = 0; i < n; i++) {
+      final x = i * xStep;
+      final y = size.height - ((scores[i] - minScore) / range) * (size.height - 8) - 4;
+      points.add(Offset(x, y));
+    }
+
+    fillPath.moveTo(points.first.dx, size.height);
+    for (final p in points) { fillPath.lineTo(p.dx, p.dy); }
+    fillPath.lineTo(points.last.dx, size.height);
+    fillPath.close();
+
+    canvas.drawPath(fillPath, Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          EchoColors.amber.withValues(alpha: 0.18),
+          EchoColors.amber.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)));
+
+    // Line
+    final linePath = Path();
+    linePath.moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      linePath.lineTo(points[i].dx, points[i].dy);
+    }
+
+    canvas.drawPath(linePath, Paint()
+      ..color = EchoColors.amber.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round);
+
+    // Dots
+    for (int i = 0; i < points.length; i++) {
+      final isLast = i == points.length - 1;
+      canvas.drawCircle(points[i], isLast ? 4.0 : 2.5,
+          Paint()..color = EchoColors.amber.withValues(alpha: isLast ? 0.95 : 0.50));
+    }
+
+    // Score labels at first and last
+    void drawLabel(String text, Offset point, bool right) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 9.0, color: EchoColors.amberText,
+            fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final dx = right ? point.dx - tp.width - 4 : point.dx + 4;
+      tp.paint(canvas, Offset(dx, point.dy - tp.height - 2));
+    }
+
+    final firstScore = '${(scores.first * 100).round()}%';
+    final lastScore = '${(scores.last * 100).round()}%';
+    drawLabel(firstScore, points.first, false);
+    drawLabel(lastScore, points.last, true);
+  }
+
+  @override
+  bool shouldRepaint(_SparklinePainter old) => old.scores != scores;
+}

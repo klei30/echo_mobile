@@ -92,7 +92,7 @@ class _PermanentRecordScreenState extends State<PermanentRecordScreen> {
                       child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
                     ),
                     const SizedBox(width: 10),
-                    Text('Permanent Record',
+                    Text('Record',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 14, fontWeight: FontWeight.w600, color: EchoColors.textPrimary)),
                   ],

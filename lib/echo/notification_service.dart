@@ -15,6 +15,7 @@ final FlutterLocalNotificationsPlugin _plugin =
 const _channelId = 'echo_evening_signal';
 const _channelName = 'Evening Signal';
 const _notifId = 42;
+const _trainingReadyNotifId = 44;
 
 /// Initialize and schedule the nightly Evening Signal notification.
 /// Safe to call on all platforms — silently no-ops on desktop/web.
@@ -45,6 +46,7 @@ Future<void> initNotifications({
 
   await _scheduleEveningSignal();
   await syncEchoInterventionNotification();
+  await syncTrainingReadyNotification();
 }
 
 @pragma('vm:entry-point')
@@ -166,6 +168,56 @@ Future<void> syncEchoInterventionNotification() async {
     _log.info('Echo intervention scheduled: $title at $scheduled');
   } catch (e) {
     _log.warning('syncEchoInterventionNotification error: $e');
+  }
+}
+
+Future<void> syncTrainingReadyNotification() async {
+  if (kIsWeb || (!_isMobile) || !AuthService().isLoggedIn) return;
+  try {
+    await _plugin.cancel(_trainingReadyNotifId);
+    final summary = await EchoApiClient().getTrainingSummary(lane: 'gemma4_e2b');
+    final ready = summary?['ready_for_training'] == true;
+    if (!ready) return;
+
+    final untrained = (summary?['untrained_pairs'] as num?)?.toInt() ?? 0;
+    final dpoReady = (summary?['dpo_ready_pairs'] as num?)?.toInt() ?? 0;
+    final dpoRequired = (summary?['dpo_required_pairs'] as num?)?.toInt() ?? 4;
+    final scheduled = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: 'Echo model training readiness',
+        importance: Importance.high,
+        priority: Priority.high,
+        enableLights: true,
+        playSound: true,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    await _plugin.zonedSchedule(
+      _trainingReadyNotifId,
+      'Echo is ready to update',
+      '$untrained new moments and $dpoReady/$dpoRequired preference pairs are ready for training.',
+      scheduled,
+      details,
+      payload: jsonEncode({
+        'kind': 'training_ready',
+        'action': {'type': 'open_training'},
+      }),
+      androidScheduleMode: AndroidScheduleMode.inexact,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+    _log.info('Training-ready notification scheduled for $scheduled');
+  } catch (e) {
+    _log.warning('syncTrainingReadyNotification error: $e');
   }
 }
 

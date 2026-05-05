@@ -156,7 +156,7 @@ class _OperatingSystemScreenState extends State<OperatingSystemScreen> {
                     child: const Icon(Icons.arrow_back_ios_rounded, size: 16, color: EchoColors.textMuted),
                   ),
                   const SizedBox(width: 10),
-                  Text('Your Operating System',
+                  Text('Rules',
                       style: GoogleFonts.plusJakartaSans(
                           fontSize: 14, fontWeight: FontWeight.w600, color: EchoColors.textPrimary)),
                 ],

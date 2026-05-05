@@ -145,7 +145,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
                   const Spacer(),
                   Text(
                     'Voice',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: Colors.white.withValues(alpha: 0.25),
                       fontSize: 12,
                       letterSpacing: 0.5,
@@ -303,7 +303,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       return Text(
         _error!,
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           color: Colors.red.withValues(alpha: 0.70),
           fontSize: 13,
         ),
@@ -329,7 +329,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       child: Text(
         label,
         key: ValueKey(label),
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           color: color,
           fontSize: 15,
           fontWeight: FontWeight.w500,
@@ -345,7 +345,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
         _voiceState == VoiceState.listening
             ? 'Go ahead and speak...'
             : '',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           color: Colors.white.withValues(alpha: 0.15),
           fontSize: 13,
           fontStyle: FontStyle.italic,
@@ -391,7 +391,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
               child: Text(
                 _echoTranscript,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: const Color(0xFF4A9EDB).withValues(alpha: 0.80),
                   fontSize: 13,
                   height: 1.5,

@@ -11,6 +11,7 @@ class EchoLoopState extends ChangeNotifier {
   Map<String, dynamic>? thesis;
   Map<String, dynamic>? rank;
   Map<String, dynamic>? practice;
+  Map<String, dynamic>? trainingSummary;
   Map<String, dynamic>? mission;
   Map<String, dynamic>? realityCheck;
   Map<String, dynamic>? growthTimeline;
@@ -23,12 +24,16 @@ class EchoLoopState extends ChangeNotifier {
     Map<String, dynamic>? thesis,
     Map<String, dynamic>? mission,
     Map<String, dynamic>? intervention,
+    Map<String, dynamic>? practice,
+    Map<String, dynamic>? trainingSummary,
   }) {
     if (snapshot != null) this.snapshot = snapshot;
     if (todayPriority != null) this.todayPriority = todayPriority;
     if (thesis != null) this.thesis = thesis;
     if (mission != null) this.mission = mission;
     if (intervention != null) this.intervention = intervention;
+    if (practice != null) this.practice = practice;
+    if (trainingSummary != null) this.trainingSummary = trainingSummary;
     notifyListeners();
   }
 

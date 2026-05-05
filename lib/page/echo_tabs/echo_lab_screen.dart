@@ -4,12 +4,19 @@ import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/memories_screen.dart';
+import 'package:chatmcp/page/echo_tabs/mirror_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/operating_system_screen.dart';
-import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
-import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 import 'package:chatmcp/page/echo_tabs/pair_computer_screen.dart';
+import 'package:chatmcp/page/echo_tabs/permanent_record_screen.dart';
+import 'package:chatmcp/page/echo_tabs/remote_access_screen.dart';
+import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
+import 'package:chatmcp/page/echo_tabs/twin_screen.dart';
+import 'package:chatmcp/page/setting/mcp_server.dart';
 import 'package:chatmcp/echo/echo_host_service.dart';
+import 'package:chatmcp/provider/provider_manager.dart';
+
+enum _LabSection { training, memory, connections, signals }
 
 class EchoLabScreen extends StatefulWidget {
   const EchoLabScreen({super.key});
@@ -22,8 +29,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
   Map<String, dynamic>? _health;
   Map<String, dynamic>? _summary;
   Map<String, dynamic>? _evalData;
-  List<Map<String, dynamic>> _runs = [];
   bool _loading = true;
+  _LabSection _section = _LabSection.training;
 
   @override
   void initState() {
@@ -36,14 +43,12 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
       EchoApiClient().getSystemHealth(),
       EchoApiClient().getTrainingSummary(lane: 'gemma4_e2b'),
       EchoApiClient().getTrainingEval(lane: 'gemma4_e2b'),
-      EchoApiClient().getTrainingRuns(lane: 'gemma4_e2b'),
     ]);
     if (!mounted) return;
     setState(() {
       _health = results[0] as Map<String, dynamic>?;
       _summary = results[1] as Map<String, dynamic>?;
       _evalData = results[2] as Map<String, dynamic>?;
-      _runs = results[3] as List<Map<String, dynamic>>;
       _loading = false;
     });
   }
@@ -57,47 +62,10 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
           children: [
             _header(context),
+            const SizedBox(height: 14),
+            _segmentControl(),
             const SizedBox(height: 18),
-            _statusCard(),
-            const SizedBox(height: 10),
-            _evalCard(),
-            const SizedBox(height: 10),
-            _trainingHistoryCard(),
-            const SizedBox(height: 16),
-            _section('Clone Training'),
-            _toolRow('Training room', 'Update the local clone and inspect DPO readiness.',
-                Icons.model_training_rounded, EchoColors.amber,
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()))),
-            _toolRow('Send clones', 'Run a tournament on one real situation.',
-                Icons.military_tech_rounded, EchoColors.amber,
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShadowTournamentScreen()))),
-            _toolRow('Evening check-in', 'Structured voice/written outcome signal.',
-                Icons.nights_stay_rounded, const Color(0xFF7A8A9A),
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen()))),
-            const SizedBox(height: 16),
-            _section('Memory & System'),
-            _toolRow('Memories', 'What Echo remembers.', Icons.grain_rounded,
-                EchoColors.indigo, () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen()))),
-            _toolRow('Operating system', 'Rules and preferences Echo follows.',
-                Icons.tonality_rounded, const Color(0xFF9A6AB4),
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen()))),
-            _toolRow('Permanent record', 'Long-term evidence and history.',
-                Icons.history_edu_rounded, EchoColors.indigo,
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen()))),
-            const SizedBox(height: 16),
-            _section('Connections'),
-            _toolRow(
-              'My Computer',
-              EchoHostService().hasTunnel
-                  ? 'Secure private connection active'
-                  : 'Pair Echo Desktop',
-              EchoHostService().hasTunnel ? Icons.check_circle_rounded : Icons.computer_rounded,
-              EchoHostService().hasTunnel ? const Color(0xFF4CAF50) : EchoColors.textGhost,
-              () async {
-                await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PairComputerScreen()));
-                if (mounted) setState(() {});
-              },
-            ),
+            ..._sectionWidgets(),
           ],
         ),
       ),
@@ -108,15 +76,252 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     return Row(
       children: [
         Expanded(
-          child: Text('Lab',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18, fontWeight: FontWeight.w900, color: EchoColors.textPrimary)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Training Studio',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: EchoColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                'Improve Echo with practice, preference signal, memory, and tools.',
+                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
+              ),
+            ],
+          ),
         ),
         IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close_rounded, color: EchoColors.textGhost),
         ),
       ],
+    );
+  }
+
+  Widget _segmentControl() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          _segmentButton(_LabSection.training, 'Training', Icons.model_training_rounded),
+          _segmentButton(_LabSection.memory, 'Memory', Icons.grain_rounded),
+          _segmentButton(_LabSection.connections, 'Connect', Icons.hub_outlined),
+          _segmentButton(_LabSection.signals, 'Signals', Icons.bolt_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _segmentButton(_LabSection value, String label, IconData icon) {
+    final active = _section == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _section = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 38,
+          decoration: BoxDecoration(
+            color: active ? EchoColors.amber.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: active ? EchoColors.amber.withValues(alpha: 0.24) : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: active ? EchoColors.amber : EchoColors.textGhost),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                    color: active ? EchoColors.amber : EchoColors.textMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _sectionWidgets() {
+    switch (_section) {
+      case _LabSection.training:
+        return _trainingSection();
+      case _LabSection.memory:
+        return _memorySection();
+      case _LabSection.connections:
+        return _connectionsSection();
+      case _LabSection.signals:
+        return _signalsSection();
+    }
+  }
+
+  List<Widget> _trainingSection() {
+    return [
+      _sectionHeader('Personal Model', 'Train and compare the guidance style Echo is learning for you.'),
+      _statusCard(),
+      const SizedBox(height: 10),
+      _evalCard(),
+      const SizedBox(height: 14),
+      _toolRow(
+        'Model training',
+        'Update the personal model and inspect preference readiness.',
+        Icons.model_training_rounded,
+        EchoColors.amber,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen())),
+      ),
+      _toolRow(
+        'Decision Room',
+        'Compare multiple perspectives on one real situation.',
+        Icons.psychology_alt_rounded,
+        EchoColors.amber,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShadowTournamentScreen())),
+      ),
+      _toolRow(
+        'Personal Lens',
+        'Pick which answer fits your context and standards.',
+        Icons.people_outline_rounded,
+        const Color(0xFF5A8DEE),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TwinScreen())),
+      ),
+    ];
+  }
+
+  List<Widget> _memorySection() {
+    return [
+      _sectionHeader('Memory', 'Review what Echo stores, believes, and uses as long-term evidence.'),
+      _toolRow(
+        'Memories',
+        'What Echo remembers.',
+        Icons.grain_rounded,
+        EchoColors.indigo,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MemoriesScreen())),
+      ),
+      _toolRow(
+        'Rules',
+        'Rules and preferences Echo follows.',
+        Icons.tonality_rounded,
+        const Color(0xFF9A6AB4),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen())),
+      ),
+      _toolRow(
+        'Record',
+        'Long-term evidence and history.',
+        Icons.history_edu_rounded,
+        EchoColors.indigo,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen())),
+      ),
+      _toolRow(
+        'Weekly reflection',
+        'The latest reflection report from your signal.',
+        Icons.remove_red_eye_rounded,
+        const Color(0xFF9A6AB4),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorScreen())),
+      ),
+    ];
+  }
+
+  List<Widget> _connectionsSection() {
+    final host = EchoHostService();
+    final connected = host.hasTunnel;
+    return [
+      _sectionHeader('Connections', 'Give Echo access to tools, MCP servers, and your local computer.'),
+      _mcpStatusCard(),
+      const SizedBox(height: 10),
+      _toolRow(
+        'Echo MCP',
+        'Install, start, and inspect MCP servers available to chat.',
+        Icons.hub_outlined,
+        EchoColors.amber,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _McpServerRoute())),
+      ),
+      _toolRow(
+        'Local Brain',
+        connected ? 'Secure private connection active.' : 'Pair Echo Desktop.',
+        connected ? Icons.check_circle_rounded : Icons.computer_rounded,
+        connected ? const Color(0xFF4CAF50) : EchoColors.textGhost,
+        () async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PairComputerScreen()));
+          if (mounted) setState(() {});
+        },
+      ),
+      _toolRow(
+        'Remote access',
+        'Test or update the URL your phone uses to reach your PC.',
+        Icons.settings_ethernet_rounded,
+        const Color(0xFF7A8A9A),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemoteAccessScreen())),
+      ),
+    ];
+  }
+
+  List<Widget> _signalsSection() {
+    return [
+      _sectionHeader('Signals', 'Feed Echo the outcomes that make guidance less generic.'),
+      _toolRow(
+        'Evening check-in',
+        'Structured voice or written outcome signal.',
+        Icons.nights_stay_rounded,
+        const Color(0xFF7A8A9A),
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen())),
+      ),
+      _toolRow(
+        'Decision Room',
+        'A fast comparison that creates preference signal.',
+        Icons.psychology_alt_rounded,
+        EchoColors.amber,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShadowTournamentScreen())),
+      ),
+      _toolRow(
+        'Model training',
+        'See whether enough new signal is ready for an update.',
+        Icons.model_training_rounded,
+        EchoColors.amber,
+        () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen())),
+      ),
+    ];
+  }
+
+  Widget _sectionHeader(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9,
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.w800,
+              color: EchoColors.textGhost,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, height: 1.4, color: EchoColors.textMuted),
+          ),
+        ],
+      ),
     );
   }
 
@@ -138,9 +343,14 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('System state',
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary)),
+                Text(
+                  'System state',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: EchoColors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -163,51 +373,13 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     final runStatus = _evalData?['status'] as String? ?? '';
     final finishedAt = _evalData?['finished_at'] as String?;
 
-    // No runs yet
     if (eval == null && (runStatus == 'no_runs' || runStatus.isEmpty)) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: EchoColors.borderSubtle),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.science_outlined, size: 16, color: EchoColors.textGhost.withValues(alpha: 0.6)),
-            const SizedBox(width: 10),
-            Text(
-              'Clone eval runs after first training.',
-              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost),
-            ),
-          ],
-        ),
-      );
+      return _compactNotice(Icons.science_outlined, 'Model eval runs after first training.');
     }
 
-    // Eval was skipped (not enough held-out pairs)
     final skippedReason = eval?['skipped_reason'] as String?;
     if (skippedReason != null && skippedReason.isNotEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: EchoColors.bgSurface,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: EchoColors.borderSubtle),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline_rounded, size: 16, color: EchoColors.textGhost.withValues(alpha: 0.6)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Eval skipped: $skippedReason',
-                style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
-              ),
-            ),
-          ],
-        ),
-      );
+      return _compactNotice(Icons.info_outline_rounded, 'Eval skipped: $skippedReason');
     }
 
     if (eval == null) return const SizedBox.shrink();
@@ -215,10 +387,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     final passed = eval['passed'] as bool? ?? true;
     final score = eval['score'] as num?;
     final nEval = (eval['n_eval'] as num?)?.toInt() ?? 0;
-    final scorePct = score != null ? '${(score * 100).round()}%' : '—';
+    final scorePct = score != null ? '${(score * 100).round()}%' : 'not run';
     final dateStr = finishedAt != null ? finishedAt.substring(0, 10) : '';
-
-    // Eval failed but adapter is confirmed live in vLLM — eval threshold was conservative
     final adapterActuallyLive = _health?['adapter_loaded'] == true;
     final effectivePassed = passed || adapterActuallyLive;
 
@@ -229,10 +399,10 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             : Colors.redAccent;
     final icon = effectivePassed ? Icons.check_circle_rounded : Icons.cancel_rounded;
     final label = passed
-        ? 'Clone passed eval'
+        ? 'Model passed eval'
         : adapterActuallyLive
-            ? 'Clone active — eval threshold was conservative'
-            : 'Eval failed — previous adapter kept';
+            ? 'Model active - eval threshold was conservative'
+            : 'Eval failed - previous adapter kept';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -252,7 +422,9 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
                 child: Text(
                   label,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5, fontWeight: FontWeight.w700, color: color,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: color,
                   ),
                 ),
               ),
@@ -276,7 +448,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           if (!passed && adapterActuallyLive) ...[
             const SizedBox(height: 8),
             Text(
-              'Word-overlap eval is a rough check. Your clone is running — just chat and give thumbs up/down to improve it further.',
+              'Word-overlap eval is a rough check. Your personal model is running. Chat and give thumbs up/down to improve it further.',
               style: GoogleFonts.plusJakartaSans(fontSize: 11, height: 1.45, color: EchoColors.textGhost),
             ),
           ],
@@ -285,102 +457,73 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     );
   }
 
-  Widget _trainingHistoryCard() {
-    if (_loading || _runs.isEmpty) return const SizedBox.shrink();
-    final completed = _runs.where((r) {
-      final s = r['status'] as String? ?? '';
-      return s.startsWith('complete');
-    }).toList();
-    if (completed.isEmpty) return const SizedBox.shrink();
-
+  Widget _compactNotice(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: EchoColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: EchoColors.borderSubtle),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(children: [
-            const Icon(Icons.trending_up_rounded, size: 15, color: EchoColors.amber),
-            const SizedBox(width: 7),
-            Text('Training history',
-                style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.textPrimary)),
-            const Spacer(),
-            Text('${completed.length} run${completed.length == 1 ? '' : 's'}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost)),
-          ]),
-          const SizedBox(height: 12),
-          ...completed.take(5).map((run) {
-            final score = run['eval_score'] as num?;
-            final passed = run['eval_passed'] as bool?;
-            final adapterLive = _health?['adapter_loaded'] == true &&
-                run == completed.first;
-            final status = run['status'] as String? ?? '';
-            final date = (run['finished_at'] as String? ?? '').length >= 10
-                ? (run['finished_at'] as String).substring(0, 10)
-                : '';
-            final pairs = run['pairs'] as num? ?? 0;
-            final scorePct = score != null ? '${(score * 100).round()}%' : '—';
-            final Color dotColor = (passed == true || adapterLive)
-                ? const Color(0xFF4CAF50)
-                : status == 'complete_eval_failed'
-                    ? EchoColors.amber
-                    : EchoColors.textGhost;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8, height: 8,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      date,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textMuted),
-                    ),
-                  ),
-                  Text(
-                    '$pairs pairs',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: dotColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      score != null ? 'score $scorePct' : (adapterLive ? 'live' : status.replaceAll('_', ' ')),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w700, color: dotColor),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          const SizedBox(height: 4),
-          Text(
-            'Score = word-overlap check (>25% passes). Green = adapter active. Amber = trained, eval conservative.',
-            style: GoogleFonts.plusJakartaSans(fontSize: 10.5, height: 1.45, color: EchoColors.textVeryGhost),
+          Icon(icon, size: 16, color: EchoColors.textGhost.withValues(alpha: 0.6)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _section(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label.toUpperCase(),
-          style: GoogleFonts.plusJakartaSans(
-              fontSize: 9, letterSpacing: 1.5, fontWeight: FontWeight.w800, color: EchoColors.textGhost)),
+  Widget _mcpStatusCard() {
+    return FutureBuilder<int>(
+      future: ProviderManager.mcpServerProvider.installedServersCount,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        final running = ProviderManager.mcpServerProvider.clients.length;
+        return Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: EchoColors.bgSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: EchoColors.borderSubtle),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.hub_outlined, size: 17, color: EchoColors.amber),
+                  const SizedBox(width: 8),
+                  Text(
+                    'MCP status',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _pill(Icons.inventory_2_outlined, '$count installed'),
+                  _pill(Icons.play_circle_outline_rounded, '$running running'),
+                  _pill(Icons.security_rounded, 'approval controlled'),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -403,14 +546,21 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textMuted)),
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.textMuted,
+                    ),
+                  ),
                   const SizedBox(height: 3),
-                  Text(subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost)),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
+                  ),
                 ],
               ),
             ),
@@ -437,6 +587,18 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textMuted)),
         ],
       ),
+    );
+  }
+}
+
+class _McpServerRoute extends StatelessWidget {
+  const _McpServerRoute();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: EchoColors.bg,
+      body: SafeArea(child: McpServer()),
     );
   }
 }

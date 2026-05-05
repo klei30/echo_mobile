@@ -4,14 +4,14 @@ import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 
-class MirrorTab extends StatefulWidget {
-  const MirrorTab({super.key});
+class MirrorScreen extends StatefulWidget {
+  const MirrorScreen({super.key});
 
   @override
-  State<MirrorTab> createState() => _MirrorTabState();
+  State<MirrorScreen> createState() => _MirrorScreenState();
 }
 
-class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMixin {
+class _MirrorScreenState extends State<MirrorScreen> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _report;
   bool _loading = true;
   bool _error = false;
@@ -224,7 +224,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
                 _buildCloneStatus(totalPairs, weeks, avgConf, weekCompletions, lastTrained),
                 const SizedBox(height: 20),
                 if (rules.isNotEmpty) ...[
-                  _sectionLabel('YOUR OPERATING SYSTEM'),
+                  _sectionLabel('RULES'),
                   const SizedBox(height: 12),
                   ...rules.map((r) => _ruleItem(r)),
                   const SizedBox(height: 20),
@@ -259,7 +259,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
               ),
               const SizedBox(height: 4),
               Text(
-                weeks > 0 ? 'Week $weeks · ${_weekLabel()}' : _weekLabel(),
+                weeks > 0 ? 'Week $weeks - ${_weekLabel()}' : _weekLabel(),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12, color: EchoColors.textGhost,
                 ),
@@ -372,7 +372,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
               ),
               const SizedBox(width: 7),
               Text(
-                'SHADOW CLONE',
+                'PERSONAL MODEL',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 9.5, fontWeight: FontWeight.w700,
                   letterSpacing: 1.0, color: const Color(0xFF7A5A30),
@@ -382,7 +382,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
           ),
           const SizedBox(height: 10),
           Text(
-            '$totalPairs conversations · $weeks week${weeks == 1 ? '' : 's'} · still learning.',
+            '$totalPairs conversations - $weeks week${weeks == 1 ? '' : 's'} - still learning.',
             style: GoogleFonts.lora(
               fontSize: 13, fontStyle: FontStyle.italic,
               color: EchoColors.textMuted, height: 1.55,
@@ -424,7 +424,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
                           fontSize: 10, color: EchoColors.textGhost)),
                   const SizedBox(height: 2),
                   Text(
-                    clonePct > 0 ? '$clonePct%' : '—',
+                    clonePct > 0 ? '$clonePct%' : '-',
                     style: GoogleFonts.lora(
                       fontSize: 16, fontStyle: FontStyle.italic,
                       color: EchoColors.amber,
@@ -436,7 +436,7 @@ class _MirrorTabState extends State<MirrorTab> with SingleTickerProviderStateMix
           ),
           const SizedBox(height: 8),
           Text(
-            'Last trained · $trained',
+            'Last trained - $trained',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 10, color: EchoColors.textVeryGhost,
             ),

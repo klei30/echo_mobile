@@ -138,7 +138,7 @@ class _EchoSettingsSheetState extends State<EchoSettingsSheet> {
           _sectionLabel('NOTIFICATIONS'),
           _settingTile(
             label: 'Evening Signal',
-            sub: 'Daily check-in at 7:00 PM · 3 questions, 5 minutes',
+            sub: 'Daily check-in at 7:00 PM - 3 questions, 5 minutes',
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -219,7 +219,7 @@ class _EchoSettingsSheetState extends State<EchoSettingsSheet> {
           _sectionLabel('ABOUT'),
           _settingTile(
             label: 'Echo',
-            sub: 'Your shadow clone · version 1.0',
+            sub: 'Personal learning system - version 1.0',
             trailing: const SizedBox.shrink(),
           ),
         ],

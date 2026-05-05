@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 
-// Clone identity definitions
+// Perspective identity definitions
 const _cloneOrder = ['Builder', 'Creative', 'Strategist', 'Examiner', 'Connector'];
 
 const _cloneColors = {
@@ -37,7 +37,14 @@ class CouncilScreen extends StatefulWidget {
   final String? initialQuestion;
   final String? threadId;
   final String? threadContext;
-  const CouncilScreen({super.key, this.initialQuestion, this.threadId, this.threadContext});
+  final bool showChrome;
+  const CouncilScreen({
+    super.key,
+    this.initialQuestion,
+    this.threadId,
+    this.threadContext,
+    this.showChrome = true,
+  });
 
   @override
   State<CouncilScreen> createState() => _CouncilScreenState();
@@ -120,24 +127,26 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: EchoColors.bg,
-      appBar: AppBar(
-        backgroundColor: EchoColors.bg,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          color: EchoColors.textMuted,
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'The Council',
-          style: GoogleFonts.inter(
-            color: EchoColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: widget.showChrome
+          ? AppBar(
+              backgroundColor: EchoColors.bg,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, size: 18),
+                color: EchoColors.textMuted,
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                'Perspective Panel',
+                style: GoogleFonts.plusJakartaSans(
+                  color: EchoColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _phase == _Phase.input
@@ -173,7 +182,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                   children: [
                     Text(
                       'E C H O  C A L L E D  T H I S',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: EchoColors.amber.withValues(alpha: 0.55),
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
@@ -183,7 +192,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                     const SizedBox(height: 6),
                     Text(
                       widget.threadContext!,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: EchoColors.textMuted,
                         fontSize: 13,
                         height: 1.5,
@@ -195,7 +204,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
             ],
             Text(
               'Bring a decision to the council.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: EchoColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -204,7 +213,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
             const SizedBox(height: 8),
             Text(
               'Five distinct perspectives. They will disagree. That\'s the point.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: EchoColors.textMuted,
                 fontSize: 13,
                 height: 1.5,
@@ -223,14 +232,14 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                 focusNode: _focus,
                 maxLines: 4,
                 minLines: 2,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.textPrimary,
                   fontSize: 15,
                   height: 1.6,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Should I accept this offer?\nWhat do I do about this situation?',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.plusJakartaSans(
                     color: EchoColors.textMuted.withValues(alpha: 0.5),
                     fontSize: 14,
                     height: 1.6,
@@ -263,7 +272,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                   child: Center(
                     child: Text(
                       'Convene the council',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: Colors.black,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -275,7 +284,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
               ),
             ),
             const SizedBox(height: 32),
-            // Clone identity preview
+            // Perspective preview
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -295,7 +304,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                       const SizedBox(width: 5),
                       Text(
                         name,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           color: color.withValues(alpha: 0.9),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -346,7 +355,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
           const SizedBox(height: 24),
           Text(
             'The council is deliberating…',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: EchoColors.textMuted,
               fontSize: 14,
               letterSpacing: 0.3,
@@ -355,7 +364,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
           const SizedBox(height: 8),
           Text(
             'Five perspectives. One question.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: EchoColors.textMuted.withValues(alpha: 0.5),
               fontSize: 12,
             ),
@@ -385,7 +394,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
             ),
             child: Text(
               '"$question"',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: EchoColors.textMuted,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
@@ -394,7 +403,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
             ),
           ),
 
-          // Clone voice cards
+          // Perspective cards
           for (int i = 0; i < _cloneOrder.length; i++) ...[
             _buildVoiceCard(i, _cloneOrder[i], voices[_cloneOrder[i]] as String? ?? ''),
             const SizedBox(height: 10),
@@ -426,7 +435,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                         const SizedBox(width: 6),
                         Text(
                           'VERDICT',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             color: EchoColors.amber.withValues(alpha: 0.8),
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -438,7 +447,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                     const SizedBox(height: 8),
                     Text(
                       verdict,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: EchoColors.textPrimary,
                         fontSize: 14,
                         height: 1.55,
@@ -475,7 +484,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                 child: Center(
                   child: Text(
                     'I\'ve heard this',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: EchoColors.amber.withValues(alpha: 0.80),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -497,7 +506,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
             child: Center(
               child: Text(
                 'Ask a different question',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.textMuted.withValues(alpha: 0.6),
                   fontSize: 13,
                   decoration: TextDecoration.underline,
@@ -552,7 +561,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                       children: [
                         Text(
                           name,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             color: color.withValues(alpha: 0.9),
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -562,7 +571,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                         const SizedBox(width: 6),
                         Text(
                           '· $subtitle',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             color: EchoColors.textMuted.withValues(alpha: 0.45),
                             fontSize: 11,
                           ),
@@ -572,7 +581,7 @@ class _CouncilScreenState extends State<CouncilScreen> with TickerProviderStateM
                     const SizedBox(height: 5),
                     Text(
                       text.isNotEmpty ? text : '—',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: EchoColors.textPrimary.withValues(alpha: 0.88),
                         fontSize: 13,
                         height: 1.55,

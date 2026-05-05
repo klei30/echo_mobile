@@ -153,8 +153,8 @@ class _MessageActionsState extends State<MessageActions> {
             children: [
               _loopChip(
                 context,
-                Icons.military_tech_rounded,
-                'Send clones',
+                Icons.psychology_alt_rounded,
+                'Explore options',
                 () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),
@@ -162,10 +162,8 @@ class _MessageActionsState extends State<MessageActions> {
                 ),
                 filled: action['type'] == 'run_tournament',
               ),
-              _loopChip(context, Icons.check_circle_outline_rounded, 'This helped', () => _sendFeedback('helped')),
+              _loopChip(context, Icons.check_circle_outline_rounded, 'Useful', () => _sendFeedback('helped')),
               _loopChip(context, Icons.cancel_outlined, 'Not true', () => _sendFeedback('not_true')),
-              _loopChip(context, Icons.bookmark_add_outlined, 'Save signal', () => _sendFeedback('saved_signal')),
-              _loopChip(context, Icons.bolt_outlined, 'Turn into rep', () => _sendFeedback('practice_request')),
             ],
           ),
         );

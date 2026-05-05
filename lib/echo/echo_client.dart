@@ -73,9 +73,13 @@ class EchoClient {
         _cachedContext = ctx;
         final priority = ctx.loopState['today_priority'];
         final thesis = ctx.loopState['thesis'];
+        final practice = ctx.loopState['practice'];
+        final trainingSummary = ctx.loopState['training_summary'];
         EchoLoopState().apply(
           todayPriority: priority is Map ? Map<String, dynamic>.from(priority) : null,
           thesis: thesis is Map ? Map<String, dynamic>.from(thesis) : null,
+          practice: practice is Map ? Map<String, dynamic>.from(practice) : null,
+          trainingSummary: trainingSummary is Map ? Map<String, dynamic>.from(trainingSummary) : null,
         );
         _log.info('Echo /context OK model=${ctx.recommendedModel} confidence=${ctx.confidence.toStringAsFixed(2)}');
         return ctx;

@@ -85,7 +85,7 @@ class _ListViewToImageScreenState extends State<ListViewToImageScreen> {
                     Expanded(
                       child: Text(ProviderManager.chatProvider.activeChat!.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     ),
-                    Text("by ChatMcp", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text("by Echo", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -163,7 +163,7 @@ class _ListViewToImageScreenState extends State<ListViewToImageScreen> {
       if (kIsDesktop) {
         final path = await FilePicker.platform.saveFile(
           dialogTitle: ProviderManager.chatProvider.activeChat?.title ?? 'Save chat image',
-          fileName: 'ChatMcp-${ProviderManager.chatProvider.activeChat?.title ?? DateTime.now().millisecondsSinceEpoch}.jpg',
+          fileName: 'Echo-${ProviderManager.chatProvider.activeChat?.title ?? DateTime.now().millisecondsSinceEpoch}.jpg',
           type: FileType.custom,
           allowedExtensions: ['jpg'],
         );
@@ -177,10 +177,10 @@ class _ListViewToImageScreenState extends State<ListViewToImageScreen> {
         final safeTitle = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(RegExp(r'\s+'), '_');
 
         final tempDir = await getTemporaryDirectory();
-        final tempFile = io.File('${tempDir.path}/ChatMcp_${safeTitle}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final tempFile = io.File('${tempDir.path}/Echo_${safeTitle}_${DateTime.now().millisecondsSinceEpoch}.jpg');
         await tempFile.writeAsBytes(image);
 
-        await SharePlus.instance.share(ShareParams(files: [XFile(tempFile.path)], subject: "ChatMcp $title"));
+        await SharePlus.instance.share(ShareParams(files: [XFile(tempFile.path)], subject: "Echo $title"));
       }
 
       if (mounted) {

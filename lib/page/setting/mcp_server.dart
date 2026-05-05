@@ -90,6 +90,8 @@ class _McpServerState extends State<McpServer> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
+                  _buildEchoToolsHeader(context),
+                  const SizedBox(height: 16),
                   // 搜索框
                   Card(
                     elevation: 0,
@@ -264,6 +266,54 @@ class _McpServerState extends State<McpServer> {
       }
     }
     return false;
+  }
+
+  Widget _buildEchoToolsHeader(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outline.withAlpha(28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Echo Tools',
+            style: TextStyle(
+              color: scheme.onSurface,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Product workflows first. Raw MCP servers stay below for advanced setup.',
+            style: TextStyle(
+              color: scheme.onSurface.withAlpha(150),
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const [
+              _WorkflowChip(icon: Icons.wb_sunny_outlined, label: 'Daily Brief'),
+              _WorkflowChip(icon: Icons.visibility_outlined, label: 'Current Read'),
+              _WorkflowChip(icon: Icons.psychology_alt_outlined, label: 'Decision Room'),
+              _WorkflowChip(icon: Icons.model_training_rounded, label: 'Training Center'),
+              _WorkflowChip(icon: Icons.inventory_2_outlined, label: 'Memory Editor'),
+              _WorkflowChip(icon: Icons.bolt_outlined, label: 'Signal Capture'),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildServerCard(BuildContext context, String serverName, dynamic serverConfig, McpServerProvider provider, bool installed) {
@@ -1059,6 +1109,41 @@ class _McpServerState extends State<McpServer> {
         title: Text(l10n.error),
         content: Text(message),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.ok))],
+      ),
+    );
+  }
+}
+
+class _WorkflowChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _WorkflowChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: scheme.primary.withAlpha(22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.primary.withAlpha(48)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: scheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: scheme.onSurface.withAlpha(210),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

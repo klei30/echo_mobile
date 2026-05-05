@@ -29,6 +29,13 @@ import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/llm/openai_client.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class _StarterLabel {
+  final IconData icon;
+  final String text;
+
+  const _StarterLabel(this.icon, this.text);
+}
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -512,6 +519,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildStarterPrompt(String text) {
+    final label = _displayStarterLabel(text);
     return GestureDetector(
       onTap: () {
         _inputAreaKey.currentState?.textController.text = text;
@@ -526,9 +534,40 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: EchoColors.border),
         ),
-        child: Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.textMuted, height: 1.4)),
+        child: Row(
+          children: [
+            Icon(label.icon, size: 16, color: EchoColors.amber.withValues(alpha: 0.78)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label.text,
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: EchoColors.textMuted, height: 1.4),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, size: 15, color: EchoColors.textGhost),
+          ],
+        ),
       ),
     );
+  }
+
+  _StarterLabel _displayStarterLabel(String raw) {
+    if (raw.startsWith('My current thesis:')) {
+      return const _StarterLabel(Icons.psychology_alt_outlined, 'Review my current read');
+    }
+    if (raw.startsWith("Walk me through today's practice:")) {
+      return const _StarterLabel(Icons.bolt_outlined, 'Practice today\'s rep');
+    }
+    if (raw.startsWith('Help me work on:') || raw.contains('thesis_test') || raw.contains('priority')) {
+      return const _StarterLabel(Icons.flag_outlined, 'Work on today\'s priority');
+    }
+    if (raw.contains('decision')) {
+      return const _StarterLabel(Icons.compare_arrows_outlined, 'Think through a decision');
+    }
+    if (raw.contains('avoiding')) {
+      return const _StarterLabel(Icons.search_outlined, 'Find an avoided pattern');
+    }
+    return const _StarterLabel(Icons.visibility_outlined, 'Show recent patterns');
   }
 
   void _onSwitch(String messageId) {

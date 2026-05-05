@@ -6,7 +6,7 @@ import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
-import 'package:chatmcp/page/echo_tabs/mirror_tab.dart';
+import 'package:chatmcp/page/echo_tabs/mirror_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/revelation_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
@@ -367,7 +367,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
       children: [
         Text(
           'Day $_threadDay',
-          style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+          style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5),
         ),
         const SizedBox(height: 6),
       ],
@@ -385,7 +385,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               const SizedBox(height: 12),
               Text(
                 'echo is reading',
-                style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.12), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w300),
+                style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.12), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w300),
               ),
             ],
           ),
@@ -403,7 +403,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                 children: [
                   Text(
                     'Good morning.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: Colors.white.withValues(alpha: 0.55),
                       fontSize: 14,
                       letterSpacing: 0.5,
@@ -414,7 +414,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                   Text(
                     'Echo is listening.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 22,
                       fontWeight: FontWeight.w300,
@@ -435,7 +435,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                         ),
                       );
                       if (mounted) {
-                        _showXp('+10 XP · Check-in complete');
+                        _showXp('+10 XP - Check-in complete');
                         _contentFade.value = 0;
                         _checkState();
                       }
@@ -449,7 +449,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                       ),
                       child: Text(
                         'Begin',
-                        style: GoogleFonts.inter(color: EchoColors.amber, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+                        style: GoogleFonts.plusJakartaSans(color: EchoColors.amber, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.5),
                       ),
                     ),
                   ),
@@ -485,12 +485,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text('— what echo sees', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.16), fontSize: 10, letterSpacing: 0.5)),
+                  Text('— what echo sees', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.16), fontSize: 10, letterSpacing: 0.5)),
                   const SizedBox(height: 30),
                 ] else ...[
                   Text(
                     hasThread ? 'Still watching.' : 'Nothing yet.',
-                    style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.18), fontSize: 13, letterSpacing: 0.3),
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.18), fontSize: 13, letterSpacing: 0.3),
                   ),
                   const SizedBox(height: 30),
                 ],
@@ -521,12 +521,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                           Expanded(
                             child: Text(
                               _threadName!,
-                              style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.42), fontSize: 12.5, fontWeight: FontWeight.w300),
+                              style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.42), fontSize: 12.5, fontWeight: FontWeight.w300),
                             ),
                           ),
                           Text(
                             _threadDay >= 2 ? 'Day $_threadDay' : 'lv $_escalationLevel',
-                            style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.28), fontSize: 10, letterSpacing: 0.4),
+                            style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.28), fontSize: 10, letterSpacing: 0.4),
                           ),
                         ],
                       ),
@@ -553,7 +553,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                       children: [
                         Text(
                           "TODAY'S REP",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             color: EchoColors.amber.withValues(alpha: 0.35),
                             fontSize: 8.5,
                             letterSpacing: 1.0,
@@ -564,7 +564,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                         Expanded(
                           child: Text(
                             practiceTitle,
-                            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.32), fontSize: 12),
+                            style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.32), fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -575,7 +575,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
 
                 if (!hasThread && signal == null) ...[
                   const SizedBox(height: 8),
-                  Text('Keep talking.', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.10), fontSize: 12, letterSpacing: 0.3)),
+                  Text('Keep talking.', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.10), fontSize: 12, letterSpacing: 0.3)),
                 ],
               ],
             ),
@@ -597,7 +597,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                   Text(
                     statement,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: Colors.white.withValues(alpha: 0.90),
                       fontSize: 21,
                       fontWeight: FontWeight.w300,
@@ -629,7 +629,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     fullscreenDialog: true,
                   ),
                 );
-                if (mounted) _showXp('+30 XP · Revelation received');
+                if (mounted) _showXp('+30 XP - Insight received');
               }
             },
             child: Center(
@@ -641,7 +641,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     _buildThreadLabel(),
                     Text(
                       'R E V E L A T I O N',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: EchoColors.amber.withValues(alpha: 0.40),
                         fontSize: 10,
                         letterSpacing: 3.5,
@@ -652,10 +652,10 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     Text(
                       'Echo has something to tell you.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.65), fontSize: 16, fontWeight: FontWeight.w300, height: 1.5),
+                      style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.65), fontSize: 16, fontWeight: FontWeight.w300, height: 1.5),
                     ),
                     const SizedBox(height: 16),
-                    Text('Tap to read', style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 12, letterSpacing: 0.5)),
+                    Text('Tap to read', style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 12, letterSpacing: 0.5)),
                   ],
                 ),
               ),
@@ -677,14 +677,14 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                   Text(
                     _threadContext != null ? 'Echo called the council.' : 'The council is ready.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.70), fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.70), fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
                   ),
                   if (_threadContext != null) ...[
                     const SizedBox(height: 10),
                     Text(
                       _threadContext!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.35), fontSize: 12, height: 1.5),
+                      style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.35), fontSize: 12, height: 1.5),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -705,8 +705,8 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                         border: Border.all(color: EchoColors.amber.withValues(alpha: 0.30)),
                       ),
                       child: Text(
-                        _threadContext != null ? 'Enter the council' : 'Bring your question',
-                        style: GoogleFonts.inter(color: EchoColors.amber, fontSize: 13, fontWeight: FontWeight.w500),
+                        _threadContext != null ? 'Open perspectives' : 'Bring your question',
+                        style: GoogleFonts.plusJakartaSans(color: EchoColors.amber, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ),
@@ -727,12 +727,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     switch (type) {
       case 'daily_checkin':
         await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen()));
-        if (mounted) _showXp('+10 XP · Check-in complete');
+        if (mounted) _showXp('+10 XP - Check-in complete');
         break;
       case 'run_tournament':
         await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: payload['prompt'] as String?)));
         await EchoLoopState().refresh();
-        if (mounted) _showXp('+15 XP · Clones deployed');
+        if (mounted) _showXp('+15 XP - Perspectives saved');
         break;
       case 'open_council':
         await Navigator.of(context).push(
@@ -746,14 +746,14 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
         if (repId != null) {
           await EchoApiClient().logPractice(repId, true);
           await EchoLoopState().refresh();
-          if (mounted) _showXp('+20 XP · Rep complete');
+          if (mounted) _showXp('+20 XP - Rep complete');
         }
         break;
       case 'open_training':
         await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NightlyTrainingScreen()));
         break;
       case 'open_mirror':
-        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorTab()));
+        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MirrorScreen()));
         break;
       default:
         await _recordPriorityOutcome(priority, 'acknowledged', 0.5);
@@ -788,12 +788,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     final headline = mission['headline'] as String? ?? 'Echo has one mission today.';
     final why = mission['why'] as String? ?? '';
     final priority = mission['priority'] is Map ? Map<String, dynamic>.from(mission['priority'] as Map) : <String, dynamic>{};
-    final cloneMission = mission['clone_mission'] is Map ? Map<String, dynamic>.from(mission['clone_mission'] as Map) : null;
+    final perspectiveMission = mission['clone_mission'] is Map ? Map<String, dynamic>.from(mission['clone_mission'] as Map) : null;
     final reality = mission['reality_check'] is Map ? Map<String, dynamic>.from(mission['reality_check'] as Map) : null;
     final growth = mission['growth'] is Map ? Map<String, dynamic>.from(mission['growth'] as Map) : null;
     final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
     final actionType = action['type'] as String? ?? 'none';
-    final actionLabel = action['label'] as String? ?? 'Start';
+    final actionLabel = _cleanActionLabel(action['label'] as String? ?? 'Start');
 
     return Container(
       width: double.infinity,
@@ -813,7 +813,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               const SizedBox(width: 8),
               Text(
                 'DAILY MISSION',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.amber.withValues(alpha: 0.42),
                   fontSize: 8.5,
                   fontWeight: FontWeight.w700,
@@ -825,15 +825,15 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
           const SizedBox(height: 11),
           Text(
             headline,
-            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.72), fontSize: 16, fontWeight: FontWeight.w500, height: 1.35),
+            style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.72), fontSize: 16, fontWeight: FontWeight.w500, height: 1.35),
           ),
           if (why.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(why, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.36), fontSize: 12.5, height: 1.45)),
+            Text(why, style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.36), fontSize: 12.5, height: 1.45)),
           ],
-          if (cloneMission != null) ...[
+          if (perspectiveMission != null) ...[
             const SizedBox(height: 12),
-            _missionLine(Icons.military_tech_outlined, 'Clone returned', cloneMission['suggested_action'] as String? ?? 'A clone mission is ready.'),
+            _missionLine(Icons.psychology_alt_outlined, 'Perspective ready', perspectiveMission['suggested_action'] as String? ?? 'A decision prompt is ready.'),
           ],
           if (reality != null) ...[
             const SizedBox(height: 8),
@@ -858,7 +858,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     ),
                     child: Text(
                       actionLabel,
-                      style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.78), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.78), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -884,7 +884,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
         Expanded(
           child: RichText(
             text: TextSpan(
-              style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.30), fontSize: 11.5, height: 1.35),
+              style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.30), fontSize: 11.5, height: 1.35),
               children: [
                 TextSpan(
                   text: '$label: ',
@@ -906,7 +906,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     final evidence = (priority['evidence_count'] as num?)?.toInt() ?? 0;
     final confidence = priority['confidence'] as String? ?? 'emerging';
     final action = Map<String, dynamic>.from(priority['action'] as Map? ?? {});
-    final actionLabel = action['label'] as String? ?? 'Open';
+    final actionLabel = _cleanActionLabel(action['label'] as String? ?? 'Open');
     final actionType = action['type'] as String? ?? 'none';
     IconData icon = Icons.auto_awesome_motion_rounded;
     if (kind == 'practice') {
@@ -914,7 +914,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     } else if (kind == 'training_ready') {
       icon = Icons.model_training_rounded;
     } else if (kind == 'tournament' || kind == 'thread_tournament' || kind == 'tournament_result') {
-      icon = Icons.military_tech_rounded;
+      icon = Icons.psychology_alt_rounded;
     } else if (kind == 'council') {
       icon = Icons.forum_rounded;
     } else if (kind == 'mirror') {
@@ -941,7 +941,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               const SizedBox(width: 8),
               Text(
                 confidence.toUpperCase(),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.amber.withValues(alpha: 0.38),
                   fontSize: 8.5,
                   fontWeight: FontWeight.w700,
@@ -949,17 +949,17 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                 ),
               ),
               const Spacer(),
-              if (evidence > 0) Text('$evidence signals', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.18), fontSize: 10)),
+              if (evidence > 0) Text('$evidence signals', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.18), fontSize: 10)),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             title,
-            style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.68), fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
+            style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.68), fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
           ),
           if (body.isNotEmpty) ...[
             const SizedBox(height: 7),
-            Text(body, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.34), fontSize: 12, height: 1.45)),
+            Text(body, style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.34), fontSize: 12, height: 1.45)),
           ],
           const SizedBox(height: 13),
           Row(
@@ -976,7 +976,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     ),
                     child: Text(
                       actionLabel,
-                      style: GoogleFonts.inter(color: EchoColors.amber.withValues(alpha: 0.74), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.74), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -994,8 +994,20 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
   Widget _miniOutcome(Map<String, dynamic> priority, String outcome, String label, double score) {
     return GestureDetector(
       onTap: () => _recordPriorityOutcome(priority, outcome, score),
-      child: Text(label, style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.24), fontSize: 11)),
+      child: Text(label, style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.24), fontSize: 11)),
     );
+  }
+
+  String _cleanActionLabel(String label) {
+    return label
+        .replaceAll('Send clones', 'Run perspectives')
+        .replaceAll('send clones', 'run perspectives')
+        .replaceAll('Open council', 'Open perspectives')
+        .replaceAll('Enter council', 'Open perspectives')
+        .replaceAll('Run tournament', 'Run perspectives')
+        .replaceAll('run tournament', 'run perspectives')
+        .replaceAll('clone', 'model')
+        .replaceAll('Clone', 'Model');
   }
 
   Widget _buildInterruptionActions() {
@@ -1013,7 +1025,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
-            child: Text('I need to think about this', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.80), fontSize: 13)),
+            child: Text('I need to think about this', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.80), fontSize: 13)),
           ),
         ),
         const SizedBox(height: 12),
@@ -1022,7 +1034,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
             HapticFeedback.lightImpact();
             setState(() => _state = _TodayState.silence);
           },
-          child: Text('Dismiss', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.25), fontSize: 12)),
+          child: Text('Dismiss', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.25), fontSize: 12)),
         ),
       ],
     );
@@ -1041,7 +1053,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
-        child: Text('Ask Echo', style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.40), fontSize: 13, letterSpacing: 0.3)),
+        child: Text('Ask Echo', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.40), fontSize: 13, letterSpacing: 0.3)),
       ),
     );
   }

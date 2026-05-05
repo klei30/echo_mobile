@@ -62,7 +62,7 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen> {
                     children: [
                       _pill(Icons.flag_outlined, '${stats['milestones'] ?? 0} milestones'),
                       _pill(Icons.bolt_outlined, '${stats['practice_done'] ?? 0} reps'),
-                      _pill(Icons.military_tech_outlined, '${stats['clone_battles'] ?? 0} clone wins'),
+                      _pill(Icons.psychology_alt_outlined, '${stats['clone_battles'] ?? 0} useful decisions'),
                       _pill(Icons.memory_outlined, '${stats['model_updates'] ?? 0} updates'),
                     ],
                   ),
@@ -82,7 +82,7 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen> {
       children: [
         Expanded(
           child: Text(
-            'Growth Timeline',
+            'Progress Evidence',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -126,7 +126,7 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen> {
         border: Border.all(color: EchoColors.borderSubtle),
       ),
       child: Text(
-        'The timeline fills when you talk, send clones, complete reps, correct Echo, and train the clone.',
+        'The timeline fills when you talk, compare perspectives, complete reps, correct Echo, and update the personal model.',
         style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.5, color: EchoColors.textMuted),
       ),
     );

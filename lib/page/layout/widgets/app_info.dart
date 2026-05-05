@@ -39,12 +39,12 @@ class AppInfo extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Logo
-              ClipRRect(borderRadius: BorderRadius.circular(8.0), child: Image.asset('assets/logo.png', width: 80, height: 80)),
+              ClipRRect(borderRadius: BorderRadius.circular(8.0), child: Image.asset('assets/echo_logo.png', width: 80, height: 80)),
               const SizedBox(height: 16),
 
               // App Name
               Text(
-                'ChatMCP',
+                'Echo',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.getThemeTextColor(context)),
               ),
 
@@ -54,7 +54,7 @@ class AppInfo extends StatelessWidget {
 
               // Description
               Text(
-                l10n.appDescription,
+                'A local-first personal learning system for memory, decisions, practice, and model training.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: AppColors.getThemeTextColor(context)),
               ),

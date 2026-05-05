@@ -86,7 +86,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
     if (result == null) {
       setState(() {
         _phase = _TournamentPhase.input;
-        _error = 'Echo could not run the tournament.';
+        _error = 'Echo could not run the comparison.';
       });
       return;
     }
@@ -148,7 +148,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Send Clones',
+          'Decision Room',
           style: GoogleFonts.plusJakartaSans(
             color: EchoColors.textPrimary,
             fontSize: 16,
@@ -223,10 +223,10 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             ),
           ],
           const SizedBox(height: 18),
-          _primaryButton('Send four clones', Icons.military_tech_rounded, _run),
+          _primaryButton('Run perspectives', Icons.psychology_alt_rounded, _run),
           const SizedBox(height: 18),
           _hintRow(Icons.psychology_alt_rounded,
-              'Pick the answer that actually helps. Echo turns that choice into clone-training signal.'),
+              'Pick the answer that actually helps. Echo turns that choice into training signal.'),
         ],
       ),
     );
@@ -237,7 +237,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Four versions of you will compete.',
+          'Compare four ways forward.',
           style: GoogleFonts.lora(
             color: EchoColors.textPrimary,
             fontSize: 26,
@@ -247,7 +247,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
         ),
         const SizedBox(height: 12),
         Text(
-          'Strategist, Challenger, Mirror, and Builder each try to help in a different way. Your choice teaches Echo which version moves you forward.',
+          'Strategist, Challenger, Mirror, and Builder each take a different angle. Your choice teaches Echo which kind of help moves you forward.',
           style: GoogleFonts.plusJakartaSans(
             color: EchoColors.textMuted,
             fontSize: 13.5,
@@ -289,7 +289,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'Your clones are competing.',
+                  'Echo is testing perspectives.',
                   style: GoogleFonts.plusJakartaSans(
                     color: EchoColors.textPrimary,
                     fontSize: 16,
@@ -298,7 +298,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Four responses. One signal.',
+                  'Four responses. One useful signal.',
                   style: GoogleFonts.plusJakartaSans(
                     color: EchoColors.textMuted,
                     fontSize: 12.5,
@@ -323,7 +323,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             child: Row(
               children: [
                 Text(
-                  _topic == null ? 'Choose the winner' : 'Choose the winner - $_topic',
+                  _topic == null ? 'Choose what helped' : 'Choose what helped - $_topic',
                   style: GoogleFonts.plusJakartaSans(
                     color: EchoColors.textMuted,
                     fontSize: 12,
@@ -362,7 +362,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
   }
 
   Widget _candidateCard(Map<String, dynamic> candidate) {
-    final style = candidate['style'] as String? ?? 'Shadow';
+    final style = candidate['style'] as String? ?? 'Perspective';
     final response = candidate['response'] as String? ?? '';
     final color = _styleColors[style] ?? EchoColors.amber;
     final icon = _styleIcons[style] ?? Icons.auto_awesome_rounded;
@@ -435,10 +435,10 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
   }
 
   Widget _buildSaved() {
-    final winner = _winner ?? 'Shadow';
+    final winner = _winner ?? 'Perspective';
     final color = _styleColors[winner] ?? EchoColors.amber;
     final learning = _learningSummary ??
-        'Echo learned which version helped most here. That choice updates your current read and becomes training signal.';
+        'Echo learned which angle helped most here. That choice updates your current read and becomes training signal.';
 
     return SafeArea(
       key: const ValueKey('saved'),
@@ -461,11 +461,11 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                   ),
                 ],
               ),
-              child: Icon(Icons.military_tech_rounded, color: color, size: 34),
+              child: Icon(Icons.psychology_alt_rounded, color: color, size: 34),
             ),
             const SizedBox(height: 26),
             Text(
-              '$winner won.',
+              '$winner helped most.',
               textAlign: TextAlign.center,
               style: GoogleFonts.lora(
                 color: EchoColors.textPrimary,
@@ -484,7 +484,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
               ),
             ),
             const SizedBox(height: 28),
-            _primaryButton('Send clones again', Icons.refresh_rounded, _reset),
+            _primaryButton('Run again', Icons.refresh_rounded, _reset),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context, true),

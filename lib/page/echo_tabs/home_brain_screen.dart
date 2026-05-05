@@ -228,7 +228,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
         setState(() {
           _startingTunnel = false;
           _tunnelDnsWarming = true;
-          _tunnelLog.add('Tunnel URL ready — waiting for DNS to propagate...');
+          _tunnelLog.add('Tunnel URL ready - waiting for DNS to propagate...');
         });
         // Cloudflare DNS takes ~15s to propagate after the URL appears.
         // Show QR only once the record is resolvable.
@@ -258,7 +258,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
           setState(() {
             _tunnelUrl = url;
             _tunnelDnsWarming = false;
-            _tunnelLog.add('Tunnel ready ✓ — scan QR to pair your phone');
+            _tunnelLog.add('Tunnel ready - scan QR to pair your phone');
           });
           return;
         }
@@ -271,7 +271,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
   }
 
   String _qrPayload(String url) => jsonEncode({
-        'type': 'echo_home_brain',
+        'type': 'echo_local_brain',
         'baseUrl': url,
         'version': 1,
       });
@@ -284,14 +284,14 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
           children: [
-            Text('Home Brain',
+            Text('Local Brain',
                 style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: EchoColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
-              'Run Echo on this computer and pair your phone.',
+              'Run Echo locally, load your personal model, and pair your phone.',
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 12.5, color: EchoColors.textGhost, height: 1.5),
             ),

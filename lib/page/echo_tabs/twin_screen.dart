@@ -8,7 +8,8 @@ import 'package:chatmcp/echo/echo_api_client.dart';
 enum _Phase { intro, input, loading, comparing, done }
 
 class TwinScreen extends StatefulWidget {
-  const TwinScreen({super.key});
+  final bool showCloseButton;
+  const TwinScreen({super.key, this.showCloseButton = true});
 
   @override
   State<TwinScreen> createState() => _TwinScreenState();
@@ -114,7 +115,7 @@ class _TwinScreenState extends State<TwinScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCloseButton(),
+        if (widget.showCloseButton) _buildCloseButton(),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
@@ -125,7 +126,7 @@ class _TwinScreenState extends State<TwinScreen>
                 EchoOrb(size: 52, rings: 3),
                 const SizedBox(height: 32),
                 Text(
-                  'Ask Your Twin',
+                  'Personal Lens',
                   style: GoogleFonts.lora(
                     fontSize: 26, fontStyle: FontStyle.italic,
                     color: EchoColors.textPrimary, letterSpacing: -0.4,
@@ -133,7 +134,7 @@ class _TwinScreenState extends State<TwinScreen>
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Your shadow clone has been trained on your conversations. '
+                  'Echo compares a general answer with guidance adapted from your conversations. '
                   'Ask both — see which one sounds more like you.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13.5, height: 1.7, color: EchoColors.textMuted,
@@ -423,8 +424,8 @@ class _TwinScreenState extends State<TwinScreen>
                 const SizedBox(height: 20),
                 Text(
                   _choseClone
-                      ? 'You picked the clone. It\'s working — your shadow is becoming more you.'
-                      : 'You picked the teacher. The clone still has room to grow on this.',
+                      ? 'You picked the personal answer. Echo is learning what actually fits you.'
+                      : 'You picked the general answer. Echo needs more signal for this kind of situation.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, height: 1.6, color: EchoColors.textMuted,
                   ),

@@ -180,7 +180,7 @@ class _DailyCheckinScreenState extends State<DailyCheckinScreen>
               onTap: () => Navigator.of(context).pop(),
               child: Text(
                 'Close',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.textGhost,
                   fontSize: 13,
                   letterSpacing: 0.3,

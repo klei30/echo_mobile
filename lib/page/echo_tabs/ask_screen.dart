@@ -63,8 +63,8 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Ask',
-          style: GoogleFonts.inter(
+          'Decision Room',
+          style: GoogleFonts.plusJakartaSans(
             color: EchoColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -84,9 +84,10 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
             initialQuestion: widget.initialQuestion,
             threadId: widget.threadId,
             threadContext: widget.threadContext,
+            showChrome: false,
           ),
-          const TwinScreen(),
-          const ParallelSelfScreen(),
+          const TwinScreen(showCloseButton: false),
+          const ParallelSelfScreen(showChrome: false),
         ],
       ),
     );
@@ -97,11 +98,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       child: Row(
         children: [
-          _modeTab('Voices', _AskMode.voices),
+          _modeTab('Perspectives', _AskMode.voices),
           const SizedBox(width: 8),
-          _modeTab('Twin', _AskMode.twin),
+          _modeTab('Personal Lens', _AskMode.twin),
           const SizedBox(width: 8),
-          _modeTab('Paths', _AskMode.paths),
+          _modeTab('Scenarios', _AskMode.paths),
         ],
       ),
     );
@@ -127,7 +128,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: active ? FontWeight.w600 : FontWeight.w400,
             color: active ? EchoColors.amber : EchoColors.textMuted,

@@ -91,7 +91,7 @@ class _RevelationScreenState extends State<RevelationScreen>
                         // "REVELATION" label — faint, top
                         Text(
                           'R E V E L A T I O N',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             color: EchoColors.amber.withValues(alpha: 0.25),
                             fontSize: 10,
                             letterSpacing: 3.5,
@@ -132,7 +132,7 @@ class _RevelationScreenState extends State<RevelationScreen>
                           Center(
                             child: Text(
                               'tap to reveal',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 color: Colors.white.withValues(alpha: 0.15),
                                 fontSize: 11,
                                 letterSpacing: 1.5,
@@ -173,7 +173,7 @@ class _RevelationScreenState extends State<RevelationScreen>
                         child: Center(
                           child: Text(
                             'Carry this',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               color: Colors.white.withValues(alpha: 0.40),
                               fontSize: 13,
                               letterSpacing: 0.5,

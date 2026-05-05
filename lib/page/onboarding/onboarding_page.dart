@@ -424,7 +424,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget _buildFirstRead({Key? key}) {
     final title = _firstRead?['title'] as String? ?? 'A first signal is visible.';
     final read = _firstRead?['read'] as String? ?? 'Echo has enough of a first signal to begin watching a real pattern.';
-    final nextMove = _firstRead?['next_move'] as String? ?? 'Keep talking until Echo can test this with clones.';
+    final nextMove = _firstRead?['next_move'] as String? ?? 'Keep talking until Echo can test this with real feedback.';
 
     return Padding(
       key: key,

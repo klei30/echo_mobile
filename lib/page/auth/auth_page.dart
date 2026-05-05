@@ -147,7 +147,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                     ),
                   ),
                   Text(
-                    'Your shadow clone',
+                    'Your personal learning system',
                     style: TextStyle(
                       fontSize: 14,
                       color: EchoColors.textGhost,

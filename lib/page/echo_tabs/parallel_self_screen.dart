@@ -4,7 +4,8 @@ import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 
 class ParallelSelfScreen extends StatefulWidget {
-  const ParallelSelfScreen({super.key});
+  final bool showChrome;
+  const ParallelSelfScreen({super.key, this.showChrome = true});
 
   @override
   State<ParallelSelfScreen> createState() => _ParallelSelfScreenState();
@@ -58,24 +59,26 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: EchoColors.bg,
-      appBar: AppBar(
-        backgroundColor: EchoColors.bg,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          color: EchoColors.textMuted,
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Two Paths',
-          style: GoogleFonts.inter(
-            color: EchoColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: widget.showChrome
+          ? AppBar(
+              backgroundColor: EchoColors.bg,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, size: 18),
+                color: EchoColors.textMuted,
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                'Scenarios',
+                style: GoogleFonts.plusJakartaSans(
+                  color: EchoColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: _loading ? _buildLoading() : _buildContent(),
     );
   }
@@ -96,7 +99,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           const SizedBox(height: 20),
           Text(
             'Reading your patterns…',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: EchoColors.textMuted,
               fontSize: 13,
             ),
@@ -114,7 +117,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           child: Text(
             'Not enough data yet.\nKeep talking to Echo.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: EchoColors.textMuted,
               fontSize: 14,
               height: 1.6,
@@ -137,7 +140,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
             padding: const EdgeInsets.only(bottom: 20, left: 2),
             child: Text(
               'Not prediction. Pattern-based projection.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: EchoColors.textMuted.withValues(alpha: 0.55),
                 fontSize: 12,
                 letterSpacing: 0.3,
@@ -178,7 +181,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Text(
                     'or',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       color: EchoColors.textMuted.withValues(alpha: 0.35),
                       fontSize: 12,
                       letterSpacing: 1.0,
@@ -219,7 +222,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
               child: Text(
                 'Keep talking. The patterns become clearer over time.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.textMuted.withValues(alpha: 0.4),
                   fontSize: 12,
                   height: 1.5,
@@ -267,7 +270,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
               const SizedBox(width: 6),
               Text(
                 isCurrent ? 'CURRENT PATH' : 'AVAILABLE PATH',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   color: labelColor.withValues(alpha: 0.7),
                   fontSize: 9.5,
                   fontWeight: FontWeight.w700,
@@ -279,7 +282,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: EchoColors.textPrimary,
               fontSize: 17,
               fontWeight: FontWeight.w600,
@@ -300,7 +303,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
             const SizedBox(height: 10),
             Text(
               detail,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: EchoColors.textMuted,
                 fontSize: 12.5,
                 height: 1.6,

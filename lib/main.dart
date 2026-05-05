@@ -134,7 +134,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           scaffoldMessengerKey: _scaffoldMessengerKey,
           navigatorKey: navigatorKey,
-          title: 'ChatMcp',
+          title: 'Echo',
           theme: ThemeData(useMaterial3: true, brightness: Brightness.light, fontFamily: getPlatformFontFamily(), colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC4783A))),
           darkTheme: ThemeData(useMaterial3: true, brightness: Brightness.dark, fontFamily: getPlatformFontFamily(), colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC4783A), brightness: Brightness.dark)),
           themeMode: _getThemeMode(settings.generalSetting.theme),

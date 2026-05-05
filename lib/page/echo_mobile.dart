@@ -8,6 +8,9 @@ import 'package:chatmcp/page/layout/sidebar.dart';
 import 'package:chatmcp/page/layout/chat_page/chat_page.dart';
 import 'package:chatmcp/page/echo_tabs/you_tab.dart';
 import 'package:chatmcp/page/echo_tabs/today_screen.dart';
+import 'package:chatmcp/page/echo_tabs/echo_lab_screen.dart';
+import 'package:chatmcp/page/setting/mcp_server.dart';
+import 'package:chatmcp/page/setting/network_sync_setting.dart';
 import 'package:chatmcp/page/onboarding/onboarding_page.dart';
 import 'package:chatmcp/page/echo_settings/echo_settings_sheet.dart';
 import 'package:chatmcp/provider/chat_model_provider.dart';
@@ -15,8 +18,8 @@ import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/home_brain_screen.dart';
-import 'package:chatmcp/utils/platform.dart';
 
 class EchoMobilePage extends StatefulWidget {
   const EchoMobilePage({super.key});
@@ -25,7 +28,7 @@ class EchoMobilePage extends StatefulWidget {
   State<EchoMobilePage> createState() => _EchoMobilePageState();
 }
 
-class _EchoMobilePageState extends State<EchoMobilePage> {
+class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObserver {
   int _selectedTab = 1;
   bool _onboardingChecked = false;
   bool _showOnboarding = false;
@@ -38,6 +41,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     EchoLoopState().addListener(_onLoopStateChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ProviderManager.settingsProvider.loadSettings();
@@ -53,8 +57,17 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     EchoLoopState().removeListener(_onLoopStateChanged);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      syncEchoInterventionNotification();
+      syncTrainingReadyNotification();
+    }
   }
 
   @override
@@ -164,7 +177,8 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
   }
 
   Widget _buildMobileShell() {
-    return IndexedStack(index: _selectedTab, children: [_buildEchoTab(), const TodayScreen(), const YouTab()]);
+    final mobileIndex = _selectedTab > 2 ? 1 : _selectedTab;
+    return IndexedStack(index: mobileIndex, children: [_buildEchoTab(), const TodayScreen(), const YouTab()]);
   }
 
   Widget _buildDesktopShell() {
@@ -188,17 +202,12 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                       _desktopNavItem(0, 'Talk', Icons.chat_bubble_outline_rounded),
                       _desktopNavItem(1, 'Today', Icons.circle_outlined),
                       _desktopNavItem(2, 'You', Icons.person_outline_rounded),
-                      if (kIsWindows) ...[
-                        const SizedBox(height: 4),
-                        const Divider(color: EchoColors.borderNav, height: 12),
-                        _desktopNavPush(
-                          'Home Brain',
-                          Icons.computer_rounded,
-                          () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const HomeBrainScreen()),
-                          ),
-                        ),
-                      ],
+                      const SizedBox(height: 4),
+                      const Divider(color: EchoColors.borderNav, height: 12),
+                      _desktopNavItem(3, 'Studio', Icons.model_training_rounded),
+                      _desktopNavItem(4, 'Local Brain', Icons.computer_rounded),
+                      _desktopNavItem(5, 'Sync', Icons.sync_rounded),
+                      _desktopNavItem(6, 'Tools', Icons.extension_rounded),
                     ],
                   ),
                 ),
@@ -208,11 +217,17 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
             ),
           ),
           Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1000),
-                child: IndexedStack(index: _selectedTab, children: [_buildEchoTab(showHeader: false), const TodayScreen(), const YouTab()]),
-              ),
+            child: IndexedStack(
+              index: _selectedTab,
+              children: const [
+                _DesktopChatPane(),
+                TodayScreen(),
+                YouTab(),
+                EchoLabScreen(),
+                HomeBrainScreen(),
+                NetworkSyncSetting(),
+                McpServer(),
+              ],
             ),
           ),
         ],
@@ -273,31 +288,6 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
     );
   }
 
-  Widget _desktopNavPush(String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: EchoColors.textGhost),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: EchoColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ─── Echo (chat) tab ─────────────────────────────────────────────────────
 
   Widget _buildEchoTab({bool showHeader = true}) {
@@ -342,10 +332,10 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
                     final loop = EchoLoopState();
                     final rankName = loop.rank?['rank'] as String?;
                     final subtitle = rankName != null && rankName.isNotEmpty
-                        ? '${rankName.toLowerCase()} · ${firstName != null ? 'hi, $firstName' : 'your shadow clone'}'
+                        ? '${_displayRank(rankName)} - ${firstName != null ? 'hi, $firstName' : 'personal model'}'
                         : firstName != null
                         ? 'hi, $firstName'
-                        : 'your shadow clone';
+                        : 'personal model';
                     return Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost, height: 1.3));
                   },
                 ),
@@ -384,6 +374,21 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
 
   // ─── Bottom navigation ────────────────────────────────────────────────────
 
+  String _displayRank(String rank) {
+    switch (rank) {
+      case 'Genin':
+        return 'level 1';
+      case 'Chunin':
+        return 'level 2';
+      case 'Jonin':
+        return 'level 3';
+      case 'Kage':
+        return 'mastery';
+      default:
+        return rank.toLowerCase();
+    }
+  }
+
   Widget _buildBottomNav() {
     return Container(
       decoration: const BoxDecoration(
@@ -404,7 +409,8 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
   }
 
   Widget _navItem(int index, String label, _EchoTabIcon icon) {
-    final active = _selectedTab == index;
+    final mobileIndex = _selectedTab > 2 ? 1 : _selectedTab;
+    final active = mobileIndex == index;
     final color = active ? EchoColors.amber : EchoColors.textVeryGhost;
 
     return GestureDetector(
@@ -440,6 +446,19 @@ class _EchoMobilePageState extends State<EchoMobilePage> {
 }
 
 enum _EchoTabIcon { echo, today, you }
+
+class _DesktopChatPane extends StatelessWidget {
+  const _DesktopChatPane();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        Expanded(child: ChatPage()),
+      ],
+    );
+  }
+}
 
 /// Sonar rings icon — Echo brand mark: center dot + two concentric arcs emanating outward.
 class _SonarRingsIcon extends StatelessWidget {
