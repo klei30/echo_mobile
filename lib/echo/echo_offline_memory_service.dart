@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_offline_queue.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,6 +59,12 @@ class EchoOfflineMemoryService {
       await prefs.setString(_packKey, jsonEncode(data));
       _pack = data;
       _applyLoopState(data);
+
+      // Upload any conversations captured while offline so they enter training.
+      final uploaded = await EchoOfflineQueue().flush();
+      if (uploaded > 0) {
+        _log.info('syncFromEcho: flushed $uploaded offline pairs into training');
+      }
       return true;
     } catch (e) {
       _log.warning('offline export failed: $e');

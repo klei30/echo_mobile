@@ -613,6 +613,28 @@ class EchoApiClient {
     return null;
   }
 
+  Future<Map<String, dynamic>?> triggerSkillExtraction() async {
+    try {
+      final resp = await http.post(Uri.parse('$_base/v1/skills/extract'), headers: _h).timeout(const Duration(seconds: 30));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('triggerSkillExtraction HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('triggerSkillExtraction error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> triggerProofSeed() async {
+    try {
+      final resp = await http.post(Uri.parse('$_base/v1/proof/seed'), headers: _h).timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('triggerProofSeed HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('triggerProofSeed error: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> triggerTraining({String? lane}) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};

@@ -17,7 +17,10 @@ import 'package:chatmcp/provider/chat_model_provider.dart';
 import 'package:chatmcp/provider/chat_provider.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_offline_queue.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/home_brain_screen.dart';
 
@@ -52,7 +55,21 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
           _onboardingChecked = true;
         });
       }
+      // After onboarding check, seed skills and proof if the backend is reachable.
+      if (AuthService().isLoggedIn && !EchoRuntimeService().isDevice) {
+        _autoSeedIfNeeded();
+      }
     });
+  }
+
+  Future<void> _autoSeedIfNeeded() async {
+    try {
+      // These endpoints are idempotent — safe to call every startup.
+      await Future.wait([
+        EchoApiClient().triggerSkillExtraction(),
+        EchoApiClient().triggerProofSeed(),
+      ]);
+    } catch (_) {}
   }
 
   @override
@@ -67,6 +84,11 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
     if (state == AppLifecycleState.resumed) {
       syncEchoInterventionNotification();
       syncTrainingReadyNotification();
+      // Upload any offline conversations when the app comes back to foreground
+      // and the user is connected to their backend (not in offline device mode).
+      if (AuthService().isLoggedIn && !EchoRuntimeService().isDevice) {
+        EchoOfflineQueue().flush();
+      }
     }
   }
 
