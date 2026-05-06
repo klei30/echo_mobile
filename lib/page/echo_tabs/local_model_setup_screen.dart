@@ -109,7 +109,7 @@ class _LocalModelSetupScreenState extends State<LocalModelSetupScreen> {
     if (!mounted) return;
     setState(() {
       _syncingMemory = false;
-      _error = ok ? null : 'Could not sync Echo memory. Connect to desktop or cloud Echo, then try again.';
+      _error = ok ? null : 'Could not sync Echo memory. Connect to Home Brain or Cloud Echo, then try again.';
     });
   }
 
@@ -126,7 +126,7 @@ class _LocalModelSetupScreenState extends State<LocalModelSetupScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: EchoColors.textPrimary),
         title: Text(
-          'This Device',
+          'Runtime',
           style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: EchoColors.textPrimary),
         ),
       ),
@@ -158,7 +158,7 @@ class _LocalModelSetupScreenState extends State<LocalModelSetupScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Desktop is strongest. This Device keeps Coach available offline. Cloud is the fallback when desktop is away.',
+                    'Home Brain is strongest. This Device keeps Coach available offline. Cloud is the fallback when Home Brain is away.',
                     style: GoogleFonts.plusJakartaSans(fontSize: 13.5, height: 1.65, color: EchoColors.textMuted),
                   ),
                   const SizedBox(height: 24),
@@ -187,7 +187,7 @@ class _LocalModelSetupScreenState extends State<LocalModelSetupScreen> {
                   const SizedBox(height: 22),
                   _CapabilityRow(icon: Icons.chat_bubble_outline_rounded, title: 'Offline Coach', body: 'Uses on-device Gemma with cached Echo context.'),
                   _CapabilityRow(icon: Icons.psychology_alt_outlined, title: 'Cached Echo memory', body: 'Memories, rules, Current Read, and Today stay available.'),
-                  _CapabilityRow(icon: Icons.sync_rounded, title: 'Sync later', body: 'New signals and feedback are saved for cloud or desktop training.'),
+                  _CapabilityRow(icon: Icons.sync_rounded, title: 'Sync later', body: 'New signals and feedback are saved for Home Brain or Cloud training.'),
                   const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
@@ -296,18 +296,18 @@ class _RuntimePanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Offline & Privacy',
+          'Runtime',
           style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
         ),
         const SizedBox(height: 10),
         _RuntimeCard(
           icon: Icons.computer_rounded,
-          title: 'Desktop Echo',
+          title: 'Home Brain',
           badge: 'Personalized',
-          body: 'Uses your desktop Gemma 4 E2B adapter, full memory, Decision Room, and Improve Echo.',
-          action: 'Use Desktop',
+          body: 'Uses your private desktop Gemma 4 adapter, full memory, Decision Room, tools, voice, and training.',
+          action: 'Use Home Brain',
           selected: mode == EchoRuntimeMode.desktop,
-          status: 'Best when your computer is running Echo',
+          status: 'Best when your computer is running Echo and paired by Wi-Fi or tunnel',
           enabled: true,
           onTap: () => onSelect(EchoRuntimeMode.desktop),
         ),
@@ -316,7 +316,7 @@ class _RuntimePanel extends StatelessWidget {
           icon: Icons.cloud_rounded,
           title: 'Cloud Echo',
           badge: 'Connected',
-          body: 'Uses Echo backend routing when desktop is not available. Good for online fallback.',
+          body: 'Uses Echo backend routing when Home Brain is not available. Good for online fallback.',
           action: 'Use Cloud',
           selected: mode == EchoRuntimeMode.cloud,
           status: 'Requires login and network',

@@ -55,7 +55,7 @@ class EchoRuntimeService extends ChangeNotifier {
   String get modeLabel {
     return switch (_mode) {
       EchoRuntimeMode.cloud => 'Echo Cloud',
-      EchoRuntimeMode.desktop => 'My Computer',
+      EchoRuntimeMode.desktop => 'Home Brain',
       EchoRuntimeMode.device => 'This Device',
     };
   }

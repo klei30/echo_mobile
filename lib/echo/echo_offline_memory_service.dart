@@ -44,6 +44,13 @@ class EchoOfflineMemoryService {
   Future<bool> syncFromEcho() async {
     if (!AuthService().isLoggedIn) return false;
     try {
+      // Upload offline conversations first so the downloaded pack includes
+      // the latest device-side training signal when the backend is reachable.
+      final uploaded = await EchoOfflineQueue().flush();
+      if (uploaded > 0) {
+        _log.info('syncFromEcho: flushed $uploaded offline pairs into training');
+      }
+
       final resp = await http
           .get(
             Uri.parse('${AuthService().baseUrl}/v1/offline/export'),
@@ -59,12 +66,6 @@ class EchoOfflineMemoryService {
       await prefs.setString(_packKey, jsonEncode(data));
       _pack = data;
       _applyLoopState(data);
-
-      // Upload any conversations captured while offline so they enter training.
-      final uploaded = await EchoOfflineQueue().flush();
-      if (uploaded > 0) {
-        _log.info('syncFromEcho: flushed $uploaded offline pairs into training');
-      }
       return true;
     } catch (e) {
       _log.warning('offline export failed: $e');

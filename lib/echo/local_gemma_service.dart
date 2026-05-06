@@ -65,7 +65,7 @@ class LocalGemmaService {
   Stream<String> generate({required String prompt, int maxTokens = 512, double temperature = 0.7}) async* {
     final runtime = EchoRuntimeService();
     if (!runtime.isDeviceReady) {
-      yield 'On-device Gemma is not ready yet. Open Offline & Privacy and import a .litertlm model before using offline Coach.';
+      yield 'On-device Gemma is not ready yet. Open Runtime and import a .litertlm model before using offline Coach.';
       return;
     }
 

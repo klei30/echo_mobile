@@ -75,9 +75,9 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         children: [
           _modeTab('Perspectives', _AskMode.voices),
           const SizedBox(width: 8),
-          _modeTab('Compare', _AskMode.twin),
+          _modeTab('Personal Lens', _AskMode.twin),
           const SizedBox(width: 8),
-          _modeTab('Future Paths', _AskMode.paths),
+          _modeTab('Scenario Test', _AskMode.paths),
         ],
       ),
     );

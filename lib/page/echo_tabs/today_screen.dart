@@ -9,7 +9,9 @@ import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
+import 'package:chatmcp/page/echo_tabs/opportunities_screen.dart';
 import 'package:chatmcp/page/echo_tabs/outcome_capture_sheet.dart';
+import 'package:chatmcp/page/echo_tabs/proof_builder_screen.dart';
 import 'package:chatmcp/page/echo_tabs/revelation_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
@@ -1092,6 +1094,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     );
     if (!mounted || saved != true) return;
     _showXp('Outcome saved. Passport updated.');
+    _showProofCompletion('Outcome saved as proof.', openOpportunities: true);
     _contentFade.value = 0;
     _checkState();
   }
@@ -1115,8 +1118,28 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
       await EchoLoopState().refresh();
     }
     _showXp('Practice outcome saved.');
+    _showProofCompletion('Practice saved as proof.', openOpportunities: true);
     _contentFade.value = 0;
     _checkState();
+  }
+
+  void _showProofCompletion(String message, {bool openOpportunities = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: openOpportunities ? 'Opportunity plan' : 'Open proof',
+          onPressed: () {
+            if (!mounted) return;
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => openOpportunities ? const OpportunitiesScreen() : const ProofBuilderScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   String _cleanActionLabel(String label) {

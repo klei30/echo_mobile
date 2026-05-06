@@ -258,7 +258,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
           setState(() {
             _tunnelUrl = url;
             _tunnelDnsWarming = false;
-            _tunnelLog.add('Tunnel ready - scan QR to pair your phone');
+            _tunnelLog.add('Tunnel ready - scan QR to pair your phone with Home Brain');
           });
           return;
         }
@@ -284,14 +284,14 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
           children: [
-            Text('Local Brain',
+            Text('Home Brain',
                 style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: EchoColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
-              'Run Echo locally, load your personal model, and pair your phone.',
+              'Run Echo privately on this computer, load your personal model, and pair your phone by Wi-Fi or tunnel.',
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 12.5, color: EchoColors.textGhost, height: 1.5),
             ),
@@ -306,7 +306,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
             ),
             const SizedBox(height: 8),
             _serviceRow(
-              label: 'Local Model (vLLM)',
+              label: 'Gemma 4 Model (vLLM)',
               running: _vllmRunning,
               icon: Icons.memory_rounded,
               starting: _startingVllm,
@@ -524,7 +524,7 @@ class _HomeBrainScreenState extends State<HomeBrainScreen> {
         ]),
         const SizedBox(height: 4),
         Text(
-          'Open Echo on your phone → My Computer → Scan QR',
+          'Open Echo on your phone -> Home Brain -> Scan QR',
           style: GoogleFonts.plusJakartaSans(
               fontSize: 11.5, color: EchoColors.textGhost, height: 1.5),
         ),

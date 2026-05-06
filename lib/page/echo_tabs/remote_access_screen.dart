@@ -107,7 +107,7 @@ class _RemoteAccessScreenState extends State<RemoteAccessScreen> {
             ]),
             const SizedBox(height: 4),
             Text(
-              'Developer setup for entering a remote Echo URL manually. Most people should pair Echo Desktop instead.',
+              'Developer setup for entering a remote Echo URL manually. Most people should pair Home Brain instead.',
               style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textGhost, height: 1.5),
             ),
             const SizedBox(height: 22),

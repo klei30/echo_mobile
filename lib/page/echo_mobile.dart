@@ -19,10 +19,15 @@ import 'package:chatmcp/provider/provider_manager.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_offline_memory_service.dart';
 import 'package:chatmcp/echo/echo_offline_queue.dart';
 import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/home_brain_screen.dart';
+import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
+import 'package:chatmcp/page/echo_tabs/local_model_setup_screen.dart';
+import 'package:chatmcp/page/echo_tabs/opportunities_screen.dart';
+import 'package:chatmcp/page/echo_tabs/proof_builder_screen.dart';
 
 class EchoMobilePage extends StatefulWidget {
   const EchoMobilePage({super.key});
@@ -70,6 +75,40 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
         EchoApiClient().triggerProofSeed(),
       ]);
     } catch (_) {}
+  }
+
+  Future<void> _openRuntimePanel() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LocalModelSetupScreen()));
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openEchoContextSheet() async {
+    await EchoLoopState().refresh();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EchoContextSheet(
+        onOpenRuntime: () {
+          Navigator.of(context).pop();
+          _openRuntimePanel();
+        },
+        onOpenToday: () {
+          Navigator.of(context).pop();
+          setState(() => _selectedTab = 1);
+        },
+        onOpenDecision: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AskScreen()));
+        },
+        onOpenProof: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProofBuilderScreen()));
+        },
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   @override
@@ -224,12 +263,13 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
                       _desktopNavItem(0, 'Coach', Icons.chat_bubble_outline_rounded),
                       _desktopNavItem(1, 'Today', Icons.circle_outlined),
                       _desktopNavItem(2, 'Passport', Icons.assignment_ind_outlined),
+                      _desktopNavItem(3, 'Proof', Icons.workspace_premium_outlined),
                       const SizedBox(height: 4),
                       const Divider(color: EchoColors.borderNav, height: 12),
-                      _desktopNavItem(3, 'Improve Echo', Icons.model_training_rounded),
-                      _desktopNavItem(4, 'Offline & Privacy', Icons.privacy_tip_outlined),
-                      _desktopNavItem(5, 'Sync', Icons.sync_rounded),
-                      _desktopNavItem(6, 'Tools', Icons.extension_rounded),
+                      _desktopNavItem(4, 'Improve Echo', Icons.model_training_rounded),
+                      _desktopNavItem(5, 'Home Brain', Icons.hub_rounded),
+                      _desktopNavItem(6, 'Sync', Icons.sync_rounded),
+                      _desktopNavItem(7, 'Tools', Icons.extension_rounded),
                     ],
                   ),
                 ),
@@ -241,7 +281,16 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
           Expanded(
             child: IndexedStack(
               index: _selectedTab,
-              children: const [_DesktopChatPane(), TodayScreen(), YouTab(), EchoLabScreen(), HomeBrainScreen(), NetworkSyncSetting(), McpServer()],
+              children: const [
+                _DesktopChatPane(),
+                TodayScreen(),
+                YouTab(),
+                _ProofDesktopPane(),
+                EchoLabScreen(),
+                HomeBrainScreen(),
+                NetworkSyncSetting(),
+                McpServer(),
+              ],
             ),
           ),
         ],
@@ -353,6 +402,8 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
                     return Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost, height: 1.3));
                   },
                 ),
+                const SizedBox(height: 5),
+                _RuntimeStatusPill(onTap: _openEchoContextSheet),
               ],
             ),
           ),
@@ -459,6 +510,254 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
   }
 }
 
+class _RuntimeStatusPill extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _RuntimeStatusPill({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final runtime = EchoRuntimeService();
+    final memory = EchoOfflineMemoryService();
+    return ListenableBuilder(
+      listenable: runtime,
+      builder: (context, _) {
+        return FutureBuilder<int>(
+          future: EchoOfflineQueue().pendingPairCount,
+          builder: (context, snapshot) {
+            final pendingPairs = snapshot.data ?? 0;
+            return GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 220),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: EchoColors.bgSurface,
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: EchoColors.borderSubtle),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_iconFor(runtime.mode), size: 12, color: EchoColors.amber),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        '${runtime.modeLabel} - ${_detail(runtime, memory, pendingPairs)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 10.5, fontWeight: FontWeight.w700, color: EchoColors.textGhost, height: 1.2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  static IconData _iconFor(EchoRuntimeMode mode) {
+    return switch (mode) {
+      EchoRuntimeMode.desktop => Icons.hub_rounded,
+      EchoRuntimeMode.cloud => Icons.cloud_rounded,
+      EchoRuntimeMode.device => Icons.phone_android_rounded,
+    };
+  }
+
+  static String _detail(EchoRuntimeService runtime, EchoOfflineMemoryService memory, int pendingPairs) {
+    if (runtime.isDevice) {
+      final memoryState = memory.hasPack ? 'memory synced' : 'sync memory';
+      final queued = pendingPairs > 0 ? ', $pendingPairs queued' : '';
+      return '$memoryState$queued';
+    }
+    if (runtime.isDesktop) {
+      return pendingPairs > 0 ? '$pendingPairs queued to upload' : 'Wi-Fi or tunnel';
+    }
+    return pendingPairs > 0 ? '$pendingPairs queued to upload' : 'online fallback';
+  }
+}
+
+class _EchoContextSheet extends StatelessWidget {
+  final VoidCallback onOpenRuntime;
+  final VoidCallback onOpenToday;
+  final VoidCallback onOpenDecision;
+  final VoidCallback onOpenProof;
+
+  const _EchoContextSheet({
+    required this.onOpenRuntime,
+    required this.onOpenToday,
+    required this.onOpenDecision,
+    required this.onOpenProof,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final runtime = EchoRuntimeService();
+    final memory = EchoOfflineMemoryService();
+    final loop = EchoLoopState();
+    final thesis = loop.thesis;
+    final priority = loop.todayPriority;
+    final practice = loop.practice;
+    final thesisTitle = thesis?['title'] as String? ?? 'Current Read is still forming';
+    final thesisBody = thesis?['statement'] as String? ?? 'Echo will use what you share in Talk, Today, and Passport.';
+    final priorityTitle = priority?['title'] as String? ?? 'No priority loaded yet';
+    final priorityBody = priority?['body'] as String? ?? 'Open Today to refresh your next useful step.';
+    final practiceTitle = practice?['rep_title'] as String? ?? 'No practice rep loaded yet';
+    final practiceBody = practice?['rep_instruction'] as String? ?? 'Echo will suggest a small rep when enough context exists.';
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: EchoColors.bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: FutureBuilder<int>(
+            future: EchoOfflineQueue().pendingPairCount,
+            builder: (context, snapshot) {
+              final pendingPairs = snapshot.data ?? 0;
+              final memoryLabel = runtime.isDevice
+                  ? memory.hasPack
+                      ? 'Synced memory pack${memory.exportedAt.isEmpty ? '' : ' - ${memory.exportedAt}'}'
+                      : 'No synced memory pack yet'
+                  : 'Full Echo memory through ${runtime.modeLabel}';
+              final scopeLabel = runtime.isDevice
+                  ? 'Offline scope: no MCP tools, no training, no live backend. New chat pairs sync later.'
+                  : pendingPairs > 0
+                      ? '$pendingPairs offline pairs ready to upload into Echo training.'
+                      : 'Connected scope: memory, Today, Passport, tools, and training can stay in sync.';
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: EchoColors.amber.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.radar_rounded, color: EchoColors.amber, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Echo is using', style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w900, color: EchoColors.textPrimary)),
+                            const SizedBox(height: 3),
+                            Text('${runtime.modeLabel} - ${_RuntimeStatusPill._detail(runtime, memory, pendingPairs)}',
+                                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close_rounded, color: EchoColors.textGhost),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  _ContextInfoRow(icon: Icons.psychology_alt_outlined, label: 'Current Read', title: thesisTitle, body: thesisBody),
+                  _ContextInfoRow(icon: Icons.flag_outlined, label: 'Today', title: priorityTitle, body: priorityBody),
+                  _ContextInfoRow(icon: Icons.fitness_center_rounded, label: 'Practice', title: practiceTitle, body: practiceBody),
+                  _ContextInfoRow(icon: Icons.storage_rounded, label: 'Memory', title: memoryLabel, body: scopeLabel),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _ContextAction(icon: Icons.play_arrow_rounded, label: 'Work on priority', onTap: onOpenToday),
+                      _ContextAction(icon: Icons.repeat_rounded, label: 'Practice rep', onTap: onOpenToday),
+                      _ContextAction(icon: Icons.psychology_rounded, label: 'Decision Room', onTap: onOpenDecision),
+                      _ContextAction(icon: Icons.inventory_2_outlined, label: 'Build proof', onTap: onOpenProof),
+                      _ContextAction(icon: Icons.tune_rounded, label: 'Runtime', onTap: onOpenRuntime),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContextInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String title;
+  final String body;
+
+  const _ContextInfoRow({required this.icon, required this.label, required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: EchoColors.borderSubtle),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: EchoColors.amber),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(), style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.1, fontWeight: FontWeight.w800, color: EchoColors.amber)),
+                const SizedBox(height: 5),
+                Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.textPrimary, height: 1.3)),
+                const SizedBox(height: 4),
+                Text(body, maxLines: 3, overflow: TextOverflow.ellipsis, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textMuted, height: 1.4)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContextAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ContextAction({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: EchoColors.textPrimary,
+        side: const BorderSide(color: EchoColors.borderSubtle),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+        textStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
 enum _EchoTabIcon { echo, today, you }
 
 class _DesktopChatPane extends StatelessWidget {
@@ -467,6 +766,146 @@ class _DesktopChatPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Column(children: [Expanded(child: ChatPage())]);
+  }
+}
+
+class _ProofDesktopPane extends StatelessWidget {
+  const _ProofDesktopPane();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: EchoColors.bg,
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 24, 28, 40),
+          children: [
+            Text(
+              'Proof',
+              style: GoogleFonts.plusJakartaSans(fontSize: 28, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Text(
+                'Turn practice, decisions, shipped work, and feedback into evidence that can unlock jobs, school, scholarships, projects, or personal goals.',
+                style: GoogleFonts.plusJakartaSans(fontSize: 14, height: 1.55, color: EchoColors.textMuted),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 14,
+              runSpacing: 14,
+              children: [
+                _ProofActionCard(
+                  icon: Icons.add_task_rounded,
+                  title: 'Build proof',
+                  body: 'Save outcomes, artifacts, practice wins, decisions, and feedback into a useful evidence trail.',
+                  action: 'Open Proof Builder',
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProofBuilderScreen())),
+                ),
+                _ProofActionCard(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'Find opportunities',
+                  body: 'Map your current evidence to practical next steps and see what proof is still missing.',
+                  action: 'Open Opportunities',
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OpportunitiesScreen())),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Container(
+              constraints: const BoxConstraints(maxWidth: 920),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: EchoColors.bgSurface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: EchoColors.borderSubtle),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.sync_alt_rounded, color: EchoColors.amber, size: 20),
+                      const SizedBox(width: 10),
+                      Text(
+                        'The loop',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Today gives a small practice rep. Echo captures the outcome. Proof Builder saves the evidence. Opportunities show where that evidence can be used next.',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.55, color: EchoColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProofActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  final String action;
+  final VoidCallback onTap;
+
+  const _ProofActionCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.action,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 360,
+      child: Material(
+        color: EchoColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: EchoColors.borderSubtle),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 24, color: EchoColors.amber),
+                const SizedBox(height: 16),
+                Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w900, color: EchoColors.textPrimary)),
+                const SizedBox(height: 8),
+                Text(body, style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.5, color: EchoColors.textMuted)),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Text(
+                      action,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.amber),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.arrow_forward_rounded, size: 16, color: EchoColors.amber),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

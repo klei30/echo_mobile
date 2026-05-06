@@ -18,7 +18,7 @@ import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/today_screen.dart';
 import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
-import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
+import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'utils/init.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -111,7 +111,7 @@ Widget _screenForNotificationPayload(String? payload) {
       return const TalentScreen();
     }
     if (kind == 'clone_returned' || actionType == 'open_clone_mission') {
-      return const ShadowTournamentScreen();
+      return const AskScreen();
     }
   } catch (_) {}
   return const TodayScreen();

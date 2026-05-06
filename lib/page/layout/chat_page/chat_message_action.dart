@@ -6,8 +6,8 @@ import 'package:chatmcp/generated/app_localizations.dart';
 import 'package:chatmcp/echo/echo_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/outcome_capture_sheet.dart';
-import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
 class MessageActions extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -132,7 +132,7 @@ class _MessageActionsState extends State<MessageActions> {
                 context,
                 Icons.psychology_alt_rounded,
                 'Decide',
-                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: prompt))),
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AskScreen(initialQuestion: prompt))),
                 filled: action['type'] == 'run_tournament',
               ),
               _loopChip(

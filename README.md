@@ -1,8 +1,12 @@
-# Echo + Chat UI
+# Echo Mobile App
 
-Echo is a local-first personal learning system with a cross-platform Chat UI.
+Echo is a mobile-first personal learning system connected to a private Home Brain.
 
-The system combines chat, long-term memory, daily practice, decision workflows, MCP tools, local model routing, personal model training, and desktop-to-mobile pairing. The goal is not to be another generic chatbot. Echo observes useful signals over time, builds a current read of the user, helps them make better decisions, and trains a personal model from real feedback.
+The mobile app is the user's daily Echo: Talk, Today, You, Decision Room, proof, practice, voice, and offline mode. The user's desktop can run **Home Brain**, a private local runtime with Echo backend, Gemma 4, personal LoRA adapters, memory, MCP tools, voice, and training. The phone can connect to Home Brain over local Wi-Fi or a secure tunnel, then keep working offline with LiteRT-LM Gemma and a synced memory pack.
+
+The goal is not to be another generic chatbot. Echo observes useful signals over time, builds a current read of the user, helps them make better decisions, and trains a personal model from real feedback.
+
+For current execution planning, see [ULTIMATE_TODO.md](ULTIMATE_TODO.md). For the audited product map, see [CURRENT_PRODUCT_AUDIT.md](CURRENT_PRODUCT_AUDIT.md).
 
 ## Product Idea
 
@@ -15,17 +19,17 @@ Echo is designed to notice patterns across conversations, decisions, practice re
 - Long-term memory and personal rules.
 - Decision workflows that compare multiple useful perspectives.
 - Training data for a personal model.
-- Local-first desktop/mobile workflows.
+- Mobile-first Home Brain pairing and offline continuity.
 - MCP tools that let Echo operate across a user’s work environment.
 
 ## System Overview
 
 ```text
-Mobile / Desktop Chat UI
+Echo Mobile App
         |
-        | chat, tabs, MCP tools, sync, local brain pairing
+        | Talk, Today, You, Decision Room, offline mode, Home Brain pairing
         v
-Echo FastAPI backend :8002
+Home Brain / Echo FastAPI backend :8002
         |
         |-- /context memory + loop state injection
         |-- /v1/chat/completions OpenAI-compatible runtime
@@ -36,29 +40,36 @@ Echo FastAPI backend :8002
         |-- scheduler and interventions
         |-- training orchestrator
         |
-        |-- Local model lane, Gemma 4 E2B via vLLM
+        |-- Home Brain model lane, Gemma 4 E2B via vLLM
         |-- Personal LoRA adapters
         |-- Teacher fallback when policy allows
         |
         `-- Echo MCP server for external agents and tools
+
+This Device mode
+        |
+        |-- LiteRT-LM Gemma on mobile
+        |-- synced Echo memory pack
+        |-- queued offline conversations
+        `-- flushes signal back to Home Brain when reconnected
 ```
 
 ## Main Components
 
 | Component | Purpose |
 | --- | --- |
-| Chat UI | Flutter app for mobile, desktop, and web-style layouts |
+| Echo mobile app | Flutter app for daily mobile use, offline mode, and Home Brain pairing |
 | Echo backend | FastAPI sidecar that owns context, memory, routing, training, and product APIs |
 | Echo model context | `/context` builds memory and loop-state injection before chat responses |
 | OpenAI-compatible runtime | `/v1/chat/completions` lets the Chat UI or other clients talk to Echo like an OpenAI provider |
 | Personal model training | Collects pairs, feedback, DPO preferences, evals, and LoRA adapters |
-| Local Brain | Desktop control center for API, vLLM, adapter, tunnel, and phone pairing |
+| Home Brain | Desktop control center for API, Gemma 4 vLLM, adapter, tunnel, voice, and phone pairing |
 | Echo MCP | FastMCP server exposing product workflows to agents and developer tools |
 | MCP server manager | Chat UI can connect to external MCP servers and expose tools inside chat |
 
-## Chat UI
+## Mobile App
 
-The Chat UI is the user-facing app. It is built with Flutter and supports mobile and desktop layouts.
+The mobile app is the user-facing product. It is built with Flutter and can also render desktop layouts, but the core product direction is mobile Echo connected to the user's private Home Brain.
 
 ### Mobile Navigation
 
@@ -68,16 +79,17 @@ The Chat UI is the user-facing app. It is built with Flutter and supports mobile
 | Today | Daily priority, practice rep, check-in, reality check, intervention, and next useful action. |
 | You | Current read, potential, progress evidence, training readiness, memory, and personal model status. |
 
-### Desktop Navigation
+### Desktop / Home Brain Navigation
 
 | Section | Purpose |
 | --- | --- |
 | Talk | Main chat workspace |
 | Today | Daily practice and priority dashboard |
 | You | Personal dashboard |
+| Proof | Proof Builder and opportunity planning |
 | Studio | Training Studio for model training, memory, signals, and connections |
-| Local Brain | Desktop runtime control center |
-| Sync | Pair and sync data between devices |
+| Home Brain | Desktop runtime control center |
+| Sync | Pair the mobile app with Home Brain and sync data between devices |
 | Tools | Echo tools and MCP server management |
 
 ## Current Screens
@@ -88,9 +100,9 @@ The Chat UI is the user-facing app. It is built with Flutter and supports mobile
 - `Today`: daily mission, priority, practice rep, check-in, reflection, intervention states.
 - `You`: current read, progress, potential, training readiness, and Training Studio entry.
 - `Training Studio`: model training, Decision Room, Personal Lens, memory, tools, and signal capture.
-- `Local Brain`: starts/checks Echo API, local model, adapter status, secure tunnel, and mobile QR pairing.
+- `Home Brain`: starts/checks Echo API, local Gemma 4, adapter status, secure tunnel, voice, and mobile QR pairing.
 - `Tools`: Echo workflow cards plus raw MCP server setup.
-- `Sync`: local network sync and mobile/desktop data transfer.
+- `Sync`: local network and tunnel pairing between the mobile app and Home Brain.
 
 ### Echo Feature Screens
 
@@ -281,17 +293,19 @@ Echo learns from:
 - Life events and outcomes.
 - Manually saved memories and rules.
 
-Training readiness is shown in the Chat UI and available through the API. Training can be triggered manually from the Training Studio or through Echo MCP. The backend also contains scheduled training infrastructure.
+Training readiness is shown in the mobile app and available through the API. Training can be triggered manually from Training Studio, Home Brain, or Echo MCP. The backend also contains scheduled training infrastructure.
 
-## Local Brain And Desktop Pairing
+## Home Brain And Mobile Pairing
 
-The desktop Chat UI includes a Local Brain screen for running Echo on the user’s computer.
+Home Brain is the desktop runtime that powers the mobile app. It gives the phone private compute, Gemma 4, memory, personal adapters, tools, voice, and training through local Wi-Fi or a secure tunnel.
+
+The desktop app includes a Home Brain screen for running Echo on the user's computer.
 
 It can:
 
 - Check Echo API health.
 - Start Echo API on Windows/WSL.
-- Check local vLLM model status.
+- Check local Gemma 4 vLLM model status.
 - Check whether the personal adapter is loaded.
 - Start a Cloudflare quick tunnel.
 - Generate a QR code so the mobile app can pair with the desktop.
@@ -300,15 +314,19 @@ It can:
 Typical pairing flow:
 
 ```text
-Desktop Chat UI
-  -> Local Brain
+Desktop app
+  -> Home Brain
   -> Start Echo API
-  -> Start Local Model
-  -> Start Tunnel
+  -> Start Gemma 4 local model
+  -> Start tunnel or use local Wi-Fi
   -> Show QR
   -> Mobile scans QR
-  -> Mobile uses desktop Echo backend
+  -> Mobile uses Home Brain for Gemma 4, memory, tools, voice, and training
+  -> Mobile syncs an offline memory pack
+  -> Mobile keeps working in This Device mode when disconnected
 ```
+
+This is the core product direction: the phone is where the user lives; Home Brain is the user's private model and training runtime.
 
 ## MCP Support
 
@@ -357,10 +375,10 @@ The mobile app includes local notification support:
 - Notification tap routing to Today, Training, Potential, Progress, or Decision Room.
 - Notification sync on app resume.
 
-Current limitation:
+Current boundary:
 
 - Mobile does not auto-start training in the background.
-- Training should be started by the backend/desktop scheduler or by explicit user confirmation.
+- Training should be started by Home Brain scheduler, Training Studio, MCP, or explicit user confirmation.
 
 ## Data Storage
 
@@ -421,9 +439,9 @@ flutter build apk --debug
 ## Development Notes
 
 - The Flutter package is still named `chatmcp` internally.
-- The user-facing product should be described as **Echo + Chat UI**.
+- The user-facing product should be described as **Echo mobile app**.
 - Some route names still refer to older internal concepts for backward compatibility.
-- The active product language should use: Current Read, Priority, Practice, Decision Room, Personal Lens, Training Studio, Local Brain, Memory, Rules, Progress Evidence.
+- The active product language should use: Current Read, Priority, Practice, Decision Room, Personal Lens, Training Studio, Home Brain, Memory, Rules, Progress Evidence.
 - Avoid user-facing “clone” or anime-inspired naming unless describing old/internal implementation.
 
 ## Current Status
@@ -434,7 +452,7 @@ Implemented:
 - Mobile tabs and desktop navigation.
 - Echo auth and API client.
 - Echo context injection into Talk.
-- Today, You, Training Studio, Local Brain, Tools, Sync.
+- Today, You, Training Studio, Home Brain, Tools, Sync.
 - OpenAI-compatible Echo runtime.
 - Memory, rules, thesis/current read, practice, outcomes, growth timeline.
 - Decision workflows.

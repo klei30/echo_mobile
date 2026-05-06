@@ -569,7 +569,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
           const SizedBox(height: 10),
-          // My Computer card
+          // Home Brain card
           GestureDetector(
             onTap: () async {
               final paired = await Navigator.of(context).push<bool>(
@@ -604,12 +604,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'My Computer',
+                          'Home Brain',
                           style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: EchoColors.textMuted),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Runs on your own device.\nPair Echo Desktop with a QR code.',
+                          'Runs on your own computer.\nPair by Wi-Fi or secure QR tunnel.',
                           style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF3A3530), height: 1.5),
                         ),
                       ],

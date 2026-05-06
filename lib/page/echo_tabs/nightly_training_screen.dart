@@ -992,6 +992,11 @@ class _NightlyTrainingScreenState extends State<NightlyTrainingScreen> {
             leading == null ? 'Run a comparison to see which guidance style fits you best.' : '$leading is the guidance style helping most often.',
             style: GoogleFonts.lora(fontSize: 14, height: 1.5, color: EchoColors.textSecondary, fontStyle: FontStyle.italic),
           ),
+          const SizedBox(height: 10),
+          Text(
+            'Home Brain trains the personal Gemma adapter. This Device does not train locally yet; offline chats sync back as future training signal.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, height: 1.45, color: EchoColors.textGhost),
+          ),
           if (styleWins.isNotEmpty) ...[const SizedBox(height: 16), _buildStyleBars(styleWins)],
           const SizedBox(height: 20),
           _buildProgressRow('Pairs ready', untrained, required, EchoColors.amber),

@@ -266,7 +266,7 @@ class _YouTabState extends State<YouTab> {
                 const Icon(Icons.public_rounded, size: 17, color: EchoColors.amber),
                 const SizedBox(width: 8),
                 Text(
-                  'NEXT OPPORTUNITY',
+                  'PROOF PASSPORT',
                   style: GoogleFonts.plusJakartaSans(fontSize: 9.5, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.amber),
                 ),
                 const Spacer(),
@@ -302,15 +302,50 @@ class _YouTabState extends State<YouTab> {
               children: [
                 Expanded(
                   child: Text(
-                    'Open opportunity plan',
+                    'What your proof can unlock next',
                     style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.amber),
                   ),
                 ),
                 const Icon(Icons.chevron_right_rounded, color: EchoColors.amber),
               ],
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _passportActionButton(
+                    icon: Icons.add_task_rounded,
+                    label: 'Build proof',
+                    onTap: _openProofBuilderScreen,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _passportActionButton(
+                    icon: Icons.emoji_events_outlined,
+                    label: 'Find opportunities',
+                    onTap: _openOpportunitiesScreen,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _passportActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 15),
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: EchoColors.textPrimary,
+        side: const BorderSide(color: EchoColors.borderSubtle),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: GoogleFonts.plusJakartaSans(fontSize: 11.2, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -524,7 +559,7 @@ class _YouTabState extends State<YouTab> {
             ? ready
                   ? 'This Device is ready offline'
                   : 'This Device needs a model'
-            : 'Offline & Privacy';
+            : 'Runtime';
         final body = ready
             ? '${runtime.deviceModelVersion.isEmpty ? 'Gemma on device' : runtime.deviceModelVersion} is selected for offline Coach.'
             : 'Import a LiteRT-LM Gemma model so Echo can work without Wi-Fi.';

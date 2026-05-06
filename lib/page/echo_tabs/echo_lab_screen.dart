@@ -242,8 +242,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _McpServerRoute())),
       ),
       _toolRow(
-        'Desktop Echo',
-        connected ? 'Secure private connection active.' : 'Pair Echo Desktop.',
+        'Home Brain',
+        connected ? 'Secure private connection active.' : 'Pair Home Brain.',
         connected ? Icons.check_circle_rounded : Icons.computer_rounded,
         connected ? const Color(0xFF4CAF50) : EchoColors.textGhost,
         () async {

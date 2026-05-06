@@ -59,7 +59,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
       setState(() {
         _scanning = false;
         _testing = false;
-        _error = 'That QR code does not look like an Echo Desktop pairing code.';
+        _error = 'That QR code does not look like an Echo Home Brain pairing code.';
       });
       return;
     }
@@ -109,7 +109,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
             .get(Uri.parse('$url/health'))
             .timeout(const Duration(seconds: 8));
         if (resp.statusCode != 200) {
-          throw Exception('Echo Desktop returned ${resp.statusCode}.');
+          throw Exception('Home Brain returned ${resp.statusCode}.');
         }
         await EchoHostService().setTunnel(url);
         if (!mounted) return;
@@ -201,7 +201,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Pair My Computer',
+                    'Pair Home Brain',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -217,7 +217,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Open Echo Desktop on your computer, choose Pair phone, then scan the QR code here.',
+              'Open Home Brain on your computer, choose Pair phone, then scan the QR code here.',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12.5,
                 color: EchoColors.textGhost,
@@ -304,7 +304,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  connected ? 'My Computer connected' : 'My Computer not connected',
+                  connected ? 'Home Brain connected' : 'Home Brain not connected',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
@@ -315,7 +315,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
                 Text(
                   connected
                       ? 'Secure private connection active'
-                      : 'Pair Echo Desktop to use your own computer.',
+                      : 'Pair Home Brain to use your own computer.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11.5,
                     color: EchoColors.textGhost,
@@ -339,7 +339,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
       ),
       child: Column(
         children: [
-          _step('1', 'Install or open Echo Desktop'),
+          _step('1', 'Install or open Echo Home Brain'),
           _step('2', 'Click Pair phone'),
           _step('3', 'Scan the QR code'),
           _step('4', 'Echo saves the connection automatically'),
