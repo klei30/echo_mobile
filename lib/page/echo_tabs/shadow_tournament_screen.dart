@@ -16,8 +16,7 @@ class ShadowTournamentScreen extends StatefulWidget {
   State<ShadowTournamentScreen> createState() => _ShadowTournamentScreenState();
 }
 
-class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
-    with TickerProviderStateMixin {
+class _ShadowTournamentScreenState extends State<ShadowTournamentScreen> with TickerProviderStateMixin {
   final TextEditingController _ctrl = TextEditingController();
   final FocusNode _focus = FocusNode();
   late final AnimationController _pulse;
@@ -55,10 +54,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
   void initState() {
     super.initState();
     _ctrl.text = widget.initialPrompt ?? '';
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
   }
 
   @override
@@ -94,9 +90,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
     setState(() {
       _runId = result['run_id'] as String?;
       _topic = result['topic'] as String?;
-      _candidates = (result['candidates'] as List? ?? [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      _candidates = (result['candidates'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
       _phase = _TournamentPhase.result;
     });
   }
@@ -142,25 +136,14 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
       appBar: AppBar(
         backgroundColor: EchoColors.bg,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          color: EchoColors.textMuted,
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, size: 18), color: EchoColors.textMuted, onPressed: () => Navigator.pop(context)),
         title: Text(
-          'Decision Room',
-          style: GoogleFonts.plusJakartaSans(
-            color: EchoColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          'Choose Best Path',
+          style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
-        child: _buildBody(),
-      ),
+      body: AnimatedSwitcher(duration: const Duration(milliseconds: 260), child: _buildBody()),
     );
   }
 
@@ -197,36 +180,22 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
               focusNode: _focus,
               minLines: 5,
               maxLines: 8,
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.textPrimary,
-                fontSize: 15,
-                height: 1.45,
-              ),
+              style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 15, height: 1.45),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Describe a situation, decision, fear, project, or pattern...',
-                hintStyle: GoogleFonts.plusJakartaSans(
-                  color: EchoColors.textGhost,
-                  fontSize: 14,
-                ),
+                hintStyle: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost, fontSize: 14),
               ),
             ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: GoogleFonts.plusJakartaSans(
-                color: const Color(0xFFE06A4F),
-                fontSize: 12,
-              ),
-            ),
+            Text(_error!, style: GoogleFonts.plusJakartaSans(color: const Color(0xFFE06A4F), fontSize: 12)),
           ],
           const SizedBox(height: 18),
           _primaryButton('Run perspectives', Icons.psychology_alt_rounded, _run),
           const SizedBox(height: 18),
-          _hintRow(Icons.psychology_alt_rounded,
-              'Pick the answer that actually helps. Echo turns that choice into training signal.'),
+          _hintRow(Icons.psychology_alt_rounded, 'Pick the answer that actually helps. Echo turns that choice into proof and training signal.'),
         ],
       ),
     );
@@ -237,22 +206,13 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Compare four ways forward.',
-          style: GoogleFonts.lora(
-            color: EchoColors.textPrimary,
-            fontSize: 26,
-            height: 1.2,
-            fontWeight: FontWeight.w600,
-          ),
+          'Choose the best path forward.',
+          style: GoogleFonts.lora(color: EchoColors.textPrimary, fontSize: 26, height: 1.2, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Text(
-          'Strategist, Challenger, Mirror, and Builder each take a different angle. Your choice teaches Echo which kind of help moves you forward.',
-          style: GoogleFonts.plusJakartaSans(
-            color: EchoColors.textMuted,
-            fontSize: 13.5,
-            height: 1.55,
-          ),
+          'Four perspectives turn the situation into possible next moves. Your choice teaches Echo what kind of help moves you forward.',
+          style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 13.5, height: 1.55),
         ),
       ],
     );
@@ -274,9 +234,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: EchoColors.amber.withValues(alpha: 0.08 + _pulse.value * 0.05),
-                    border: Border.all(
-                      color: EchoColors.amber.withValues(alpha: 0.22 + _pulse.value * 0.24),
-                    ),
+                    border: Border.all(color: EchoColors.amber.withValues(alpha: 0.22 + _pulse.value * 0.24)),
                     boxShadow: [
                       BoxShadow(
                         color: EchoColors.amber.withValues(alpha: 0.12 + _pulse.value * 0.16),
@@ -284,26 +242,15 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.auto_awesome_motion_rounded,
-                      color: EchoColors.amber, size: 28),
+                  child: const Icon(Icons.auto_awesome_motion_rounded, color: EchoColors.amber, size: 28),
                 ),
                 const SizedBox(height: 28),
                 Text(
                   'Echo is testing perspectives.',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: EchoColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Four responses. One useful signal.',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: EchoColors.textMuted,
-                    fontSize: 12.5,
-                  ),
-                ),
+                Text('Four responses. One useful signal.', style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 12.5)),
               ],
             );
           },
@@ -324,38 +271,18 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
               children: [
                 Text(
                   _topic == null ? 'Choose what helped' : 'Choose what helped - $_topic',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: EchoColors.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: _reset,
-                  child: Text(
-                    'Reset',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: EchoColors.textGhost,
-                      fontSize: 12,
-                    ),
-                  ),
+                  child: Text('Reset', style: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost, fontSize: 12)),
                 ),
               ],
             ),
           ),
-          for (final candidate in _candidates) ...[
-            _candidateCard(candidate),
-            const SizedBox(height: 12),
-          ],
-          if (_error != null)
-            Text(
-              _error!,
-              style: GoogleFonts.plusJakartaSans(
-                color: const Color(0xFFE06A4F),
-                fontSize: 12,
-              ),
-            ),
+          for (final candidate in _candidates) ...[_candidateCard(candidate), const SizedBox(height: 12)],
+          if (_error != null) Text(_error!, style: GoogleFonts.plusJakartaSans(color: const Color(0xFFE06A4F), fontSize: 12)),
         ],
       ),
     );
@@ -385,10 +312,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                 Container(
                   width: 34,
                   height: 34,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color.withValues(alpha: 0.10),
-                  ),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.10)),
                   child: Icon(icon, color: color, size: 18),
                 ),
                 const SizedBox(width: 10),
@@ -398,36 +322,18 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                     children: [
                       Text(
                         style,
-                        style: GoogleFonts.plusJakartaSans(
-                          color: EchoColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.plusJakartaSans(
-                          color: EchoColors.textGhost,
-                          fontSize: 11,
-                        ),
-                      ),
+                      Text(subtitle, style: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost, fontSize: 11)),
                     ],
                   ),
                 ),
-                Icon(Icons.check_circle_outline_rounded,
-                    color: color.withValues(alpha: 0.55), size: 20),
+                Icon(Icons.check_circle_outline_rounded, color: color.withValues(alpha: 0.55), size: 20),
               ],
             ),
             const SizedBox(height: 14),
-            Text(
-              response,
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.textSecondary,
-                fontSize: 13.5,
-                height: 1.55,
-              ),
-            ),
+            Text(response, style: GoogleFonts.plusJakartaSans(color: EchoColors.textSecondary, fontSize: 13.5, height: 1.55)),
           ],
         ),
       ),
@@ -437,8 +343,8 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
   Widget _buildSaved() {
     final winner = _winner ?? 'Perspective';
     final color = _styleColors[winner] ?? EchoColors.amber;
-    final learning = _learningSummary ??
-        'Echo learned which angle helped most here. That choice updates your current read and becomes training signal.';
+    final learning =
+        _learningSummary ?? 'Echo learned which angle helped most here. That choice updates your current read and becomes proof for future guidance.';
 
     return SafeArea(
       key: const ValueKey('saved'),
@@ -454,12 +360,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
                 shape: BoxShape.circle,
                 color: color.withValues(alpha: 0.10),
                 border: Border.all(color: color.withValues(alpha: 0.32)),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.20),
-                    blurRadius: 42,
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.20), blurRadius: 42)],
               ),
               child: Icon(Icons.psychology_alt_rounded, color: color, size: 34),
             ),
@@ -467,21 +368,13 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             Text(
               '$winner helped most.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.lora(
-                color: EchoColors.textPrimary,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-              ),
+              style: GoogleFonts.lora(color: EchoColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             Text(
               learning,
               textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.textMuted,
-                fontSize: 13.5,
-                height: 1.55,
-              ),
+              style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 13.5, height: 1.55),
             ),
             const SizedBox(height: 28),
             _primaryButton('Run again', Icons.refresh_rounded, _reset),
@@ -489,12 +382,8 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(
-                'Back to loop',
-                style: GoogleFonts.plusJakartaSans(
-                  color: EchoColors.textGhost,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
+                'Back to Today',
+                style: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost, fontSize: 13, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -521,11 +410,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
             const SizedBox(width: 8),
             Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.amber,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
+              style: GoogleFonts.plusJakartaSans(color: EchoColors.amber, fontSize: 14, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -540,14 +425,7 @@ class _ShadowTournamentScreenState extends State<ShadowTournamentScreen>
         Icon(icon, size: 15, color: EchoColors.textGhost),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.plusJakartaSans(
-              color: EchoColors.textGhost,
-              fontSize: 12,
-              height: 1.45,
-            ),
-          ),
+          child: Text(text, style: GoogleFonts.plusJakartaSans(color: EchoColors.textGhost, fontSize: 12, height: 1.45)),
         ),
       ],
     );

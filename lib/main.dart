@@ -12,6 +12,8 @@ import 'utils/platform.dart';
 import 'package:chatmcp/provider/settings_provider.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/echo_host_service.dart';
+import 'package:chatmcp/echo/echo_offline_memory_service.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/echo/notification_service.dart';
 import 'package:chatmcp/page/echo_tabs/today_screen.dart';
 import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
@@ -67,7 +69,7 @@ void main() async {
     // ProviderManager.init() calls adoptOrphanChats() which stamps chats with
     // the current userId. If AuthService hasn't loaded yet, userId is null and
     // all legacy chats get stamped as 'anonymous', making them invisible.
-    await Future.wait([AuthService().init(), EchoHostService().init(), initDb()]);
+    await Future.wait([AuthService().init(), EchoHostService().init(), EchoRuntimeService().init(), EchoOfflineMemoryService().init(), initDb()]);
     // Quick tunnels die when cloudflared stops — verify before any API calls.
     await EchoHostService().verifyTunnel();
     await ProviderManager.init();

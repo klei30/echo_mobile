@@ -52,6 +52,10 @@ class EchoClient {
   Map<String, String> get _headers => AuthService().authHeaders;
   String? get lastUserMessage => _lastUserMessage;
 
+  void rememberUserMessage(String message) {
+    _lastUserMessage = message;
+  }
+
   /// Call before every LLM request. Returns enriched context or null (silent fail).
   /// Falls back to the last cached context if the server doesn't respond in time.
   Future<EchoContext?> fetchContext(String message) async {

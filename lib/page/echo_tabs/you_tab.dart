@@ -6,10 +6,14 @@ import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
 import 'package:chatmcp/page/echo_tabs/echo_lab_screen.dart';
+import 'package:chatmcp/page/echo_tabs/local_model_setup_screen.dart';
 import 'package:chatmcp/page/echo_tabs/growth_timeline_screen.dart';
+import 'package:chatmcp/page/echo_tabs/opportunities_screen.dart';
+import 'package:chatmcp/page/echo_tabs/proof_builder_screen.dart';
 import 'package:chatmcp/page/echo_tabs/talent_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 import 'package:chatmcp/provider/provider_manager.dart';
@@ -68,6 +72,8 @@ class _YouTabState extends State<YouTab> {
   Map<String, dynamic>? _rank;
   Map<String, dynamic>? _growthTimeline;
   Map<String, dynamic>? _revelationStatus;
+  Map<String, dynamic>? _proofData;
+  Map<String, dynamic>? _opportunityData;
   bool _loading = true;
 
   String? _trainingLane() {
@@ -103,6 +109,20 @@ class _YouTabState extends State<YouTab> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
+    if (EchoRuntimeService().isDevice) {
+      final loop = EchoLoopState();
+      if (!mounted) return;
+      setState(() {
+        _thesis = loop.thesis ?? _thesis;
+        _trainingSummary = loop.trainingSummary ?? _trainingSummary;
+        _rank = loop.rank ?? _rank;
+        _growthTimeline = loop.growthTimeline ?? _growthTimeline;
+        _proofData = null;
+        _opportunityData = null;
+        _loading = false;
+      });
+      return;
+    }
     final results = await Future.wait([
       EchoApiClient().getUserSignal(),
       EchoApiClient().getUserStats(),
@@ -111,6 +131,8 @@ class _YouTabState extends State<YouTab> {
       EchoApiClient().getUserRank(),
       EchoApiClient().getGrowthTimeline(),
       EchoApiClient().getRevelationStatus(),
+      EchoApiClient().getProofItems(limit: 6),
+      EchoApiClient().getOpportunities(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -121,6 +143,8 @@ class _YouTabState extends State<YouTab> {
       _rank = results[4];
       _growthTimeline = results[5];
       _revelationStatus = results[6];
+      _proofData = results[7];
+      _opportunityData = results[8];
       _loading = false;
     });
     EchoLoopState().apply(thesis: _thesis);
@@ -134,6 +158,18 @@ class _YouTabState extends State<YouTab> {
 
   Future<void> _openTournamentScreen({String? initialPrompt}) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: initialPrompt)));
+    if (!mounted) return;
+    await Future.wait([_load(), EchoLoopState().refresh()]);
+  }
+
+  Future<void> _openOpportunitiesScreen() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OpportunitiesScreen()));
+    if (!mounted) return;
+    await Future.wait([_load(), EchoLoopState().refresh()]);
+  }
+
+  Future<void> _openProofBuilderScreen() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProofBuilderScreen()));
     if (!mounted) return;
     await Future.wait([_load(), EchoLoopState().refresh()]);
   }
@@ -180,18 +216,155 @@ class _YouTabState extends State<YouTab> {
                   _buildCloneHero(context),
                   _buildRankBar(),
                   Padding(padding: const EdgeInsets.fromLTRB(18, 16, 18, 4), child: _buildPrimaryCta(context)),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 8, 18, 4), child: _buildOpportunityCard(context)),
 
-                  _chapterLabel('CURRENT READ'),
+                  _chapterLabel('DIRECTION'),
                   Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildThesisCard(context)),
 
-                  _chapterLabel('PROGRESS'),
+                  _chapterLabel('PROOF'),
                   Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: _buildProgressCard(context)),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 16), child: _buildProofBuilderEntry(context)),
 
                   Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 16), child: _buildLabEntry(context)),
+                  Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 16), child: _buildDeviceEntry(context)),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpportunityCard(BuildContext context) {
+    final opportunities = (_opportunityData?['items'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    final opportunity = opportunities.isNotEmpty ? opportunities.first : null;
+    final direction = _thesis?['title'] as String? ?? 'Direction still forming';
+    final statement = _thesis?['statement'] as String? ?? 'Keep using Coach and Today so Echo can connect your signals to real proof.';
+    final title = opportunity?['title'] as String? ?? 'Build proof for: $direction';
+    final body = opportunity?['description'] as String? ?? statement;
+    final nextStep = opportunity?['next_step'] as String? ?? 'Create one proof item from a real action today.';
+    final nextStepPill = nextStep.length > 30 ? 'next step ready' : nextStep;
+    final proofSummary = Map<String, dynamic>.from((_opportunityData?['proof_summary'] as Map?) ?? (_proofData?['summary'] as Map?) ?? {});
+    final proofCount = (proofSummary['count'] as num?)?.toInt() ?? 0;
+    final missing = (opportunity?['missing_proof'] as List? ?? []).length;
+
+    return GestureDetector(
+      onTap: _openOpportunitiesScreen,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.public_rounded, size: 17, color: EchoColors.amber),
+                const SizedBox(width: 8),
+                Text(
+                  'NEXT OPPORTUNITY',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 9.5, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.amber),
+                ),
+                const Spacer(),
+                Text('$proofCount proof', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textVeryGhost)),
+              ],
+            ),
+            const SizedBox(height: 11),
+            Text(
+              title,
+              style: GoogleFonts.plusJakartaSans(fontSize: 15.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary, height: 1.35),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              body,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(fontSize: 12.2, color: EchoColors.textMuted, height: 1.45),
+            ),
+            const SizedBox(height: 13),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _loopPill(Icons.inventory_2_outlined, '$proofCount proof items'),
+                _loopPill(Icons.assignment_turned_in_outlined, missing > 0 ? '$missing missing' : 'proof ready'),
+                _loopPill(Icons.arrow_forward_rounded, nextStepPill),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(height: 1, color: EchoColors.borderSubtle),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Open opportunity plan',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.amber),
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: EchoColors.amber),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProofBuilderEntry(BuildContext context) {
+    final items = (_proofData?['items'] as List? ?? []).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    final summary = Map<String, dynamic>.from(_proofData?['summary'] as Map? ?? {});
+    final proofCount = (summary['count'] as num?)?.toInt() ?? items.length;
+    final latest = items.isNotEmpty ? items.first['title'] as String? : null;
+    final body = latest == null
+        ? 'Save one artifact, outcome, practice result, or piece of feedback.'
+        : 'Latest proof: $latest';
+    return GestureDetector(
+      onTap: _openProofBuilderScreen,
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EchoColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EchoColors.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: EchoColors.amber.withValues(alpha: 0.09),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: EchoColors.amber.withValues(alpha: 0.18)),
+              ),
+              child: const Icon(Icons.inventory_2_outlined, size: 18, color: EchoColors.amber),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    proofCount > 0 ? 'Proof Builder - $proofCount saved' : 'Proof Builder',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, height: 1.35, color: EchoColors.textGhost),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
+          ],
         ),
       ),
     );
@@ -209,9 +382,7 @@ class _YouTabState extends State<YouTab> {
     final stats = Map<String, dynamic>.from(_growthTimeline?['stats'] as Map? ?? {});
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ready ? const TalentScreen() : const GrowthTimelineScreen()),
-      ),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ready ? const TalentScreen() : const GrowthTimelineScreen())),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -228,10 +399,10 @@ class _YouTabState extends State<YouTab> {
                 const SizedBox(width: 8),
                 Text(
                   state == 'revealed'
-                      ? 'REVELATION DELIVERED'
+                      ? 'STRENGTH FOUND'
                       : ready
-                      ? 'REVELATION READY'
-                      : 'REVELATION FORMING',
+                      ? 'DIRECTION READY'
+                      : 'PROOF FORMING',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 9.5,
                     letterSpacing: 1.2,
@@ -282,10 +453,14 @@ class _YouTabState extends State<YouTab> {
               children: [
                 Expanded(
                   child: Text(
-                    ready ? 'Open Revelation' : timelineHeadline,
+                    ready ? 'Open strengths' : timelineHeadline,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: ready ? EchoColors.amber : EchoColors.textGhost),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: ready ? EchoColors.amber : EchoColors.textGhost,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -320,12 +495,12 @@ class _YouTabState extends State<YouTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ready ? 'Training Studio has a model update ready' : 'Open Training Studio',
+                    ready ? 'Echo is ready to improve' : 'Improve Echo',
                     style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Model training, preference signal $dpoReady/$dpoRequired, memory, system health, and tools.',
+                    'Your outcomes and choices become training signal. Technical details stay here when you need them. Preference signal $dpoReady/$dpoRequired.',
                     style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
                   ),
                 ],
@@ -335,6 +510,56 @@ class _YouTabState extends State<YouTab> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDeviceEntry(BuildContext context) {
+    final runtime = EchoRuntimeService();
+    return ListenableBuilder(
+      listenable: runtime,
+      builder: (context, _) {
+        final active = runtime.isDevice;
+        final ready = runtime.isDeviceReady;
+        final title = active
+            ? ready
+                  ? 'This Device is ready offline'
+                  : 'This Device needs a model'
+            : 'Offline & Privacy';
+        final body = ready
+            ? '${runtime.deviceModelVersion.isEmpty ? 'Gemma on device' : runtime.deviceModelVersion} is selected for offline Coach.'
+            : 'Import a LiteRT-LM Gemma model so Echo can work without Wi-Fi.';
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LocalModelSetupScreen())),
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: active ? EchoColors.amber.withValues(alpha: 0.07) : EchoColors.bgSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: active ? EchoColors.amber.withValues(alpha: 0.28) : EchoColors.borderSubtle),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.phone_android_rounded, size: 18, color: active ? EchoColors.amber : EchoColors.textGhost),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(body, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: EchoColors.textGhost),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -409,7 +634,7 @@ class _YouTabState extends State<YouTab> {
 
             // Label
             Text(
-              'personal model',
+              'opportunity passport',
               style: GoogleFonts.plusJakartaSans(fontSize: 10.5, letterSpacing: 1.1, color: EchoColors.textGhost, fontWeight: FontWeight.w500),
             ),
 
@@ -593,7 +818,11 @@ class _YouTabState extends State<YouTab> {
                       actionLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.amber.withValues(alpha: 0.86)),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: EchoColors.amber.withValues(alpha: 0.86),
+                      ),
                     ),
                   ),
                   Icon(Icons.chevron_right_rounded, size: 18, color: EchoColors.amber.withValues(alpha: 0.45)),
@@ -771,19 +1000,19 @@ class _YouTabState extends State<YouTab> {
 
     if (revelationReady) {
       icon = Icons.auto_awesome_rounded;
-      label = 'OPEN REVELATION';
+      label = 'OPEN STRENGTHS';
       action = () {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TalentScreen()));
       };
     } else if (trainingReady) {
       icon = Icons.model_training_rounded;
-      label = 'UPDATE MODEL';
+      label = 'IMPROVE ECHO';
       action = () {
         _openTrainingScreen();
       };
     } else {
       icon = Icons.psychology_alt_rounded;
-      label = 'RUN PERSPECTIVES';
+      label = 'CHOOSE BEST PATH';
       action = () {
         _openTournamentScreen();
       };
@@ -816,10 +1045,10 @@ class _YouTabState extends State<YouTab> {
 
   String _cleanActionLabel(String label) {
     return label
-        .replaceAll('Send clones', 'Run perspectives')
-        .replaceAll('send clones', 'run perspectives')
-        .replaceAll('Run tournament', 'Run perspectives')
-        .replaceAll('run tournament', 'run perspectives')
+        .replaceAll('Send clones', 'Choose best path')
+        .replaceAll('send clones', 'choose best path')
+        .replaceAll('Run tournament', 'Choose best path')
+        .replaceAll('run tournament', 'choose best path')
         .replaceAll('Open talent', 'Open potential')
         .replaceAll('clone', 'model')
         .replaceAll('Clone', 'Model');

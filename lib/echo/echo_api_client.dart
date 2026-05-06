@@ -501,6 +501,118 @@ class EchoApiClient {
     }
   }
 
+  Future<Map<String, dynamic>?> getProofItems({int limit = 50}) async {
+    try {
+      final uri = Uri.parse('$_base/v1/proof/items').replace(queryParameters: {'limit': '$limit'});
+      final resp = await http.get(uri, headers: _h).timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getProofItems HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getProofItems error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> createProofItem({
+    required String title,
+    String description = '',
+    String category = 'practice',
+    String? sourceType,
+    String? sourceId,
+    String evidence = '',
+    List<String> skillTags = const [],
+    String opportunityType = 'personal_goal',
+  }) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/proof/items'),
+            headers: h,
+            body: jsonEncode({
+              'title': title,
+              'description': description,
+              'category': category,
+              'source_type': sourceType,
+              'source_id': sourceId,
+              'evidence': evidence,
+              'skill_tags': skillTags,
+              'opportunity_type': opportunityType,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('createProofItem HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('createProofItem error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> deleteProofItem(String itemId) async {
+    try {
+      final resp = await http.delete(Uri.parse('$_base/v1/proof/items/$itemId'), headers: _h).timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      _log.warning('deleteProofItem error: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getOpportunities() async {
+    try {
+      final resp = await http.get(Uri.parse('$_base/v1/opportunities'), headers: _h).timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('getOpportunities HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('getOpportunities error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> generateOpportunity() async {
+    try {
+      final resp = await http.post(Uri.parse('$_base/v1/opportunities/generate'), headers: _h).timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('generateOpportunity HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('generateOpportunity error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> createOpportunity({
+    required String title,
+    String type = 'personal_goal',
+    String description = '',
+    List<String> requiredProof = const [],
+    List<String> missingProof = const [],
+    String nextStep = '',
+  }) async {
+    try {
+      final h = {..._h, 'Content-Type': 'application/json'};
+      final resp = await http
+          .post(
+            Uri.parse('$_base/v1/opportunities'),
+            headers: h,
+            body: jsonEncode({
+              'title': title,
+              'type': type,
+              'description': description,
+              'required_proof': requiredProof,
+              'missing_proof': missingProof,
+              'next_step': nextStep,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      _log.warning('createOpportunity HTTP ${resp.statusCode}');
+    } catch (e) {
+      _log.warning('createOpportunity error: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> triggerTraining({String? lane}) async {
     try {
       final h = {..._h, 'Content-Type': 'application/json'};

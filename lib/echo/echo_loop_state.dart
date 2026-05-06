@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 
 class EchoLoopState extends ChangeNotifier {
   static final EchoLoopState _instance = EchoLoopState._();
@@ -39,6 +40,10 @@ class EchoLoopState extends ChangeNotifier {
 
   Future<void> refresh() async {
     if (loading) return;
+    if (EchoRuntimeService().isDevice) {
+      notifyListeners();
+      return;
+    }
     loading = true;
     notifyListeners();
     try {

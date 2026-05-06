@@ -15,8 +15,7 @@ class TwinScreen extends StatefulWidget {
   State<TwinScreen> createState() => _TwinScreenState();
 }
 
-class _TwinScreenState extends State<TwinScreen>
-    with SingleTickerProviderStateMixin {
+class _TwinScreenState extends State<TwinScreen> with SingleTickerProviderStateMixin {
   _Phase _phase = _Phase.intro;
   final TextEditingController _ctrl = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -31,8 +30,7 @@ class _TwinScreenState extends State<TwinScreen>
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
     _fadeCtrl.forward();
   }
@@ -72,10 +70,7 @@ class _TwinScreenState extends State<TwinScreen>
   Future<void> _choose(String choice) async {
     if (_session == null) return;
     HapticFeedback.lightImpact();
-    final result = await EchoApiClient().chooseTwin(
-      _session!['session_id'] as String,
-      choice,
-    );
+    final result = await EchoApiClient().chooseTwin(_session!['session_id'] as String, choice);
     if (!mounted) return;
     await _transition(() {
       _choseClone = result?['chose_clone'] as bool? ?? false;
@@ -104,12 +99,12 @@ class _TwinScreenState extends State<TwinScreen>
   }
 
   Widget _buildCloseButton() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.close, size: 18, color: EchoColors.textVeryGhost),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+    child: GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: const Icon(Icons.close, size: 18, color: EchoColors.textVeryGhost),
+    ),
+  );
 
   Widget _buildIntro() {
     return Column(
@@ -126,27 +121,19 @@ class _TwinScreenState extends State<TwinScreen>
                 EchoOrb(size: 52, rings: 3),
                 const SizedBox(height: 32),
                 Text(
-                  'Personal Lens',
-                  style: GoogleFonts.lora(
-                    fontSize: 26, fontStyle: FontStyle.italic,
-                    color: EchoColors.textPrimary, letterSpacing: -0.4,
-                  ),
+                  'Compare Answers',
+                  style: GoogleFonts.lora(fontSize: 26, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, letterSpacing: -0.4),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   'Echo compares a general answer with guidance adapted from your conversations. '
-                  'Ask both — see which one sounds more like you.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5, height: 1.7, color: EchoColors.textMuted,
-                  ),
+                  'Pick the answer that would actually help you move.',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13.5, height: 1.7, color: EchoColors.textMuted),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'You pick the answer that feels more you.\nYour twin learns from every choice.',
-                  style: GoogleFonts.lora(
-                    fontSize: 13, fontStyle: FontStyle.italic,
-                    height: 1.6, color: EchoColors.textGhost,
-                  ),
+                  'Your choice becomes signal for what kind of guidance fits you.',
+                  style: GoogleFonts.lora(fontSize: 13, fontStyle: FontStyle.italic, height: 1.6, color: EchoColors.textGhost),
                 ),
                 const SizedBox(height: 48),
                 GestureDetector(
@@ -159,10 +146,7 @@ class _TwinScreenState extends State<TwinScreen>
                     ),
                     child: Text(
                       'Ask something',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15, fontWeight: FontWeight.w500,
-                        color: EchoColors.amber,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w500, color: EchoColors.amber),
                     ),
                   ),
                 ),
@@ -186,17 +170,12 @@ class _TwinScreenState extends State<TwinScreen>
               children: [
                 Text(
                   'What do you want to ask?',
-                  style: GoogleFonts.lora(
-                    fontSize: 18, fontStyle: FontStyle.italic,
-                    color: EchoColors.textPrimary, height: 1.5,
-                  ),
+                  style: GoogleFonts.lora(fontSize: 18, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.5),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Ask anything you would ask Echo — the same question goes to both.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12, color: EchoColors.textGhost, height: 1.5,
-                  ),
+                  'Ask anything you would ask Echo. You will compare two answers and choose what helps.',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost, height: 1.5),
                 ),
                 const SizedBox(height: 28),
                 TextField(
@@ -205,13 +184,10 @@ class _TwinScreenState extends State<TwinScreen>
                   autofocus: true,
                   maxLines: 6,
                   minLines: 3,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15, color: EchoColors.textPrimary, height: 1.6,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 15, color: EchoColors.textPrimary, height: 1.6),
                   decoration: InputDecoration(
                     hintText: 'e.g. What should I focus on this week?',
-                    hintStyle: GoogleFonts.plusJakartaSans(
-                        fontSize: 14, color: EchoColors.textGhost),
+                    hintStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: EchoColors.textGhost),
                     filled: true,
                     fillColor: const Color(0xFF0F0D0B),
                     border: OutlineInputBorder(
@@ -234,24 +210,17 @@ class _TwinScreenState extends State<TwinScreen>
           ),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24,
-              MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 28),
+          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 28),
           child: GestureDetector(
             onTap: _ask,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: EchoColors.amber,
-                borderRadius: BorderRadius.circular(40),
-              ),
+              decoration: BoxDecoration(color: EchoColors.amber, borderRadius: BorderRadius.circular(40)),
               child: Center(
                 child: Text(
-                  'Ask both',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15, fontWeight: FontWeight.w600,
-                    color: const Color(0xFF060504),
-                  ),
+                  'Compare answers',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF060504)),
                 ),
               ),
             ),
@@ -273,10 +242,7 @@ class _TwinScreenState extends State<TwinScreen>
               const SizedBox(height: 24),
               Text(
                 'Asking both...',
-                style: GoogleFonts.lora(
-                  fontSize: 16, fontStyle: FontStyle.italic,
-                  color: EchoColors.textGhost,
-                ),
+                style: GoogleFonts.lora(fontSize: 16, fontStyle: FontStyle.italic, color: EchoColors.textGhost),
               ),
             ],
           ),
@@ -298,26 +264,18 @@ class _TwinScreenState extends State<TwinScreen>
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
             children: [
               Text(
-                'ECHO  ·  TWIN',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9.5, fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4, color: EchoColors.amber,
-                ),
+                'COMPARE ANSWERS',
+                style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.4, color: EchoColors.amber),
               ),
               const SizedBox(height: 10),
               Text(
-                'Which one sounds more like you?',
-                style: GoogleFonts.lora(
-                  fontSize: 18, fontStyle: FontStyle.italic,
-                  color: EchoColors.textPrimary, height: 1.5,
-                ),
+                'Which answer helps you move?',
+                style: GoogleFonts.lora(fontSize: 18, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.5),
               ),
               const SizedBox(height: 6),
               Text(
                 '"$q"',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12, color: EchoColors.textGhost, height: 1.5,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textGhost, height: 1.5),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -348,7 +306,8 @@ class _TwinScreenState extends State<TwinScreen>
             Row(
               children: [
                 Container(
-                  width: 26, height: 26,
+                  width: 26,
+                  height: 26,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: EchoColors.textGhost),
@@ -356,29 +315,16 @@ class _TwinScreenState extends State<TwinScreen>
                   child: Center(
                     child: Text(
                       label,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11, fontWeight: FontWeight.w700,
-                        color: EchoColors.textMuted,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: EchoColors.textMuted),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  'Tap if this sounds more like you',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11, color: EchoColors.textGhost,
-                  ),
-                ),
+                Text('Tap if this helps more', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost)),
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              text,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13.5, color: EchoColors.textSecondary, height: 1.65,
-              ),
-            ),
+            Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 13.5, color: EchoColors.textSecondary, height: 1.65)),
           ],
         ),
       ),
@@ -399,36 +345,28 @@ class _TwinScreenState extends State<TwinScreen>
                 Row(
                   children: [
                     Container(
-                      width: 8, height: 8,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: EchoColors.amber),
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: EchoColors.amber),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'ECHO',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 9.5, fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2, color: EchoColors.amber,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: EchoColors.amber),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  _resultMessage ?? 'Your twin just learned something.',
-                  style: GoogleFonts.lora(
-                    fontSize: 22, fontStyle: FontStyle.italic,
-                    color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.2,
-                  ),
+                  _resultMessage ?? 'Echo learned what kind of answer fits you.',
+                  style: GoogleFonts.lora(fontSize: 22, fontStyle: FontStyle.italic, color: EchoColors.textPrimary, height: 1.5, letterSpacing: -0.2),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   _choseClone
-                      ? 'You picked the personal answer. Echo is learning what actually fits you.'
+                      ? 'You picked the personalized answer. Echo is learning what actually fits.'
                       : 'You picked the general answer. Echo needs more signal for this kind of situation.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13, height: 1.6, color: EchoColors.textMuted,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.6, color: EchoColors.textMuted),
                 ),
                 const SizedBox(height: 48),
                 GestureDetector(
@@ -445,22 +383,14 @@ class _TwinScreenState extends State<TwinScreen>
                     ),
                     child: Text(
                       'Ask something else',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14, fontWeight: FontWeight.w500,
-                        color: EchoColors.amber,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500, color: EchoColors.amber),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Text(
-                    'Done',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13, color: EchoColors.textGhost,
-                    ),
-                  ),
+                  child: Text('Done', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.textGhost)),
                 ),
               ],
             ),

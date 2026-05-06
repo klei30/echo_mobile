@@ -13,12 +13,7 @@ class AskScreen extends StatefulWidget {
   final String? threadId;
   final String? threadContext;
 
-  const AskScreen({
-    super.key,
-    this.initialQuestion,
-    this.threadId,
-    this.threadContext,
-  });
+  const AskScreen({super.key, this.initialQuestion, this.threadId, this.threadContext});
 
   @override
   State<AskScreen> createState() => _AskScreenState();
@@ -43,11 +38,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   void _switchMode(_AskMode mode) {
     HapticFeedback.selectionClick();
     setState(() => _mode = mode);
-    _pageCtrl.animateToPage(
-      mode.index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageCtrl.animateToPage(mode.index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   @override
@@ -57,35 +48,19 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       appBar: AppBar(
         backgroundColor: EchoColors.bg,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          color: EchoColors.textMuted,
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, size: 18), color: EchoColors.textMuted, onPressed: () => Navigator.pop(context)),
         title: Text(
           'Decision Room',
-          style: GoogleFonts.plusJakartaSans(
-            color: EchoColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: _buildModeSelector(),
-        ),
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(48), child: _buildModeSelector()),
       ),
       body: PageView(
         controller: _pageCtrl,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          CouncilScreen(
-            initialQuestion: widget.initialQuestion,
-            threadId: widget.threadId,
-            threadContext: widget.threadContext,
-            showChrome: false,
-          ),
+          CouncilScreen(initialQuestion: widget.initialQuestion, threadId: widget.threadId, threadContext: widget.threadContext, showChrome: false),
           const TwinScreen(showCloseButton: false),
           const ParallelSelfScreen(showChrome: false),
         ],
@@ -100,9 +75,9 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         children: [
           _modeTab('Perspectives', _AskMode.voices),
           const SizedBox(width: 8),
-          _modeTab('Personal Lens', _AskMode.twin),
+          _modeTab('Compare', _AskMode.twin),
           const SizedBox(width: 8),
-          _modeTab('Scenarios', _AskMode.paths),
+          _modeTab('Future Paths', _AskMode.paths),
         ],
       ),
     );
@@ -116,15 +91,9 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
         decoration: BoxDecoration(
-          color: active
-              ? EchoColors.amber.withValues(alpha: 0.12)
-              : Colors.transparent,
+          color: active ? EchoColors.amber.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active
-                ? EchoColors.amber.withValues(alpha: 0.40)
-                : EchoColors.border,
-          ),
+          border: Border.all(color: active ? EchoColors.amber.withValues(alpha: 0.40) : EchoColors.border),
         ),
         child: Text(
           label,

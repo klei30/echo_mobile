@@ -6,6 +6,7 @@ import 'package:chatmcp/generated/app_localizations.dart';
 import 'package:chatmcp/echo/echo_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
+import 'package:chatmcp/page/echo_tabs/outcome_capture_sheet.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
 class MessageActions extends StatefulWidget {
@@ -14,13 +15,7 @@ class MessageActions extends StatefulWidget {
   final Function(String messageId) onSwitch;
   final bool isUser;
 
-  const MessageActions({
-    super.key,
-    required this.messages,
-    required this.onRetry,
-    required this.onSwitch,
-    this.isUser = false,
-  });
+  const MessageActions({super.key, required this.messages, required this.onRetry, required this.onSwitch, this.isUser = false});
 
   @override
   State<MessageActions> createState() => _MessageActionsState();
@@ -39,9 +34,7 @@ class _MessageActionsState extends State<MessageActions> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Text(
-          signal == 'not_true' || signal == 'thumbs_down'
-              ? 'Correction saved. Echo will adjust.'
-              : 'Signal saved. Echo updated the loop.',
+          signal == 'not_true' || signal == 'thumbs_down' ? 'Correction saved. Echo will adjust.' : 'Signal saved. Echo updated the loop.',
           style: const TextStyle(fontSize: 12.5, color: EchoColors.textMuted),
         ),
         duration: const Duration(seconds: 2),
@@ -67,9 +60,7 @@ class _MessageActionsState extends State<MessageActions> {
                 icon: const Icon(Icons.copy_outlined),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: widget.messages.map((m) => m.content ?? '').join('\n')));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(t.copiedToClipboard), duration: const Duration(seconds: 2)),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.copiedToClipboard), duration: const Duration(seconds: 2)));
                 },
               ),
               if (!widget.isUser) ...[
@@ -77,10 +68,7 @@ class _MessageActionsState extends State<MessageActions> {
                   iconSize: 14,
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                  icon: Icon(
-                    _thumbState == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
-                    color: _thumbState == 1 ? Colors.green : null,
-                  ),
+                  icon: Icon(_thumbState == 1 ? Icons.thumb_up : Icons.thumb_up_outlined, color: _thumbState == 1 ? Colors.green : null),
                   tooltip: 'Good response',
                   onPressed: () {
                     setState(() => _thumbState = _thumbState == 1 ? 0 : 1);
@@ -91,10 +79,7 @@ class _MessageActionsState extends State<MessageActions> {
                   iconSize: 14,
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                  icon: Icon(
-                    _thumbState == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
-                    color: _thumbState == -1 ? Colors.red : null,
-                  ),
+                  icon: Icon(_thumbState == -1 ? Icons.thumb_down : Icons.thumb_down_outlined, color: _thumbState == -1 ? Colors.red : null),
                   tooltip: 'Bad response',
                   onPressed: () {
                     setState(() => _thumbState = _thumbState == -1 ? 0 : -1);
@@ -111,9 +96,7 @@ class _MessageActionsState extends State<MessageActions> {
                   onPressed: () => widget.onRetry(widget.messages.last),
                   tooltip: t.retry,
                 ),
-              if (!widget.isUser &&
-                  widget.messages.first.brotherMessageIds != null &&
-                  widget.messages.first.brotherMessageIds!.isNotEmpty)
+              if (!widget.isUser && widget.messages.first.brotherMessageIds != null && widget.messages.first.brotherMessageIds!.isNotEmpty)
                 _buildBranchSwitchWidget(widget.messages),
             ],
           ),
@@ -131,19 +114,13 @@ class _MessageActionsState extends State<MessageActions> {
       animation: EchoLoopState(),
       builder: (context, _) {
         final priority = EchoLoopState().todayPriority;
-        final action = priority?['action'] is Map
-            ? Map<String, dynamic>.from(priority!['action'] as Map)
-            : <String, dynamic>{};
-        final payload = action['payload'] is Map
-            ? Map<String, dynamic>.from(action['payload'] as Map)
-            : <String, dynamic>{};
+        final action = priority?['action'] is Map ? Map<String, dynamic>.from(priority!['action'] as Map) : <String, dynamic>{};
+        final payload = action['payload'] is Map ? Map<String, dynamic>.from(action['payload'] as Map) : <String, dynamic>{};
         final priorityPrompt = payload['prompt'] as String?;
         final fallbackPrompt = EchoClient().lastUserMessage;
         final prompt = priorityPrompt?.isNotEmpty == true
             ? priorityPrompt!
-            : (fallbackPrompt?.isNotEmpty == true
-                ? fallbackPrompt!
-                : content.substring(0, content.length.clamp(0, 500)));
+            : (fallbackPrompt?.isNotEmpty == true ? fallbackPrompt! : content.substring(0, content.length.clamp(0, 500).toInt()));
 
         return Padding(
           padding: const EdgeInsets.only(top: 2, bottom: 2),
@@ -154,15 +131,37 @@ class _MessageActionsState extends State<MessageActions> {
               _loopChip(
                 context,
                 Icons.psychology_alt_rounded,
-                'Explore options',
-                () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ShadowTournamentScreen(initialPrompt: prompt),
-                  ),
-                ),
+                'Decide',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ShadowTournamentScreen(initialPrompt: prompt))),
                 filled: action['type'] == 'run_tournament',
               ),
-              _loopChip(context, Icons.check_circle_outline_rounded, 'Useful', () => _sendFeedback('helped')),
+              _loopChip(
+                context,
+                Icons.fact_check_outlined,
+                'Log outcome',
+                () => OutcomeCaptureSheet.show(
+                  context,
+                  title: 'Did this help you take action?',
+                  subjectType: 'chat_response',
+                  contextNote: content.substring(0, content.length.clamp(0, 700).toInt()),
+                ),
+              ),
+              _loopChip(
+                context,
+                Icons.inventory_2_outlined,
+                'Add proof',
+                () => OutcomeCaptureSheet.show(
+                  context,
+                  title: 'Save this as proof for your Passport?',
+                  subjectType: 'chat_response',
+                  contextNote: content.substring(0, content.length.clamp(0, 700).toInt()),
+                  doneLabel: 'Add proof',
+                  skippedLabel: 'Not proof',
+                  createProof: true,
+                  proofCategory: 'chat',
+                  proofTitle: 'Coach answer saved as proof',
+                ),
+              ),
               _loopChip(context, Icons.cancel_outlined, 'Not true', () => _sendFeedback('not_true')),
             ],
           ),
@@ -171,13 +170,7 @@ class _MessageActionsState extends State<MessageActions> {
     );
   }
 
-  Widget _loopChip(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap, {
-    bool filled = false,
-  }) {
+  Widget _loopChip(BuildContext context, IconData icon, String label, VoidCallback onTap, {bool filled = false}) {
     final color = filled ? EchoColors.amber : AppColors.getThemeColor(context);
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -196,11 +189,7 @@ class _MessageActionsState extends State<MessageActions> {
             const SizedBox(width: 5),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
             ),
           ],
         ),

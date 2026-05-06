@@ -4,10 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/page/echo_tabs/ask_screen.dart';
 import 'package:chatmcp/page/echo_tabs/daily_checkin_screen.dart';
 import 'package:chatmcp/page/echo_tabs/mirror_screen.dart';
 import 'package:chatmcp/page/echo_tabs/nightly_training_screen.dart';
+import 'package:chatmcp/page/echo_tabs/outcome_capture_sheet.dart';
 import 'package:chatmcp/page/echo_tabs/revelation_screen.dart';
 import 'package:chatmcp/page/echo_tabs/shadow_tournament_screen.dart';
 
@@ -93,6 +95,19 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
 
   Future<void> _checkState() async {
     setState(() => _state = _TodayState.checking);
+
+    if (EchoRuntimeService().isDevice) {
+      final loop = EchoLoopState();
+      if (!mounted) return;
+      setState(() {
+        _priority = loop.todayPriority ?? _priority;
+        _practice = loop.practice ?? _practice;
+        _mission = loop.mission ?? _mission;
+        _state = _TodayState.silence;
+      });
+      _contentFade.forward();
+      return;
+    }
 
     final results = await Future.wait([
       EchoApiClient().decideState(),
@@ -367,7 +382,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
       children: [
         Text(
           'Day $_threadDay',
-          style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+          style: GoogleFonts.plusJakartaSans(
+            color: EchoColors.amber.withValues(alpha: 0.45),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
         ),
         const SizedBox(height: 6),
       ],
@@ -384,8 +404,13 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.2, color: EchoColors.amber.withValues(alpha: 0.30))),
               const SizedBox(height: 12),
               Text(
-                'echo is reading',
-                style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.12), fontSize: 11, letterSpacing: 0.5, fontWeight: FontWeight.w300),
+                'building today\'s step',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w300,
+                ),
               ),
             ],
           ),
@@ -463,6 +488,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
         final hasThread = _escalationLevel >= 1 && _threadName != null;
         final signal = _signal?['signal'] as String?;
         final practiceTitle = _practice?['rep_title'] as String?;
+        final practiceId = _practice?['rep_id'] as String?;
         return FadeTransition(
           opacity: _contentFade,
           key: const ValueKey('silence'),
@@ -485,11 +511,14 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text('— what echo sees', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.16), fontSize: 10, letterSpacing: 0.5)),
+                  Text(
+                    '— what echo sees',
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.16), fontSize: 10, letterSpacing: 0.5),
+                  ),
                   const SizedBox(height: 30),
                 ] else ...[
                   Text(
-                    hasThread ? 'Still watching.' : 'Nothing yet.',
+                    hasThread ? 'A decision is forming.' : 'Ready when you are.',
                     style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.18), fontSize: 13, letterSpacing: 0.3),
                   ),
                   const SizedBox(height: 30),
@@ -521,7 +550,11 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                           Expanded(
                             child: Text(
                               _threadName!,
-                              style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.42), fontSize: 12.5, fontWeight: FontWeight.w300),
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white.withValues(alpha: 0.42),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w300,
+                              ),
                             ),
                           ),
                           Text(
@@ -569,13 +602,28 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () => _openPracticeOutcome(practiceId, practiceTitle),
+                          child: Text(
+                            'Log',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: EchoColors.amber.withValues(alpha: 0.55),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
 
                 if (!hasThread && signal == null) ...[
                   const SizedBox(height: 8),
-                  Text('Keep talking.', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.10), fontSize: 12, letterSpacing: 0.3)),
+                  Text(
+                    'Keep talking.',
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.10), fontSize: 12, letterSpacing: 0.3),
+                  ),
                 ],
               ],
             ),
@@ -652,10 +700,18 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                     Text(
                       'Echo has something to tell you.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.65), fontSize: 16, fontWeight: FontWeight.w300, height: 1.5),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w300,
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    Text('Tap to read', style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 12, letterSpacing: 0.5)),
+                    Text(
+                      'Tap to read',
+                      style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.45), fontSize: 12, letterSpacing: 0.5),
+                    ),
                   ],
                 ),
               ),
@@ -677,7 +733,12 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                   Text(
                     _threadContext != null ? 'Echo called the council.' : 'The council is ready.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.70), fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white.withValues(alpha: 0.70),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w300,
+                      height: 1.5,
+                    ),
                   ),
                   if (_threadContext != null) ...[
                     const SizedBox(height: 10),
@@ -812,7 +873,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
               Icon(Icons.wb_sunny_outlined, size: 15, color: EchoColors.amber.withValues(alpha: 0.58)),
               const SizedBox(width: 8),
               Text(
-                'DAILY MISSION',
+                'TODAY\'S STEP',
                 style: GoogleFonts.plusJakartaSans(
                   color: EchoColors.amber.withValues(alpha: 0.42),
                   fontSize: 8.5,
@@ -833,7 +894,11 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
           ],
           if (perspectiveMission != null) ...[
             const SizedBox(height: 12),
-            _missionLine(Icons.psychology_alt_outlined, 'Perspective ready', perspectiveMission['suggested_action'] as String? ?? 'A decision prompt is ready.'),
+            _missionLine(
+              Icons.psychology_alt_outlined,
+              'Perspective ready',
+              perspectiveMission['suggested_action'] as String? ?? 'A decision prompt is ready.',
+            ),
           ],
           if (reality != null) ...[
             const SizedBox(height: 8),
@@ -864,7 +929,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                 ),
               const Spacer(),
               if (priority.isNotEmpty) ...[
-                _miniOutcome(priority, 'helped', 'Helpful', 1.0),
+                _logOutcomeAction(priority, 'Log outcome'),
                 const SizedBox(width: 8),
                 _miniOutcome(priority, 'not_true', 'Not true', -0.5),
               ],
@@ -949,7 +1014,8 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                 ),
               ),
               const Spacer(),
-              if (evidence > 0) Text('$evidence signals', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.18), fontSize: 10)),
+              if (evidence > 0)
+                Text('$evidence signals', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.18), fontSize: 10)),
             ],
           ),
           const SizedBox(height: 10),
@@ -981,7 +1047,7 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
                   ),
                 ),
               const Spacer(),
-              _miniOutcome(priority, 'helped', 'Helpful', 1.0),
+              _logOutcomeAction(priority, 'Log outcome'),
               const SizedBox(width: 8),
               _miniOutcome(priority, 'not_true', 'Not true', -0.5),
             ],
@@ -998,14 +1064,69 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
     );
   }
 
+  Widget _logOutcomeAction(Map<String, dynamic> priority, String label) {
+    return GestureDetector(
+      onTap: () => _openPriorityOutcome(priority),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(color: EchoColors.amber.withValues(alpha: 0.50), fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Future<void> _openPriorityOutcome(Map<String, dynamic> priority) async {
+    final title = priority['title'] as String? ?? 'Today\'s step';
+    final body = priority['body'] as String? ?? '';
+    final subjectType = (priority['subject_type'] as String?) ?? (priority['kind'] as String?) ?? 'today_priority';
+    final saved = await OutcomeCaptureSheet.show(
+      context,
+      title: title,
+      subjectType: subjectType,
+      subjectId: priority['subject_id'] as String?,
+      contextNote: body,
+      doneLabel: 'Did it',
+      skippedLabel: 'Blocked',
+      createProof: true,
+      proofCategory: 'outcome',
+      proofTitle: title,
+    );
+    if (!mounted || saved != true) return;
+    _showXp('Outcome saved. Passport updated.');
+    _contentFade.value = 0;
+    _checkState();
+  }
+
+  Future<void> _openPracticeOutcome(String? repId, String title) async {
+    final saved = await OutcomeCaptureSheet.show(
+      context,
+      title: title,
+      subjectType: 'practice_rep',
+      subjectId: repId,
+      contextNote: _practice?['rep_instruction'] as String? ?? '',
+      doneLabel: 'Practiced',
+      skippedLabel: 'Blocked',
+      createProof: true,
+      proofCategory: 'practice',
+      proofTitle: title,
+    );
+    if (!mounted || saved != true) return;
+    if (repId != null) {
+      await EchoApiClient().logPractice(repId, true);
+      await EchoLoopState().refresh();
+    }
+    _showXp('Practice outcome saved.');
+    _contentFade.value = 0;
+    _checkState();
+  }
+
   String _cleanActionLabel(String label) {
     return label
-        .replaceAll('Send clones', 'Run perspectives')
-        .replaceAll('send clones', 'run perspectives')
+        .replaceAll('Send clones', 'Choose best path')
+        .replaceAll('send clones', 'choose best path')
         .replaceAll('Open council', 'Open perspectives')
         .replaceAll('Enter council', 'Open perspectives')
-        .replaceAll('Run tournament', 'Run perspectives')
-        .replaceAll('run tournament', 'run perspectives')
+        .replaceAll('Run tournament', 'Choose best path')
+        .replaceAll('run tournament', 'choose best path')
         .replaceAll('clone', 'model')
         .replaceAll('Clone', 'Model');
   }
@@ -1053,7 +1174,10 @@ class _TodayScreenState extends State<TodayScreen> with TickerProviderStateMixin
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
-        child: Text('Ask Echo', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.40), fontSize: 13, letterSpacing: 0.3)),
+        child: Text(
+          'Decide with Echo',
+          style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.40), fontSize: 13, letterSpacing: 0.3),
+        ),
       ),
     );
   }

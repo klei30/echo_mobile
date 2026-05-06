@@ -199,13 +199,13 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
                   padding: const EdgeInsets.fromLTRB(14, 16, 14, 8),
                   child: Column(
                     children: [
-                      _desktopNavItem(0, 'Talk', Icons.chat_bubble_outline_rounded),
+                      _desktopNavItem(0, 'Coach', Icons.chat_bubble_outline_rounded),
                       _desktopNavItem(1, 'Today', Icons.circle_outlined),
-                      _desktopNavItem(2, 'You', Icons.person_outline_rounded),
+                      _desktopNavItem(2, 'Passport', Icons.assignment_ind_outlined),
                       const SizedBox(height: 4),
                       const Divider(color: EchoColors.borderNav, height: 12),
-                      _desktopNavItem(3, 'Studio', Icons.model_training_rounded),
-                      _desktopNavItem(4, 'Local Brain', Icons.computer_rounded),
+                      _desktopNavItem(3, 'Improve Echo', Icons.model_training_rounded),
+                      _desktopNavItem(4, 'Offline & Privacy', Icons.privacy_tip_outlined),
                       _desktopNavItem(5, 'Sync', Icons.sync_rounded),
                       _desktopNavItem(6, 'Tools', Icons.extension_rounded),
                     ],
@@ -219,15 +219,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
           Expanded(
             child: IndexedStack(
               index: _selectedTab,
-              children: const [
-                _DesktopChatPane(),
-                TodayScreen(),
-                YouTab(),
-                EchoLabScreen(),
-                HomeBrainScreen(),
-                NetworkSyncSetting(),
-                McpServer(),
-              ],
+              children: const [_DesktopChatPane(), TodayScreen(), YouTab(), EchoLabScreen(), HomeBrainScreen(), NetworkSyncSetting(), McpServer()],
             ),
           ),
         ],
@@ -335,7 +327,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
                         ? '${_displayRank(rankName)} - ${firstName != null ? 'hi, $firstName' : 'personal model'}'
                         : firstName != null
                         ? 'hi, $firstName'
-                        : 'personal model';
+                        : 'private mentor';
                     return Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: EchoColors.textGhost, height: 1.3));
                   },
                 ),
@@ -401,7 +393,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [_navItem(0, 'TALK', _EchoTabIcon.echo), _navItem(1, 'TODAY', _EchoTabIcon.today), _navItem(2, 'YOU', _EchoTabIcon.you)],
+            children: [_navItem(0, 'COACH', _EchoTabIcon.echo), _navItem(1, 'TODAY', _EchoTabIcon.today), _navItem(2, 'PASSPORT', _EchoTabIcon.you)],
           ),
         ),
       ),
@@ -440,7 +432,7 @@ class _EchoMobilePageState extends State<EchoMobilePage> with WidgetsBindingObse
       case _EchoTabIcon.today:
         return Icon(Icons.circle_outlined, size: 21, color: color);
       case _EchoTabIcon.you:
-        return Icon(Icons.person_outline_rounded, size: 21, color: color);
+        return Icon(Icons.assignment_ind_outlined, size: 21, color: color);
     }
   }
 }
@@ -452,11 +444,7 @@ class _DesktopChatPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        Expanded(child: ChatPage()),
-      ],
-    );
+    return const Column(children: [Expanded(child: ChatPage())]);
   }
 }
 

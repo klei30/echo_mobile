@@ -24,8 +24,12 @@ import 'package:chatmcp/mcp/models/json_rpc_message.dart';
 import 'dart:async';
 import 'package:chatmcp/echo/echo_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_offline_memory_service.dart';
+import 'package:chatmcp/echo/echo_offline_queue.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/llm/local_gemma_client.dart';
 import 'package:chatmcp/llm/openai_client.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -931,6 +935,52 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  String _buildDeviceEchoInjection(EchoLoopState loop) {
+    String readMap(Map<String, dynamic>? map, List<String> keys) {
+      if (map == null) return '';
+      for (final key in keys) {
+        final value = map[key];
+        if (value is String && value.trim().isNotEmpty) return value.trim();
+      }
+      return '';
+    }
+
+    final currentRead = readMap(loop.thesis, const ['statement', 'title', 'read']);
+    final priorityTitle = readMap(loop.todayPriority, const ['title']);
+    final priorityBody = readMap(loop.todayPriority, const ['body', 'next_move', 'reason']);
+    final practiceTitle = readMap(loop.practice, const ['rep_title', 'title']);
+    final practiceBody = readMap(loop.practice, const ['rep_body', 'body', 'instructions']);
+    final mission = readMap(loop.mission, const ['mission', 'title', 'body']);
+
+    final buffer = StringBuffer()
+      ..writeln('You are Echo running offline on this phone.')
+      ..writeln('You are a private AI mentor that helps the user turn hidden potential into real-world opportunity.')
+      ..writeln('Use this loop: Discover direction -> Practice today -> Produce proof -> Log outcome -> Improve Echo -> Unlock opportunity.')
+      ..writeln('Be direct, calm, evidence-based, and focused on one concrete next step, one better decision, or one piece of proof.')
+      ..writeln('You have no live internet, no cloud tools, and no MCP tools in this mode.')
+      ..writeln('Use the cached Echo context below, but do not pretend it is freshly synced.');
+
+    final memoryPack = EchoOfflineMemoryService().buildDevicePrompt();
+    if (memoryPack.trim().isNotEmpty) {
+      buffer.writeln('\nOffline Echo Memory Pack:\n$memoryPack');
+    }
+
+    if (currentRead.isNotEmpty) buffer.writeln('\nCurrent Read:\n$currentRead');
+    if (priorityTitle.isNotEmpty || priorityBody.isNotEmpty) {
+      buffer.writeln('\nToday Priority:\n$priorityTitle${priorityBody.isNotEmpty ? '\n$priorityBody' : ''}');
+    }
+    if (practiceTitle.isNotEmpty || practiceBody.isNotEmpty) {
+      buffer.writeln('\nPractice Rep:\n$practiceTitle${practiceBody.isNotEmpty ? '\n$practiceBody' : ''}');
+    }
+    if (mission.isNotEmpty) buffer.writeln('\nMission:\n$mission');
+
+    buffer.writeln('\nIf cached context is thin, ask one useful question or give one concrete next step. Avoid clone, shadow, battle, tournament, lab, or anime-style language.');
+    final prompt = buffer.toString();
+    const maxChars = 3600;
+    if (prompt.length <= maxChars) return prompt;
+    return prompt.substring(0, maxChars).trimRight();
+  }
+
   Future<void> _processLLMResponse() async {
     setState(() {
       _isWaiting = true;
@@ -982,7 +1032,14 @@ class _ChatPageState extends State<ChatPage> {
             .content ??
         '';
     final echoUserId = await EchoClient().userId;
-    final echoCtx = await EchoClient().fetchContext(userMsg);
+    final useDeviceRuntime = EchoRuntimeService().isDevice;
+    final EchoContext? echoCtx;
+    if (useDeviceRuntime) {
+      EchoClient().rememberUserMessage(userMsg);
+      echoCtx = null;
+    } else {
+      echoCtx = await EchoClient().fetchContext(userMsg);
+    }
     _lastUserMessage = userMsg;
     _lastModelUsed = ProviderManager.chatModelProvider.currentModel.name;
 
@@ -992,26 +1049,31 @@ class _ChatPageState extends State<ChatPage> {
     final hasEnabledMcpTools = _hasEnabledMcpTools();
     final selectedModel = ProviderManager.chatModelProvider.currentModel;
     final selectedModelName = selectedModel.name.toLowerCase().replaceAll('-', '_');
-    final useGemmaLane = selectedModel.providerId == 'echo' && selectedModelName == 'gemma4_e2b' && !hasEnabledMcpTools;
+    final useGemmaLane = !useDeviceRuntime && selectedModel.providerId == 'echo' && selectedModelName == 'gemma4_e2b' && !hasEnabledMcpTools;
     final useLocalModel = echoCtx != null && echoCtx.recommendedModel == 'local' && echoCtx.loraId != null && !hasEnabledMcpTools;
-    final useEchoToolProxy = hasEnabledMcpTools && !_selectedProviderHasApiKey();
+    final useEchoToolProxy = !useDeviceRuntime && hasEnabledMcpTools && !_selectedProviderHasApiKey();
     // When logged into Echo but the selected model has no direct API key, route through Echo backend
     // so the backend's own key is used and the conversation is collected for training.
-    final useEchoFallback = AuthService().isLoggedIn && !_selectedProviderHasApiKey() && !hasEnabledMcpTools;
-    final activeLlmClient = useGemmaLane || useLocalModel || useEchoToolProxy || useEchoFallback
+    final useEchoFallback = !useDeviceRuntime && AuthService().isLoggedIn && !_selectedProviderHasApiKey() && !hasEnabledMcpTools;
+    final activeLlmClient = useDeviceRuntime
+        ? LocalGemmaClient()
+        : useGemmaLane || useLocalModel || useEchoToolProxy || useEchoFallback
         ? OpenAIClient(apiKey: 'local', baseUrl: EchoClient().baseUrl + '/v1')
         : _llmClient!;
-    final activeModel = useGemmaLane
+    final activeModel = useDeviceRuntime
+        ? 'gemma_on_device'
+        : useGemmaLane
         ? 'gemma4_e2b'
         : useLocalModel || useEchoToolProxy || useEchoFallback
         ? 'shadow'
         : selectedModel.name;
+    if (useDeviceRuntime) _lastModelUsed = 'gemma_on_device';
     if (useGemmaLane) _lastModelUsed = 'gemma4_e2b';
     if (useLocalModel) _lastModelUsed = 'local';
     if (useEchoToolProxy) _lastModelUsed = 'echo_tool_proxy';
     if (useEchoFallback && !useGemmaLane && !useLocalModel) _lastModelUsed = 'echo_shadow';
     Logger.root.info(
-      'LLM route: gemma=$useGemmaLane local=$useLocalModel toolProxy=$useEchoToolProxy echoFallback=$useEchoFallback '
+      'LLM route: device=$useDeviceRuntime gemma=$useGemmaLane local=$useLocalModel toolProxy=$useEchoToolProxy echoFallback=$useEchoFallback '
       'model=$activeModel endpoint=${EchoClient().baseUrl}/v1',
     );
 
@@ -1020,7 +1082,9 @@ class _ChatPageState extends State<ChatPage> {
     // Direct LLM path: prepend Echo's memory context, but make it tool-safe when tools are enabled.
     final echoInjection = echoCtx?.systemInjection ?? '';
     final safeEchoInjection = hasEnabledMcpTools ? _toolSafeEchoInjection(echoInjection) : echoInjection;
-    final activeSystemPrompt = useGemmaLane || useLocalModel || useEchoFallback
+    final activeSystemPrompt = useDeviceRuntime
+        ? _buildDeviceEchoInjection(EchoLoopState())
+        : useGemmaLane || useLocalModel || useEchoFallback
         ? ''
         : useEchoToolProxy
         ? systemPrompt
@@ -1044,7 +1108,14 @@ class _ChatPageState extends State<ChatPage> {
 
     // Echo /save: only needed when NOT routing through Echo (Echo auto-saves in its streaming handler)
     _lastAssistantMessage = _currentResponse;
-    if (!useLocalModel && !useEchoToolProxy && !useEchoFallback && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
+    if (useDeviceRuntime && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
+      await EchoOfflineQueue().addPair(
+        userMessage: _lastUserMessage,
+        assistantMessage: _lastAssistantMessage,
+        modelUsed: _lastModelUsed,
+        engagementSignal: 'continue',
+      );
+    } else if (!useLocalModel && !useEchoToolProxy && !useEchoFallback && _lastUserMessage.isNotEmpty && _lastAssistantMessage.isNotEmpty) {
       await EchoClient().savePair(
         userMessage: _lastUserMessage,
         assistantMessage: _lastAssistantMessage,
@@ -1052,7 +1123,9 @@ class _ChatPageState extends State<ChatPage> {
         engagementSignal: 'continue',
       );
     }
-    unawaited(Future<void>.delayed(const Duration(milliseconds: 700), () => EchoLoopState().refresh()));
+    if (!useDeviceRuntime) {
+      unawaited(Future<void>.delayed(const Duration(milliseconds: 700), () => EchoLoopState().refresh()));
+    }
   }
 
   List<ChatMessage> _prepareMessageList() {

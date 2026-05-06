@@ -60,13 +60,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-          children: [
-            _header(context),
-            const SizedBox(height: 14),
-            _segmentControl(),
-            const SizedBox(height: 18),
-            ..._sectionWidgets(),
-          ],
+          children: [_header(context), const SizedBox(height: 14), _segmentControl(), const SizedBox(height: 18), ..._sectionWidgets()],
         ),
       ),
     );
@@ -80,12 +74,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Training Studio',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: EchoColors.textPrimary,
-                ),
+                'Improve Echo',
+                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
               ),
               const SizedBox(height: 3),
               Text(
@@ -113,7 +103,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
       ),
       child: Row(
         children: [
-          _segmentButton(_LabSection.training, 'Training', Icons.model_training_rounded),
+          _segmentButton(_LabSection.training, 'Improve', Icons.model_training_rounded),
           _segmentButton(_LabSection.memory, 'Memory', Icons.grain_rounded),
           _segmentButton(_LabSection.connections, 'Connect', Icons.hub_outlined),
           _segmentButton(_LabSection.signals, 'Signals', Icons.bolt_outlined),
@@ -133,9 +123,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           decoration: BoxDecoration(
             color: active ? EchoColors.amber.withValues(alpha: 0.12) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: active ? EchoColors.amber.withValues(alpha: 0.24) : Colors.transparent,
-            ),
+            border: Border.all(color: active ? EchoColors.amber.withValues(alpha: 0.24) : Colors.transparent),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -176,13 +164,13 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
 
   List<Widget> _trainingSection() {
     return [
-      _sectionHeader('Personal Model', 'Train and compare the guidance style Echo is learning for you.'),
+      _sectionHeader('Personal Model', 'Improve Echo from practice, outcomes, and proof.'),
       _statusCard(),
       const SizedBox(height: 10),
       _evalCard(),
       const SizedBox(height: 14),
       _toolRow(
-        'Model training',
+        'Improve Echo',
         'Update the personal model and inspect preference readiness.',
         Icons.model_training_rounded,
         EchoColors.amber,
@@ -196,7 +184,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShadowTournamentScreen())),
       ),
       _toolRow(
-        'Personal Lens',
+        'Compare Answers',
         'Pick which answer fits your context and standards.',
         Icons.people_outline_rounded,
         const Color(0xFF5A8DEE),
@@ -223,8 +211,8 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OperatingSystemScreen())),
       ),
       _toolRow(
-        'Record',
-        'Long-term evidence and history.',
+        'Growth Record',
+        'Long-term evidence and proof history.',
         Icons.history_edu_rounded,
         EchoColors.indigo,
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PermanentRecordScreen())),
@@ -243,7 +231,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     final host = EchoHostService();
     final connected = host.hasTunnel;
     return [
-      _sectionHeader('Connections', 'Give Echo access to tools, MCP servers, and your local computer.'),
+      _sectionHeader('Connections', 'Give Echo access to tools, MCP servers, and your desktop runtime.'),
       _mcpStatusCard(),
       const SizedBox(height: 10),
       _toolRow(
@@ -254,7 +242,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _McpServerRoute())),
       ),
       _toolRow(
-        'Local Brain',
+        'Desktop Echo',
         connected ? 'Secure private connection active.' : 'Pair Echo Desktop.',
         connected ? Icons.check_circle_rounded : Icons.computer_rounded,
         connected ? const Color(0xFF4CAF50) : EchoColors.textGhost,
@@ -284,14 +272,14 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DailyCheckinScreen())),
       ),
       _toolRow(
-        'Decision Room',
+        'Choose Best Path',
         'A fast comparison that creates preference signal.',
         Icons.psychology_alt_rounded,
         EchoColors.amber,
         () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShadowTournamentScreen())),
       ),
       _toolRow(
-        'Model training',
+        'Improve Echo',
         'See whether enough new signal is ready for an update.',
         Icons.model_training_rounded,
         EchoColors.amber,
@@ -308,18 +296,10 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
         children: [
           Text(
             title.toUpperCase(),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9,
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w800,
-              color: EchoColors.textGhost,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.5, fontWeight: FontWeight.w800, color: EchoColors.textGhost),
           ),
           const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: GoogleFonts.plusJakartaSans(fontSize: 12, height: 1.4, color: EchoColors.textMuted),
-          ),
+          Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 12, height: 1.4, color: EchoColors.textMuted)),
         ],
       ),
     );
@@ -345,11 +325,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
               children: [
                 Text(
                   'System state',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.textPrimary,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -395,14 +371,14 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
     final color = passed
         ? const Color(0xFF4CAF50)
         : adapterActuallyLive
-            ? EchoColors.amber
-            : Colors.redAccent;
+        ? EchoColors.amber
+        : Colors.redAccent;
     final icon = effectivePassed ? Icons.check_circle_rounded : Icons.cancel_rounded;
     final label = passed
         ? 'Model passed eval'
         : adapterActuallyLive
-            ? 'Model active - eval threshold was conservative'
-            : 'Eval failed - previous adapter kept';
+        ? 'Model active - eval threshold was conservative'
+        : 'Eval failed - previous adapter kept';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -421,15 +397,10 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: color),
                 ),
               ),
-              if (dateStr.isNotEmpty)
-                Text(dateStr, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
+              if (dateStr.isNotEmpty) Text(dateStr, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
             ],
           ),
           const SizedBox(height: 8),
@@ -439,10 +410,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
             children: [
               _pill(Icons.bar_chart_rounded, 'Score $scorePct'),
               _pill(Icons.question_answer_outlined, '$nEval prompts'),
-              _pill(
-                effectivePassed ? Icons.memory_rounded : Icons.history_rounded,
-                effectivePassed ? 'adapter live' : 'rolled back',
-              ),
+              _pill(effectivePassed ? Icons.memory_rounded : Icons.history_rounded, effectivePassed ? 'adapter live' : 'rolled back'),
             ],
           ),
           if (!passed && adapterActuallyLive) ...[
@@ -470,10 +438,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
           Icon(icon, size: 16, color: EchoColors.textGhost.withValues(alpha: 0.6)),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
-            ),
+            child: Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost)),
           ),
         ],
       ),
@@ -502,11 +467,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'MCP status',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.textPrimary,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textPrimary),
                   ),
                 ],
               ),
@@ -548,11 +509,7 @@ class _EchoLabScreenState extends State<EchoLabScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: EchoColors.textMuted,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: EchoColors.textMuted),
                   ),
                   const SizedBox(height: 3),
                   Text(

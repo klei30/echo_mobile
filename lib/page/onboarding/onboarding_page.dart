@@ -6,6 +6,8 @@ import 'package:chatmcp/echo/echo_orb.dart';
 import 'package:chatmcp/echo/auth_service.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
+import 'package:chatmcp/echo/echo_runtime_service.dart';
+import 'package:chatmcp/page/echo_tabs/local_model_setup_screen.dart';
 import 'package:chatmcp/page/echo_tabs/pair_computer_screen.dart';
 
 const _kOnboardedKeyPrefix = 'echo_onboarded';
@@ -510,7 +512,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
           const SizedBox(height: 28),
           // Echo Cloud card
           GestureDetector(
-            onTap: () => _next(),
+            onTap: () async {
+              await EchoRuntimeService().setMode(EchoRuntimeMode.cloud);
+              _next();
+            },
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
@@ -571,7 +576,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 MaterialPageRoute(builder: (_) => const PairComputerScreen()),
               );
               if (!mounted) return;
-              if (paired == true) _next();
+              if (paired == true) {
+                await EchoRuntimeService().setMode(EchoRuntimeMode.desktop);
+                _next();
+              }
             },
             child: Container(
               width: double.infinity,
@@ -602,6 +610,55 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         const SizedBox(height: 4),
                         Text(
                           'Runs on your own device.\nPair Echo Desktop with a QR code.',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF3A3530), height: 1.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF3A3530)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // This Device card
+          GestureDetector(
+            onTap: () async {
+              final ready = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const LocalModelSetupScreen(onboarding: true)),
+              );
+              if (!mounted) return;
+              if (ready == true) _next();
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              decoration: BoxDecoration(
+                color: EchoColors.bgSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E1B17)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(color: const Color(0xFF0F0D0B), borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.phone_android_rounded, size: 19, color: Color(0xFF4A4540)),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'This Device',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: EchoColors.textMuted),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Use Gemma offline.\nPrivate, portable, syncs later.',
                           style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF3A3530), height: 1.5),
                         ),
                       ],
