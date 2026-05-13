@@ -221,6 +221,15 @@ External MCP servers can be added from **Connected Apps** (Advanced on desktop).
 
 ---
 
+## Download
+
+| Platform | File | Notes |
+| --- | --- | --- |
+| Android | [echo-android.apk](https://github.com/klei30/echo_mobile/releases/latest/download/echo-android.apk) | Enable "Install unknown apps" in Android settings |
+| Windows | [echo-windows.zip](https://github.com/klei30/echo_mobile/releases/latest/download/echo-windows.zip) | Extract and run `chatmcp.exe` |
+
+---
+
 ## Getting Started
 
 ### Prerequisites
