@@ -1,472 +1,307 @@
-# Echo Mobile App
+# Echo — Mobile App
 
-Echo is a mobile-first personal learning system connected to a private Home Brain.
+> Most people are not talentless. They are under-observed.
 
-The mobile app is the user's daily Echo: Talk, Today, You, Decision Room, proof, practice, voice, and offline mode. The user's desktop can run **Home Brain**, a private local runtime with Echo backend, Gemma 4, personal LoRA adapters, memory, MCP tools, voice, and training. The phone can connect to Home Brain over local Wi-Fi or a secure tunnel, then keep working offline with LiteRT-LM Gemma and a synced memory pack.
+Echo is a private AI growth companion that travels on your phone. It watches patterns across your conversations, decisions, practice reps, and outcomes. Over time it builds a current read of who you are, proposes daily practice, simulates decisions, and records proof of what you can actually do — so you can turn that into real opportunity.
 
-The goal is not to be another generic chatbot. Echo observes useful signals over time, builds a current read of the user, helps them make better decisions, and trains a personal model from real feedback.
+This is not another generic chatbot. Echo is built around a loop:
 
-For current execution planning, see [ULTIMATE_TODO.md](ULTIMATE_TODO.md). For the audited product map, see [CURRENT_PRODUCT_AUDIT.md](CURRENT_PRODUCT_AUDIT.md).
-
-## Product Idea
-
-Most people are not talentless. They are under-observed.
-
-Echo is designed to notice patterns across conversations, decisions, practice reps, outcomes, and corrections. It turns those signals into:
-
-- A current read of the user.
-- Daily priorities and practice reps.
-- Long-term memory and personal rules.
-- Decision workflows that compare multiple useful perspectives.
-- Training data for a personal model.
-- Mobile-first Home Brain pairing and offline continuity.
-- MCP tools that let Echo operate across a user’s work environment.
-
-## System Overview
-
-```text
-Echo Mobile App
-        |
-        | Talk, Today, You, Decision Room, offline mode, Home Brain pairing
-        v
-Home Brain / Echo FastAPI backend :8002
-        |
-        |-- /context memory + loop state injection
-        |-- /v1/chat/completions OpenAI-compatible runtime
-        |-- /save training pair capture
-        |-- /v1/* product APIs
-        |-- SQLite local state
-        |-- mem0 / vector memory
-        |-- scheduler and interventions
-        |-- training orchestrator
-        |
-        |-- Home Brain model lane, Gemma 4 E2B via vLLM
-        |-- Personal LoRA adapters
-        |-- Teacher fallback when policy allows
-        |
-        `-- Echo MCP server for external agents and tools
-
-This Device mode
-        |
-        |-- LiteRT-LM Gemma on mobile
-        |-- synced Echo memory pack
-        |-- queued offline conversations
-        `-- flushes signal back to Home Brain when reconnected
+```
+Talk → Current Read → Practice → Proof → Outcome → Improve Echo → Opportunity
 ```
 
-## Main Components
+The mobile app is the daily surface. The user's private **Home Brain** runs on their own desktop and gives the phone Gemma 4 inference, long-term memory, personal LoRA adapters, connected tools, voice, and training. When the user goes offline, the phone keeps working with on-device LiteRT-LM Gemma and a synced memory pack.
 
-| Component | Purpose |
-| --- | --- |
-| Echo mobile app | Flutter app for daily mobile use, offline mode, and Home Brain pairing |
-| Echo backend | FastAPI sidecar that owns context, memory, routing, training, and product APIs |
-| Echo model context | `/context` builds memory and loop-state injection before chat responses |
-| OpenAI-compatible runtime | `/v1/chat/completions` lets the Chat UI or other clients talk to Echo like an OpenAI provider |
-| Personal model training | Collects pairs, feedback, DPO preferences, evals, and LoRA adapters |
-| Home Brain | Desktop control center for API, Gemma 4 vLLM, adapter, tunnel, voice, and phone pairing |
-| Echo MCP | FastMCP server exposing product workflows to agents and developer tools |
-| MCP server manager | Chat UI can connect to external MCP servers and expose tools inside chat |
+---
 
-## Mobile App
+## What Echo Does
 
-The mobile app is the user-facing product. It is built with Flutter and can also render desktop layouts, but the core product direction is mobile Echo connected to the user's private Home Brain.
+Echo is built for people without access to elite coaching, mentors, or constant connectivity. It gives every person a private AI that:
 
-### Mobile Navigation
+- **Observes patterns** across conversations, practice, decisions, and outcomes
+- **Builds a current read** — a living thesis about your direction, strengths, and what to do next
+- **Proposes daily practice** based on what needs deliberate work right now
+- **Simulates decisions** through parallel reasoning before you commit
+- **Records proof** — outcomes, artifacts, and feedback that become evidence you can use
+- **Improves from your feedback** — trains a personal Gemma 4 LoRA adapter from the moments you mark as useful
+- **Keeps working offline** with on-device LiteRT-LM Gemma and synced memory
 
-| Tab | Purpose |
-| --- | --- |
-| Talk | Main conversation surface. Calls Echo `/context` before responses and saves useful turns back into Echo. |
-| Today | Daily priority, practice rep, check-in, reality check, intervention, and next useful action. |
-| You | Current read, potential, progress evidence, training readiness, memory, and personal model status. |
+---
 
-### Desktop / Home Brain Navigation
+## Mobile App — Three Tabs
+
+### Talk
+Natural conversation with Echo. Before every response, Echo injects your current read, today's priority, and relevant memories. After you respond, the turn becomes a potential training signal.
+
+Runtime pill in the header shows whether you are using Home Brain (Gemma 4 + personal adapter), Cloud Echo, or This Device (offline LiteRT-LM). Tap it to see your current context snapshot: thesis, priority, practice rep, memory state.
+
+### Today
+Your daily action surface. Echo shows the single most useful next thing:
+
+- Today's priority and daily mission
+- Practice rep — one focused activity tied to your current read
+- Daily check-in — structured outcome capture
+- Decision Room entry when a choice needs parallel thinking
+- Proactive interventions — trusted nudges Echo is allowed to send, each with a named reason
+
+### You (Passport)
+Your evolving profile. Echo shows what it currently believes about you, backed by evidence:
+
+- **Current Read** — thesis with confidence label and supporting evidence chips
+- **Discovery** — when Echo has enough signal, it reveals a named pattern: a strength, a direction, a readiness signal. Earned, not shown on day one.
+- **Talent** — what Echo actually sees in how you think and act
+- **Progress Evidence** — milestones, practice reps, decisions, model updates
+- **Training State** — how close you are to the next personal model update
+- **Memories and Rules** — what Echo is keeping and applying
+- **Opportunities** — proof-scored paths Echo has identified (scholarship, portfolio, job, project, personal goal)
+- **Runtime** — Home Brain / Cloud Echo / This Device selection
+
+---
+
+## Desktop Navigation
+
+On wide screens Echo shows a full sidebar with seven sections:
 
 | Section | Purpose |
 | --- | --- |
-| Talk | Main chat workspace |
+| Talk | Main conversation workspace |
 | Today | Daily practice and priority dashboard |
-| You | Personal dashboard |
-| Proof | Proof Builder and opportunity planning |
-| Studio | Training Studio for model training, memory, signals, and connections |
-| Home Brain | Desktop runtime control center |
-| Sync | Pair the mobile app with Home Brain and sync data between devices |
-| Tools | Echo tools and MCP server management |
+| You | Personal profile — thesis, talent, progress, proof, opportunities |
+| Proof | Proof Builder and Opportunities — first-class on desktop |
+| Improve Echo | Training Studio, memories, connected apps, signal capture |
+| Home Brain | Service health, Gemma 4, tunnel, QR phone pairing |
+| Advanced | Raw MCP server setup and Home Brain Connection |
 
-## Current Screens
+---
 
-### Core Screens
+## Runtime Modes
 
-- `Talk`: chat with Echo, tool usage, message feedback, starter actions, voice entry.
-- `Today`: daily mission, priority, practice rep, check-in, reflection, intervention states.
-- `You`: current read, progress, potential, training readiness, and Training Studio entry.
-- `Training Studio`: model training, Decision Room, Personal Lens, memory, tools, and signal capture.
-- `Home Brain`: starts/checks Echo API, local Gemma 4, adapter status, secure tunnel, voice, and mobile QR pairing.
-- `Tools`: Echo workflow cards plus raw MCP server setup.
-- `Sync`: local network and tunnel pairing between the mobile app and Home Brain.
+Echo has three runtime modes, all centered on the mobile app.
 
-### Echo Feature Screens
+| Runtime | What it does |
+| --- | --- |
+| **Home Brain** | Private desktop runtime paired to the phone. Gemma 4 E2B via vLLM, personal LoRA adapter, full memory, Decision Room, Training Studio, connected tools, LiveKit voice, tunnel pairing. |
+| **Cloud Echo** | Connected fallback when the desktop is off. Memory and product APIs stay live. |
+| **This Device** | Offline LiteRT-LM on the phone. Synced memory pack injected into prompts. Conversations queue locally and upload to Home Brain when reconnected. |
 
-- `Decision Room`: compare multiple perspectives on a real question.
-- `Perspective Panel`: multi-perspective synthesis for decisions.
-- `Personal Lens`: A/B comparison between general and personal guidance.
-- `Scenarios`: shows alternative paths based on observed patterns.
-- `Model Training`: readiness, training runs, eval, adapter status, preference signal.
-- `Potential`: hidden talent narrative and evidence.
-- `Progress Evidence`: milestones, reps, decisions, and model updates.
-- `Reflection`: weekly report and observed rules.
-- `Daily Check-in`: structured daily signal capture.
-- `Memories`: stored user memories.
-- `Rules`: durable preferences and behavioral rules.
-- `Record`: long-term evidence and notable moments.
-- `Voice Session`: realtime voice mode through LiveKit.
-- `Pair Computer`: scan/connect mobile to desktop.
-- `Remote Access`: tunnel and mobile URL setup.
+---
 
-## How Talk Connects To Today And You
+## Key Screens
 
-Talk is not separate from the other tabs.
+| Screen | Role |
+| --- | --- |
+| `OnboardingPage` | 5-step flow: Promise → Areas → Brain Picker → First Question → First Read |
+| `ChatPage` | Talk with full Echo context, tool support, voice entry, starter actions |
+| `TodayScreen` | Daily loop with seven states: silence / checking / morning check-in / interruption / council / discovery / comeback |
+| `YouTab` | Personal profile — thesis, discovery, talent, proof, opportunities, training |
+| `DiscoveryReadyScreen` | Earned entry to the discovery moment — cosmic orb with dashed-circle animation |
+| `DiscoveryInsightScreen` | Pattern reveal — named pattern, narrative, feedback actions |
+| `TalentScreen` | "What Echo Sees" — trait narrative, evidence list, correction row |
+| `GrowthTimelineScreen` | Progress Evidence — milestone timeline |
+| `ProofBuilderScreen` | Create proof items with intent seeding |
+| `OpportunitiesScreen` | Scored opportunity paths with missing-proof tracking |
+| `AskScreen` (Decision Room) | Ask a question, choose Council / Twin / Tournament |
+| `CouncilScreen` | Multiple reasoning styles synthesize a question |
+| `TwinScreen` | Two competing responses; choose the one that fits |
+| `ShadowTournamentScreen` | Candidates compete, winner becomes an actionable mission |
+| `ParallelSelfScreen` | Two diverging paths projected from current patterns |
+| `OutcomeCaptureSheet` | Done/Skipped, energy, privacy, confidence, note — saves outcome and optional proof |
+| `DailyCheckinScreen` | Structured daily outcome and habit capture |
+| `NightlyTrainingScreen` | Training Studio — pairs, readiness, runs, eval, adapter status, trigger training |
+| `HomeBrainScreen` | Echo API health, Gemma 4 vLLM, adapter status, tunnel, QR pairing |
+| `LocalModelSetupScreen` | Runtime selection, LiteRT-LM model import/download, offline memory sync |
+| `VoiceSessionScreen` | Realtime voice mode via LiveKit |
+| `ConnectedAppsScreen` | MCP workflow cards and advanced server setup |
+| `WhatEchoUsesScreen` | Memories, rules, and permanent record in one place |
+| `RemoteAccessScreen` | Cloudflare tunnel and mobile URL setup |
 
-Before every model response, the Chat UI calls:
+---
 
-```text
-POST /context
+## How Talk Connects to Today and You
+
+Before every model response:
+
+```
+User types in Talk
+  → EchoApiClient.fetchContext(message)
+  → POST /context
+  → Echo returns: memory + current read + today priority + practice + training readiness
+  → Model receives full context
+  → Model responds
+  → Turn saved for memory and training
+  → Today and You refresh from updated loop state
 ```
 
-Echo returns memory and loop state, including:
+Talk is not a separate product. It is the observation surface that feeds everything else.
 
-- Current read / thesis.
-- Today’s priority.
-- Today’s practice rep, when cached.
-- Training readiness.
-- Preference pair readiness.
+---
 
-The Chat UI then sends that context into the model path. After the assistant responds, the turn is saved back through Echo so Today and You can update.
+## Backend
 
-```text
-User asks in Talk
-    -> Chat UI calls /context
-    -> Echo injects memory + current read + today priority + practice + training readiness
-    -> Model responds
-    -> Chat UI saves pair/outcome
-    -> Today and You refresh from Echo loop state
+The Echo backend is a FastAPI service in the sibling `echo/` project.
+
+```
+Echo Mobile App
+  Talk / Today / You / Proof / Training / Offline
+        |
+        | local Wi-Fi, secure tunnel, cloud
+        ↓
+Echo Backend :8002
+  Memory (mem0 + Qdrant), daily loop, Decision Room,
+  proof, opportunities, training, voice, MCP tools
+        |
+        ↓
+Home Brain Gemma 4 E2B vLLM :8003
+  base Gemma 4 E2B or user LoRA adapter
 ```
 
-## Echo Backend
+See the [Echo backend repository](https://github.com/klei30/echo) for full API documentation and setup.
 
-The backend lives in the sibling `echo/` project. It is a FastAPI service that owns the product intelligence.
+---
 
-### Core Runtime APIs
+## Training and Personalization
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/health` | Basic health check |
-| GET | `/v1/models` | OpenAI-style model list |
-| POST | `/v1/chat/completions` | Main OpenAI-compatible chat endpoint |
-| POST | `/context` | Memory and loop-state context injection |
-| POST | `/save` | Save conversation pair for memory/training |
-| GET | `/v1/system/health` | Echo API, DB, model, adapter, and training health |
+Echo collects training signal from real interaction:
 
-### Auth
+- Chat turns marked useful with thumbs up
+- Decision Room choices (Twin, Tournament)
+- Practice outcomes and daily check-ins
+- Explicit feedback ("Not true", "Helpful")
+- Life events and outcomes logged in Today
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/auth/register` | Create local user |
-| POST | `/auth/login` | Login and receive JWT |
-| GET | `/auth/me` | Current authenticated user |
+When enough signal is collected, Training Studio shows the readiness indicator. Training uses Unsloth/LlamaFactory to fine-tune a personal Gemma 4 E2B LoRA adapter on the user's own desktop. The adapter hot-swaps into vLLM and becomes Echo's default response lane.
 
-### Daily Loop
+The mobile app never trains locally. Training runs on Home Brain. Offline conversations queue and upload when reconnected.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/v1/loop/snapshot` | Overall loop state |
-| GET | `/v1/today/priority` | Today’s priority |
-| GET | `/v1/today/mission` | Daily mission |
-| GET | `/v1/reality/check` | Reality check |
-| GET | `/v1/practice/today` | Daily practice rep |
-| POST | `/v1/practice/log` | Mark practice done/skipped |
-| GET | `/v1/daily/questions` | Daily check-in questions |
-| GET | `/v1/daily/checkin/status` | Check-in state |
-| POST | `/v1/daily/checkin` | Submit check-in |
-| GET | `/v1/interventions/next` | Next trusted nudge |
-| POST | `/v1/interventions/ack` | Acknowledge intervention |
+---
 
-### Current Read And Growth
+## Offline Mode
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/v1/thesis/current` | Current read with evidence |
-| GET | `/v1/growth/timeline` | Progress evidence |
-| GET | `/v1/revelation/status` | Readiness for deeper insight |
-| GET | `/v1/user/talent` | Potential/talent narrative |
-| GET | `/v1/user/signal` | Current signal |
-| GET | `/v1/user/rank` | Progress rank |
-| GET | `/v1/user/report` | Full user report |
+Echo's offline mode is continuity, not a fallback product.
 
-### Memory And Rules
+- Import or download a `.litertlm` Gemma 4 E2B model
+- Sync an Echo memory pack from Home Brain or Cloud Echo
+- Compressed memory injects into LiteRT-LM prompts
+- Talk stays live without network
+- Conversations queue locally
+- Offline signal uploads to training when reconnected
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/v1/user/memories` | List memories |
-| POST | `/v1/user/memories` | Add memory |
-| DELETE | `/v1/user/memories` | Delete all memories |
-| DELETE | `/v1/user/memories/{memory_id}` | Delete one memory |
-| GET | `/v1/user/rules` | List rules |
-| POST | `/v1/user/rules` | Add rule |
-| DELETE | `/v1/user/rules/{rule_id}` | Delete rule |
-| GET | `/v1/user/skills` | Extracted skills |
-| GET | `/v1/user/stats` | User stats |
-| GET | `/v1/user/confidence` | Topic confidence |
-| GET | `/v1/user/insights` | Pattern insights |
+Offline sync is available at: **You → Runtime → This Device → Sync Echo memory to this phone**
 
-### Decision Workflows
+---
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/v1/echo/decide` | Decide what Echo should do next |
-| POST | `/v1/council/ask` | Perspective Panel |
-| POST | `/v1/tournament/run` | Compare multiple candidate responses |
-| POST | `/v1/tournament/choose` | Save winning perspective |
-| POST | `/v1/twin/ask` | Personal Lens A/B comparison |
-| POST | `/v1/twin/choose` | Save preferred answer |
-| POST | `/v1/echo/simulate` | Scenario simulation |
-| GET | `/v1/threads` | Active pattern threads |
-| POST | `/v1/threads/{thread_id}/resolve` | Resolve thread |
-| POST | `/v1/threads/deduplicate` | Deduplicate threads |
+## MCP — Connected Tools
 
-### Training
+Echo uses MCP as the foundation for connected-action workflows.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/v1/training/status` | Current training state |
-| GET | `/v1/training/summary` | Training readiness |
-| GET | `/v1/training/runs` | Training run history |
-| GET | `/v1/training/eval` | Latest eval |
-| GET | `/v1/training/history` | Checkpoint history |
-| POST | `/trigger-training` | Trigger training manually |
-| POST | `/swap-adapter` | Hot-swap adapter into vLLM |
-
-### Voice And Notifications
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/v1/voice/token` | LiveKit voice room token |
-| POST | `/v1/user/fcm-token` | Register mobile push token |
-| GET | `/v1/interventions/settings` | Read nudge settings |
-| POST | `/v1/interventions/settings` | Update nudge settings |
-
-## Model And Context Path
-
-Echo can operate as an OpenAI-compatible provider.
-
-Main chat flow:
-
-```text
-Chat UI
-  -> EchoClient.fetchContext(message)
-  -> POST /context
-  -> system injection + loop state
-  -> selected model route
-  -> POST /v1/chat/completions
-  -> stream response
-  -> save pair or outcome
-```
-
-Routing supports:
-
-- Local Gemma 4 E2B lane.
-- User LoRA adapter when available.
-- OpenAI-compatible fallback through Echo.
-- Tool-safe prompt injection when MCP tools are active.
-- Direct external LLM provider mode when configured.
-
-## Personal Training
-
-Echo learns from:
-
-- Chat pairs.
-- Thumbs up/down.
-- “Useful” / “Not true” feedback.
-- Decision Room choices.
-- Personal Lens choices.
-- Daily check-ins.
-- Practice completion.
-- Life events and outcomes.
-- Manually saved memories and rules.
-
-Training readiness is shown in the mobile app and available through the API. Training can be triggered manually from Training Studio, Home Brain, or Echo MCP. The backend also contains scheduled training infrastructure.
-
-## Home Brain And Mobile Pairing
-
-Home Brain is the desktop runtime that powers the mobile app. It gives the phone private compute, Gemma 4, memory, personal adapters, tools, voice, and training through local Wi-Fi or a secure tunnel.
-
-The desktop app includes a Home Brain screen for running Echo on the user's computer.
-
-It can:
-
-- Check Echo API health.
-- Start Echo API on Windows/WSL.
-- Check local Gemma 4 vLLM model status.
-- Check whether the personal adapter is loaded.
-- Start a Cloudflare quick tunnel.
-- Generate a QR code so the mobile app can pair with the desktop.
-- Store the resolved Echo host through `EchoHostService`.
-
-Typical pairing flow:
-
-```text
-Desktop app
-  -> Home Brain
-  -> Start Echo API
-  -> Start Gemma 4 local model
-  -> Start tunnel or use local Wi-Fi
-  -> Show QR
-  -> Mobile scans QR
-  -> Mobile uses Home Brain for Gemma 4, memory, tools, voice, and training
-  -> Mobile syncs an offline memory pack
-  -> Mobile keeps working in This Device mode when disconnected
-```
-
-This is the core product direction: the phone is where the user lives; Home Brain is the user's private model and training runtime.
-
-## MCP Support
-
-There are two MCP layers.
-
-### 1. Echo MCP
-
-The `echo/echo_mcp.py` server exposes Echo product workflows through FastMCP.
-
-Primary workflow tools:
+Built-in Echo MCP product tools:
 
 | Tool | Purpose |
 | --- | --- |
-| `echo_training_center` | Training readiness, latest run, eval, adapter, trigger training |
+| `echo_training_center` | Training readiness, DPO pairs, runs, eval, adapter status, trigger |
 | `echo_daily_brief` | Priority, mission, practice, check-in, next intervention |
-| `echo_current_read` | Thesis, evidence, loop state, rank, signal |
-| `echo_decision_room` | Decide, Perspective Panel, Decision Room, Personal Lens, scenarios |
-| `echo_memory_editor` | View/add/delete memories and rules |
-| `echo_signal_capture` | Save pairs, memory, rule, life event, outcome, practice, check-in |
-| `echo_threads_inbox` | List, resolve, and deduplicate active threads |
+| `echo_current_read` | Thesis, evidence, discovery status, loop snapshot, user signal |
+| `echo_decision_room` | Decide, Council, Twin, Tournament |
+| `echo_memory_editor` | View, add, delete memories and rules |
+| `echo_signal_capture` | Save pair, memory, rule, life event, outcome, practice result |
+| `echo_threads_inbox` | List and resolve recurring threads |
+| `echo_proof` | Proof items, from-outcome, missing proof tracking |
+| `echo_opportunities` | Scored opportunity paths from current proof |
 
-Echo MCP also keeps lower-level legacy tools for direct access to memories, rules, stats, training, thesis, daily questions, practice, decisions, and conversation history.
+External MCP servers can be added from **Connected Apps** (Advanced on desktop). Supports stdio, SSE, and in-memory servers.
 
-### 2. Chat UI MCP Manager
+---
 
-The Chat UI can install and run MCP servers from the Tools screen.
+## Local Notifications
 
-It supports:
+- Evening check-in reminder
+- Echo intervention tap → routes to Today, Decision Room, or Opportunities
+- Training-ready notification when enough outcomes exist
+- Notification sync on app resume
 
-- stdio MCP servers.
-- SSE / streamable MCP clients.
-- In-memory MCP servers.
-- Tool visibility inside the chat loop.
-- Tool-safe Echo context injection when tools are active.
-- Server add/edit/delete/start/stop from the UI.
+---
 
-When MCP tools are enabled, the Chat UI preserves the tool prompt and asks Echo to use tool-safe memory context instead of blocking tool calls.
+## Getting Started
 
-## Notifications And Interactivity
+### Prerequisites
 
-The mobile app includes local notification support:
+- Flutter 3.x
+- Android toolchain (for mobile) or macOS/Windows (for desktop)
+- Echo backend running at `http://localhost:8002` (or a tunnel URL)
 
-- Evening Signal notification.
-- Backend-driven Echo intervention notification.
-- Training-ready notification when enough signal exists.
-- Notification tap routing to Today, Training, Potential, Progress, or Decision Room.
-- Notification sync on app resume.
-
-Current boundary:
-
-- Mobile does not auto-start training in the background.
-- Training should be started by Home Brain scheduler, Training Studio, MCP, or explicit user confirmation.
-
-## Data Storage
-
-The Chat UI stores local app data under the platform app data directory.
-
-Common files:
-
-- `chatmcp.db`: local chat database.
-- `shared_preferences.json`: app settings.
-- `mcp_server.json`: MCP server configuration.
-- `logs/`: app logs.
-
-Echo backend stores product intelligence in its own local database and training folders:
-
-- SQLite tables for users, pairs, rules, theses, events, outcomes, interventions, training runs, and device tokens.
-- Vector memory through the configured memory layer.
-- Training data and adapters under the Echo training directories.
-
-## Running Locally
-
-### Start Echo Backend
-
-From the `echo/` project:
-
-```powershell
-python main.py
-```
-
-Expected local URL:
-
-```text
-http://localhost:8002
-```
-
-### Start Local Model
-
-The current desktop helper expects the Gemma 4 E2B vLLM script in the Echo project:
-
-```powershell
-wsl -d Ubuntu-24.04 bash /mnt/c/Users/ASUS/Desktop/echo/start_gemma4_e2b_vllm.sh
-```
-
-### Run Chat UI
-
-From this project:
+### Install and Run
 
 ```powershell
 flutter pub get
 flutter run
 ```
 
-Build debug APK:
+### Build Debug APK
 
 ```powershell
 flutter build apk --debug
 ```
 
-## Development Notes
+### Connect to Echo Backend
 
-- The Flutter package is still named `chatmcp` internally.
-- The user-facing product should be described as **Echo mobile app**.
-- Some route names still refer to older internal concepts for backward compatibility.
-- The active product language should use: Current Read, Priority, Practice, Decision Room, Personal Lens, Training Studio, Home Brain, Memory, Rules, Progress Evidence.
-- Avoid user-facing “clone” or anime-inspired naming unless describing old/internal implementation.
+On first launch, Echo shows the onboarding flow. Choose:
 
-## Current Status
+- **Home Brain** — pair with your desktop if it is running the Echo backend
+- **Cloud Echo** — use an external API key
+- **This Device** — offline LiteRT-LM mode (import a `.litertlm` model)
 
-Implemented:
+To pair with Home Brain:
+1. Start the Echo backend on your desktop: `.\start_echo_services.bat`
+2. Open **Home Brain** in the desktop app → generate a QR code
+3. Scan the QR from **You → Runtime → Pair Computer** on mobile
 
-- Cross-platform Flutter Chat UI.
-- Mobile tabs and desktop navigation.
-- Echo auth and API client.
-- Echo context injection into Talk.
-- Today, You, Training Studio, Home Brain, Tools, Sync.
-- OpenAI-compatible Echo runtime.
-- Memory, rules, thesis/current read, practice, outcomes, growth timeline.
-- Decision workflows.
-- Voice session screen.
-- Local notifications.
-- Desktop tunnel pairing.
-- MCP server manager.
-- Echo FastMCP workflow server.
-- Personal model training APIs and adapter status.
+---
 
-Still improving:
+## Hackathon — Gemma 4 Good
 
-- Full product naming cleanup in every internal file.
-- More responsive desktop layouts for all screens.
-- Safer autonomous training controls.
-- Stable named tunnel support.
-- More polished MCP workflow execution inside the Chat UI.
+Echo was built for the [Kaggle Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon).
+
+**Digital Equity**: a private growth companion for people without access to elite coaching, mentorship, or reliable internet.
+
+**Future of Education**: not a generic tutor, but a meta-learning system that discovers how each person learns, what they avoid, and what to practice next.
+
+**Gemma 4 technical fit**:
+
+- Home Brain runs Gemma 4 E2B locally via vLLM
+- Offline mode runs LiteRT-LM Gemma 4 E2B on the Android device itself
+- Personal LoRA adapters trained from user interaction using Unsloth
+- Echo MCP server exposes product workflows for agentic use
+
+---
+
+## Project Layout
+
+```
+lib/
+  echo/                 Echo API client, services, theme, design system
+  page/
+    echo_mobile.dart    Root shell, onboarding gate, runtime pill, navigation
+    onboarding/         5-step onboarding flow
+    echo_tabs/          All Echo product screens
+    layout/             Chat page, sidebar, input area
+    setting/            App and provider settings
+  provider/             State: chat, models, settings
+  mcp/                  MCP client — stdio, SSE, in-memory, streamable
+  llm/                  Direct provider clients (OpenAI, Gemini, Ollama, etc.)
+  dao/                  SQLite chat history
+assets/
+  echo_logo.png
+pubspec.yaml
+```
+
+---
+
+## Notes
+
+- The Flutter package is named `chatmcp` internally. The product is **Echo**.
+- Use product language everywhere user-facing: Talk, Today, You, Current Read, Practice, Proof, Decision Room, Home Brain, This Device, Improve Echo.
+- Avoid internal/development language: shadow clone, twin battle, tournament, Genin/Chunin/Kage (shown in Talk header as level 1/2/3/mastery instead).
+
+## License
+
+See `LICENSE`.
