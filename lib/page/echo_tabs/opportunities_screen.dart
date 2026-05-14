@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_api_client.dart';
 import 'package:chatmcp/echo/echo_loop_state.dart';
@@ -51,10 +51,7 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     final intent = opportunity == null ? null : _intentForGap(opportunity, gap);
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ProofBuilderScreen(
-          initialIntent: intent,
-          autoOpenDraft: intent != null,
-        ),
+        builder: (_) => ProofBuilderScreen(initialIntent: intent, autoOpenDraft: intent != null),
       ),
     );
     if (!mounted) return;
@@ -281,11 +278,7 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
             const SizedBox(height: 12),
             _sectionTitle('Build next'),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: missing.take(3).map((gap) => _gapButton(item, gap)).toList(),
-            ),
+            Wrap(spacing: 8, runSpacing: 8, children: missing.take(3).map((gap) => _gapButton(item, gap)).toList()),
           ],
           if (nextStep.isNotEmpty) ...[
             const SizedBox(height: 14),
@@ -316,13 +309,7 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: _cardAction(
-                  Icons.fact_check_outlined,
-                  'Log outcome',
-                  () => _logOpportunityOutcome(item),
-                ),
-              ),
+              Expanded(child: _cardAction(Icons.fact_check_outlined, 'Log outcome', () => _logOpportunityOutcome(item))),
             ],
           ),
         ],

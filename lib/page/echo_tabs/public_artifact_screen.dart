@@ -49,17 +49,17 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
       sourceType: 'public_artifact',
     );
     if (!mounted) return;
-    setState(() { _saving = false; _saved = true; });
+    setState(() {
+      _saving = false;
+      _saved = true;
+    });
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: EchoColors.bgCard,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Public artifact saved to Proof.',
-          style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
-        ),
+        content: Text('Public artifact saved to Proof.', style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted)),
       ),
     );
     if (mounted) Navigator.of(context).pop(true);
@@ -81,7 +81,10 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Make it visible', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost, letterSpacing: 0.5)),
-                      Text('Artifact', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w900, color: EchoColors.textPrimary)),
+                      Text(
+                        'Artifact',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
+                      ),
                     ],
                   ),
                 ),
@@ -100,10 +103,7 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    EchoColors.proof.withValues(alpha: 0.09),
-                    EchoColors.bgSurface,
-                  ],
+                  colors: [EchoColors.proof.withValues(alpha: 0.09), EchoColors.bgSurface],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: EchoColors.proof.withValues(alpha: 0.24)),
@@ -113,7 +113,12 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
                 children: [
                   Text(
                     'DRAFT',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.proof.withValues(alpha: 0.70)),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 9,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.proof.withValues(alpha: 0.70),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -130,7 +135,10 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
             ),
             const SizedBox(height: 20),
 
-            Text('ARTIFACT TITLE', style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost)),
+            Text(
+              'ARTIFACT TITLE',
+              style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost),
+            ),
             const SizedBox(height: 8),
             _buildField(_titleCtrl, 'e.g. Reduced API latency by 42%', maxLines: 2),
             const SizedBox(height: 16),
@@ -151,12 +159,11 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: _saved ? EchoColors.practice : EchoColors.proof,
-                  borderRadius: BorderRadius.circular(13),
-                ),
+                decoration: BoxDecoration(color: _saved ? EchoColors.practice : EchoColors.proof, borderRadius: BorderRadius.circular(13)),
                 child: _saving
-                    ? Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)))
+                    ? Center(
+                        child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)),
+                      )
                     : Text(
                         _saved ? 'Saved to Proof' : 'Draft artifact',
                         textAlign: TextAlign.center,
@@ -176,10 +183,7 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
         Container(
           width: 30,
           height: 30,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, size: 15, color: color),
         ),
         const SizedBox(width: 10),
@@ -187,7 +191,10 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary)),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary),
+              ),
               Text(sub, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
             ],
           ),
@@ -199,7 +206,10 @@ class _PublicArtifactScreenState extends State<PublicArtifactScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: color.withValues(alpha: 0.25)),
           ),
-          child: Text(num, style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: color)),
+          child: Text(
+            num,
+            style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: color),
+          ),
         ),
       ],
     );

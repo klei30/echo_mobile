@@ -11,8 +11,7 @@ class ParallelSelfScreen extends StatefulWidget {
   State<ParallelSelfScreen> createState() => _ParallelSelfScreenState();
 }
 
-class _ParallelSelfScreenState extends State<ParallelSelfScreen>
-    with TickerProviderStateMixin {
+class _ParallelSelfScreenState extends State<ParallelSelfScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? _data;
   bool _loading = true;
 
@@ -70,11 +69,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
               ),
               title: Text(
                 'Scenarios',
-                style: GoogleFonts.plusJakartaSans(
-                  color: EchoColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
               ),
               centerTitle: true,
             )
@@ -88,22 +83,9 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 1.5,
-              color: EchoColors.amber.withValues(alpha: 0.5),
-            ),
-          ),
+          SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 1.5, color: EchoColors.amber.withValues(alpha: 0.5))),
           const SizedBox(height: 20),
-          Text(
-            'Reading your patterns…',
-            style: GoogleFonts.plusJakartaSans(
-              color: EchoColors.textMuted,
-              fontSize: 13,
-            ),
-          ),
+          Text('Reading your patterns…', style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 13)),
         ],
       ),
     );
@@ -117,11 +99,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           child: Text(
             'Not enough data yet.\nKeep talking to Echo.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              color: EchoColors.textMuted,
-              fontSize: 14,
-              height: 1.6,
-            ),
+            style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 14, height: 1.6),
           ),
         ),
       );
@@ -140,11 +118,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
             padding: const EdgeInsets.only(bottom: 20, left: 2),
             child: Text(
               'Not prediction. Pattern-based projection.',
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.textMuted.withValues(alpha: 0.55),
-                fontSize: 12,
-                letterSpacing: 0.3,
-              ),
+              style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted.withValues(alpha: 0.55), fontSize: 12, letterSpacing: 0.3),
             ),
           ),
 
@@ -152,8 +126,10 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           FadeTransition(
             opacity: _currentCtrl,
             child: SlideTransition(
-              position: Tween<Offset>(begin: const Offset(-0.06, 0), end: Offset.zero)
-                  .animate(CurvedAnimation(parent: _currentCtrl, curve: Curves.easeOut)),
+              position: Tween<Offset>(
+                begin: const Offset(-0.06, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: _currentCtrl, curve: Curves.easeOut)),
               child: _buildPathCard(
                 label: current['label'] as String? ?? 'Current Path',
                 projection: current['projection'] as String? ?? '',
@@ -171,29 +147,15 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
             opacity: _dividerCtrl,
             child: Row(
               children: [
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    color: EchoColors.borderSubtle,
-                  ),
-                ),
+                Expanded(child: Container(height: 1, color: EchoColors.borderSubtle)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Text(
                     'or',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: EchoColors.textMuted.withValues(alpha: 0.35),
-                      fontSize: 12,
-                      letterSpacing: 1.0,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted.withValues(alpha: 0.35), fontSize: 12, letterSpacing: 1.0),
                   ),
                 ),
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    color: EchoColors.borderSubtle,
-                  ),
-                ),
+                Expanded(child: Container(height: 1, color: EchoColors.borderSubtle)),
               ],
             ),
           ),
@@ -204,8 +166,10 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           FadeTransition(
             opacity: _avoidedCtrl,
             child: SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero)
-                  .animate(CurvedAnimation(parent: _avoidedCtrl, curve: Curves.easeOut)),
+              position: Tween<Offset>(
+                begin: const Offset(0.06, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: _avoidedCtrl, curve: Curves.easeOut)),
               child: _buildPathCard(
                 label: avoided['label'] as String? ?? 'Avoided Path',
                 projection: avoided['projection'] as String? ?? '',
@@ -222,11 +186,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
               child: Text(
                 'Keep talking. The patterns become clearer over time.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  color: EchoColors.textMuted.withValues(alpha: 0.4),
-                  fontSize: 12,
-                  height: 1.5,
-                ),
+                style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted.withValues(alpha: 0.4), fontSize: 12, height: 1.5),
               ),
             ),
           ],
@@ -235,20 +195,10 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
     );
   }
 
-  Widget _buildPathCard({
-    required String label,
-    required String projection,
-    required String detail,
-    required bool isCurrent,
-    required bool ready,
-  }) {
-    final borderColor = isCurrent
-        ? EchoColors.textDim.withValues(alpha: 0.5)
-        : EchoColors.amber.withValues(alpha: 0.35);
+  Widget _buildPathCard({required String label, required String projection, required String detail, required bool isCurrent, required bool ready}) {
+    final borderColor = isCurrent ? EchoColors.textDim.withValues(alpha: 0.5) : EchoColors.amber.withValues(alpha: 0.35);
     final labelColor = isCurrent ? EchoColors.textMuted : EchoColors.amber;
-    final bgColor = isCurrent
-        ? EchoColors.bgSurface
-        : EchoColors.amber.withValues(alpha: 0.04);
+    final bgColor = isCurrent ? EchoColors.bgSurface : EchoColors.amber.withValues(alpha: 0.04);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -262,11 +212,7 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
         children: [
           Row(
             children: [
-              Icon(
-                isCurrent ? Icons.trending_flat : Icons.trending_up,
-                size: 14,
-                color: labelColor.withValues(alpha: 0.7),
-              ),
+              Icon(isCurrent ? Icons.trending_flat : Icons.trending_up, size: 14, color: labelColor.withValues(alpha: 0.7)),
               const SizedBox(width: 6),
               Text(
                 isCurrent ? 'CURRENT PATH' : 'AVAILABLE PATH',
@@ -282,33 +228,16 @@ class _ParallelSelfScreenState extends State<ParallelSelfScreen>
           const SizedBox(height: 10),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
-              color: EchoColors.textPrimary,
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              height: 1.3,
-            ),
+            style: GoogleFonts.plusJakartaSans(color: EchoColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w600, height: 1.3),
           ),
           const SizedBox(height: 8),
           Text(
             projection,
-            style: GoogleFonts.lora(
-              color: EchoColors.textSecondary,
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-              height: 1.55,
-            ),
+            style: GoogleFonts.lora(color: EchoColors.textSecondary, fontSize: 14, fontStyle: FontStyle.italic, height: 1.55),
           ),
           if (detail.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(
-              detail,
-              style: GoogleFonts.plusJakartaSans(
-                color: EchoColors.textMuted,
-                fontSize: 12.5,
-                height: 1.6,
-              ),
-            ),
+            Text(detail, style: GoogleFonts.plusJakartaSans(color: EchoColors.textMuted, fontSize: 12.5, height: 1.6)),
           ],
         ],
       ),

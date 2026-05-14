@@ -40,17 +40,17 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
       sourceType: 'feedback_quote',
     );
     if (!mounted) return;
-    setState(() { _saving = false; _saved = true; });
+    setState(() {
+      _saving = false;
+      _saved = true;
+    });
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: EchoColors.bgCard,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Feedback quote saved to Proof.',
-          style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted),
-        ),
+        content: Text('Feedback quote saved to Proof.', style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted)),
       ),
     );
     if (mounted) Navigator.of(context).pop(true);
@@ -72,7 +72,10 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Ask for proof', style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost, letterSpacing: 0.5)),
-                      Text('Feedback', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w900, color: EchoColors.textPrimary)),
+                      Text(
+                        'Feedback',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
+                      ),
                     ],
                   ),
                 ),
@@ -93,10 +96,7 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      EchoColors.primaryAi.withValues(alpha: 0.08),
-                      EchoColors.bgSurface,
-                    ],
+                    colors: [EchoColors.primaryAi.withValues(alpha: 0.08), EchoColors.bgSurface],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: EchoColors.primaryAi.withValues(alpha: 0.20)),
@@ -108,7 +108,12 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
                       children: [
                         Text(
                           'MESSAGE TEMPLATE',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.primaryAi.withValues(alpha: 0.70)),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 9,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w800,
+                            color: EchoColors.primaryAi.withValues(alpha: 0.70),
+                          ),
                         ),
                         const Spacer(),
                         Icon(_showTemplate ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 16, color: EchoColors.textGhost),
@@ -133,10 +138,7 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: EchoColors.border),
                         ),
-                        child: Text(
-                          _template,
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textMuted, height: 1.6),
-                        ),
+                        child: Text(_template, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: EchoColors.textMuted, height: 1.6)),
                       ),
                       const SizedBox(height: 10),
                       GestureDetector(
@@ -155,7 +157,10 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
                           children: [
                             Icon(Icons.copy_outlined, size: 14, color: EchoColors.primaryAi),
                             const SizedBox(width: 6),
-                            Text('Copy template', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: EchoColors.primaryAi)),
+                            Text(
+                              'Copy template',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: EchoColors.primaryAi),
+                            ),
                           ],
                         ),
                       ),
@@ -172,12 +177,18 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
             _stepRow(Icons.format_quote_rounded, EchoColors.proof, 'next', 'Save quote', 'redact private details before saving'),
             const SizedBox(height: 20),
 
-            Text('WHO GAVE FEEDBACK (optional)', style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost)),
+            Text(
+              'WHO GAVE FEEDBACK (optional)',
+              style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost),
+            ),
             const SizedBox(height: 8),
             _buildField(_fromCtrl, 'e.g. colleague, mentor, manager...', maxLines: 1),
             const SizedBox(height: 16),
 
-            Text('FEEDBACK QUOTE', style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost)),
+            Text(
+              'FEEDBACK QUOTE',
+              style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.textGhost),
+            ),
             const SizedBox(height: 8),
             _buildField(_quoteCtrl, 'Paste or type the feedback here...', maxLines: 5),
             const SizedBox(height: 6),
@@ -192,12 +203,11 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: _saved ? EchoColors.practice : EchoColors.primaryAi,
-                  borderRadius: BorderRadius.circular(13),
-                ),
+                decoration: BoxDecoration(color: _saved ? EchoColors.practice : EchoColors.primaryAi, borderRadius: BorderRadius.circular(13)),
                 child: _saving
-                    ? Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)))
+                    ? Center(
+                        child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)),
+                      )
                     : Text(
                         _saved ? 'Saved to Proof' : 'Create request',
                         textAlign: TextAlign.center,
@@ -235,15 +245,25 @@ class _FeedbackQuoteScreenState extends State<FeedbackQuoteScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary)),
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary),
+                ),
                 Text(sub, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: tagBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: tagFg.withValues(alpha: 0.28))),
-            child: Text(tag, style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: tagFg)),
+            decoration: BoxDecoration(
+              color: tagBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: tagFg.withValues(alpha: 0.28)),
+            ),
+            child: Text(
+              tag,
+              style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w800, color: tagFg),
+            ),
           ),
         ],
       ),

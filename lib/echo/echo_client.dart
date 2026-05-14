@@ -21,12 +21,12 @@ class EchoContext {
   });
 
   factory EchoContext.fromJson(Map<String, dynamic> json) => EchoContext(
-        systemInjection: json['system_injection'] as String? ?? '',
-        recommendedModel: json['recommended_model'] as String? ?? 'openai',
-        loraId: json['lora_id'] as String?,
-        confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
-        loopState: Map<String, dynamic>.from(json['loop_state'] as Map? ?? {}),
-      );
+    systemInjection: json['system_injection'] as String? ?? '',
+    recommendedModel: json['recommended_model'] as String? ?? 'openai',
+    loraId: json['lora_id'] as String?,
+    confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+    loopState: Map<String, dynamic>.from(json['loop_state'] as Map? ?? {}),
+  );
 }
 
 class EchoClient {
@@ -65,11 +65,7 @@ class EchoClient {
     try {
       final uid = AuthService().userId!;
       final resp = await http
-          .post(
-            Uri.parse('$_baseUrl/context'),
-            headers: _headers,
-            body: jsonEncode({'user_id': uid, 'message': message}),
-          )
+          .post(Uri.parse('$_baseUrl/context'), headers: _headers, body: jsonEncode({'user_id': uid, 'message': message}))
           .timeout(const Duration(milliseconds: 5000));
 
       if (resp.statusCode == 200) {
@@ -103,7 +99,8 @@ class EchoClient {
     if (!EchoHostService().hasTunnel) return;
     // Only clear on DNS resolution failures — not on connection refused / timeout,
     // which can be transient and would incorrectly remove a valid tunnel URL.
-    final isDnsError = err.contains('host lookup') ||
+    final isDnsError =
+        err.contains('host lookup') ||
         err.contains('errno = 7') ||
         err.contains('errno = 11001') ||
         err.contains('No address associated') ||
@@ -123,12 +120,7 @@ class EchoClient {
   }) {
     _lastModelUsed = modelUsed;
     if (!AuthService().isLoggedIn) return Future.value(null);
-    return _savePairAsync(
-      userMessage: userMessage,
-      assistantMessage: assistantMessage,
-      modelUsed: modelUsed,
-      engagementSignal: engagementSignal,
-    );
+    return _savePairAsync(userMessage: userMessage, assistantMessage: assistantMessage, modelUsed: modelUsed, engagementSignal: engagementSignal);
   }
 
   /// Thumbs up/down — uses stored last user message.
@@ -180,10 +172,7 @@ class EchoClient {
     return null;
   }
 
-  Future<void> _sendOutcomeAsync({
-    required String assistantMessage,
-    required String signal,
-  }) async {
+  Future<void> _sendOutcomeAsync({required String assistantMessage, required String signal}) async {
     final scores = <String, double>{
       'thumbs_up': 1.0,
       'helped': 1.0,

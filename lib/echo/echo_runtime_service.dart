@@ -7,10 +7,7 @@ enum EchoRuntimeMode {
   device;
 
   static EchoRuntimeMode fromString(String value) {
-    return EchoRuntimeMode.values.firstWhere(
-      (mode) => mode.name == value,
-      orElse: () => EchoRuntimeMode.cloud,
-    );
+    return EchoRuntimeMode.values.firstWhere((mode) => mode.name == value, orElse: () => EchoRuntimeMode.cloud);
   }
 }
 
@@ -20,10 +17,7 @@ enum DeviceModelStatus {
   error;
 
   static DeviceModelStatus fromString(String value) {
-    return DeviceModelStatus.values.firstWhere(
-      (status) => status.name == value,
-      orElse: () => DeviceModelStatus.missing,
-    );
+    return DeviceModelStatus.values.firstWhere((status) => status.name == value, orElse: () => DeviceModelStatus.missing);
   }
 }
 
@@ -75,10 +69,7 @@ class EchoRuntimeService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setDeviceModel({
-    required String path,
-    String version = 'Gemma on device',
-  }) async {
+  Future<void> setDeviceModel({required String path, String version = 'Gemma on device'}) async {
     _deviceModelPath = path.trim();
     _deviceModelVersion = version.trim().isEmpty ? 'Gemma on device' : version.trim();
     _deviceModelStatus = _deviceModelPath.isEmpty ? DeviceModelStatus.missing : DeviceModelStatus.ready;

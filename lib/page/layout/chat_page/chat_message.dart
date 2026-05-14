@@ -1,4 +1,4 @@
-﻿import 'package:chatmcp/provider/settings_provider.dart';
+import 'package:chatmcp/provider/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:chatmcp/llm/model.dart';
 import 'dart:convert';
@@ -217,15 +217,11 @@ class ChatUIMessage extends StatelessWidget {
                   const EchoOrb(size: 28, rings: 1),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 278),
-                      child: _buildMessageGroup(context, messages, false),
-                    ),
+                    child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 278), child: _buildMessageGroup(context, messages, false)),
                   ),
                 ],
               ),
-              if (messages.last.role != MessageRole.loading)
-                MessageActions(messages: messages, onRetry: onRetry, onSwitch: onSwitch, isUser: false),
+              if (messages.last.role != MessageRole.loading) MessageActions(messages: messages, onRetry: onRetry, onSwitch: onSwitch, isUser: false),
             ],
           ),
         );

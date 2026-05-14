@@ -46,8 +46,7 @@ class VoiceService {
 
   /// When using local URL, rewrite localhost → 10.0.2.2 for Android emulator WebRTC.
   String _fixLiveKitUrl(String url) {
-    if (!EchoHostService().hasTunnel &&
-        defaultTargetPlatform == TargetPlatform.android) {
+    if (!EchoHostService().hasTunnel && defaultTargetPlatform == TargetPlatform.android) {
       return url.replaceFirst('localhost', '10.0.2.2');
     }
     return url;
@@ -55,20 +54,11 @@ class VoiceService {
 
   Future<({String token, String url, String room})?> _fetchToken() async {
     try {
-      final resp = await http
-          .post(
-            Uri.parse('$_echoBase/v1/voice/token'),
-            headers: AuthService().authHeaders,
-          )
-          .timeout(const Duration(seconds: 5));
+      final resp = await http.post(Uri.parse('$_echoBase/v1/voice/token'), headers: AuthService().authHeaders).timeout(const Duration(seconds: 5));
 
       if (resp.statusCode == 200) {
         final d = jsonDecode(resp.body) as Map<String, dynamic>;
-        return (
-          token: d['token'] as String,
-          url: _fixLiveKitUrl(d['url'] as String),
-          room: d['room'] as String,
-        );
+        return (token: d['token'] as String, url: _fixLiveKitUrl(d['url'] as String), room: d['room'] as String);
       }
       _log.warning('Voice token HTTP ${resp.statusCode}');
     } catch (e) {
@@ -99,11 +89,7 @@ class VoiceService {
       // Use RoomOptions to manage speakerphone — livekit_client calls setSpeakerphoneOn
       // internally via applyAudioSpeakerSettings() when the local mic track is published.
       _room = Room(
-        roomOptions: const RoomOptions(
-          defaultAudioOutputOptions: AudioOutputOptions(speakerOn: true),
-          adaptiveStream: false,
-          dynacast: false,
-        ),
+        roomOptions: const RoomOptions(defaultAudioOutputOptions: AudioOutputOptions(speakerOn: true), adaptiveStream: false, dynacast: false),
       );
 
       _room!.events.on<RoomConnectedEvent>((_) {
@@ -132,8 +118,7 @@ class VoiceService {
         _log.info('Remote track subscribed: kind=${event.track.kind} source=${event.track.source}');
         if (event.track.kind == TrackType.AUDIO) {
           // Re-assert speakerphone when remote audio track arrives.
-          if (defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS) {
+          if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
             Hardware.instance.setSpeakerphoneOn(true).then((_) {
               _log.info('Speakerphone re-asserted on remote audio track');
             });
@@ -173,26 +158,23 @@ class VoiceService {
       });
 
       _log.info('Connecting to LiveKit ${tokenData.url} room=${tokenData.room}');
-      await _room!.connect(
-        tokenData.url,
-        tokenData.token,
-        connectOptions: const ConnectOptions(autoSubscribe: true),
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw async.TimeoutException(
-            'WebRTC connect timeout - ICE could not establish (15s)',
+      await _room!
+          .connect(tokenData.url, tokenData.token, connectOptions: const ConnectOptions(autoSubscribe: true))
+          .timeout(
             const Duration(seconds: 15),
+            onTimeout: () {
+              throw async.TimeoutException('WebRTC connect timeout - ICE could not establish (15s)', const Duration(seconds: 15));
+            },
           );
-        },
-      );
       _log.info('Connected. Enabling mic.');
       await _room!.localParticipant?.setMicrophoneEnabled(true);
       return true;
     } catch (e) {
       _lastError = e.toString();
       _log.severe('LiveKit connect error: $e');
-      try { await _room?.disconnect(); } catch (_) {}
+      try {
+        await _room?.disconnect();
+      } catch (_) {}
       _room = null;
       _setState(VoiceState.idle);
       return false;
@@ -239,28 +221,17 @@ class _VoiceButtonState extends State<VoiceButton> {
           onTap: isConnecting ? null : () => _handleTap(context),
           child: Container(
             padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isActive ? Colors.red.withAlpha(30) : null,
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: isActive ? Colors.red.withAlpha(30) : null, borderRadius: BorderRadius.circular(8)),
             child: isConnecting
                 ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                     ),
                   )
-                : Icon(
-                    isActive ? Icons.mic : Icons.mic_none,
-                    size: 22,
-                    color: isActive
-                        ? Colors.red
-                        : Theme.of(context).iconTheme.color,
-                  ),
+                : Icon(isActive ? Icons.mic : Icons.mic_none, size: 22, color: isActive ? Colors.red : Theme.of(context).iconTheme.color),
           ),
         );
       },
@@ -275,12 +246,7 @@ class _VoiceButtonState extends State<VoiceButton> {
       final ok = await service.connect();
       if (!ok && context.mounted) {
         final reason = service.lastError ?? 'unknown';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Voice failed: $reason'),
-            duration: const Duration(seconds: 8),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voice failed: $reason'), duration: const Duration(seconds: 8)));
       }
     } else {
       await service.disconnect();

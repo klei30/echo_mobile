@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:chatmcp/echo/echo_host_service.dart';
@@ -88,9 +88,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
     // we silently fall through to the tunnel retry loop.
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
-        final localResp = await http
-            .get(Uri.parse('http://10.0.2.2:8002/health'))
-            .timeout(const Duration(seconds: 4));
+        final localResp = await http.get(Uri.parse('http://10.0.2.2:8002/health')).timeout(const Duration(seconds: 4));
         if (localResp.statusCode == 200) {
           // Emulator can reach the Windows host directly.
           // Save 10.0.2.2:8002 as the "tunnel URL" so hasTunnel = true
@@ -117,9 +115,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
       }
       if (!mounted) return;
       try {
-        final resp = await http
-            .get(Uri.parse('$url/health'))
-            .timeout(const Duration(seconds: 8));
+        final resp = await http.get(Uri.parse('$url/health')).timeout(const Duration(seconds: 8));
         if (resp.statusCode != 200) {
           throw Exception('Home Brain returned ${resp.statusCode}.');
         }
@@ -131,7 +127,8 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
         lastErr = e is Exception ? e : Exception(e.toString());
         final msg = e.toString();
         // Only retry on DNS / socket errors â€” not on HTTP errors
-        final isDnsError = msg.contains('host lookup') ||
+        final isDnsError =
+            msg.contains('host lookup') ||
             msg.contains('errno = 7') ||
             msg.contains('errno = 11001') ||
             msg.contains('SocketException') ||
@@ -154,9 +151,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
     final direct = Uri.tryParse(text);
     // Handle echo://pair?baseUrl=... custom scheme from desktop QR code
     if (direct != null && direct.scheme == 'echo') {
-      final pairedUrl = direct.queryParameters['baseUrl'] ??
-          direct.queryParameters['url'] ??
-          direct.queryParameters['tunnelUrl'];
+      final pairedUrl = direct.queryParameters['baseUrl'] ?? direct.queryParameters['url'] ?? direct.queryParameters['tunnelUrl'];
       if (pairedUrl != null) {
         final uri = Uri.tryParse(pairedUrl.trim());
         if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
@@ -164,28 +159,21 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
         }
       }
     }
-    final pairedUrl = direct?.queryParameters['baseUrl'] ??
-        direct?.queryParameters['url'] ??
-        direct?.queryParameters['tunnelUrl'];
+    final pairedUrl = direct?.queryParameters['baseUrl'] ?? direct?.queryParameters['url'] ?? direct?.queryParameters['tunnelUrl'];
     if (pairedUrl != null) {
       final uri = Uri.tryParse(pairedUrl.trim());
       if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
         return pairedUrl.trim().replaceAll(RegExp(r'/$'), '');
       }
     }
-    if (direct != null &&
-        (direct.scheme == 'http' || direct.scheme == 'https') &&
-        direct.host.isNotEmpty) {
+    if (direct != null && (direct.scheme == 'http' || direct.scheme == 'https') && direct.host.isNotEmpty) {
       return text.replaceAll(RegExp(r'/$'), '');
     }
 
     try {
       final decoded = jsonDecode(text);
       if (decoded is Map) {
-        final value = decoded['baseUrl'] ??
-            decoded['url'] ??
-            decoded['tunnelUrl'] ??
-            decoded['echoUrl'];
+        final value = decoded['baseUrl'] ?? decoded['url'] ?? decoded['tunnelUrl'] ?? decoded['echoUrl'];
         if (value is String) {
           final uri = Uri.tryParse(value.trim());
           if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
@@ -200,9 +188,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
   }
 
   Future<void> _openAdvanced() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RemoteAccessScreen()),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemoteAccessScreen()));
     if (!mounted) return;
     if (EchoHostService().hasTunnel) {
       Navigator.of(context).pop(true);
@@ -226,11 +212,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
                 Expanded(
                   child: Text(
                     'Pair Home Brain',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: EchoColors.textPrimary,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w900, color: EchoColors.textPrimary),
                   ),
                 ),
                 IconButton(
@@ -242,11 +224,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
             const SizedBox(height: 8),
             Text(
               'Open Home Brain on your computer, choose Pair phone, then scan the QR code here.',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12.5,
-                color: EchoColors.textGhost,
-                height: 1.5,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textGhost, height: 1.5),
             ),
             const SizedBox(height: 22),
             _statusCard(connected),
@@ -278,22 +256,12 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               label: const Text('Advanced: enter remote URL manually'),
               style: TextButton.styleFrom(
                 foregroundColor: EchoColors.textGhost,
-                textStyle: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+                textStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11.5,
-                  color: Colors.redAccent.withValues(alpha: 0.9),
-                  height: 1.4,
-                ),
-              ),
+              Text(_error!, style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: Colors.redAccent.withValues(alpha: 0.9), height: 1.4)),
             ],
           ],
         ),
@@ -305,15 +273,9 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: connected
-            ? const Color(0xFF4CAF50).withValues(alpha: 0.07)
-            : EchoColors.bgSurface,
+        color: connected ? const Color(0xFF4CAF50).withValues(alpha: 0.07) : EchoColors.bgSurface,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: connected
-              ? const Color(0xFF4CAF50).withValues(alpha: 0.24)
-              : EchoColors.borderSubtle,
-        ),
+        border: Border.all(color: connected ? const Color(0xFF4CAF50).withValues(alpha: 0.24) : EchoColors.borderSubtle),
       ),
       child: Row(
         children: [
@@ -329,21 +291,12 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               children: [
                 Text(
                   connected ? 'Home Brain connected' : 'Home Brain not connected',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: EchoColors.textMuted,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800, color: EchoColors.textMuted),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  connected
-                      ? 'Secure private connection active'
-                      : 'Pair Home Brain to use your own computer.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11.5,
-                    color: EchoColors.textGhost,
-                  ),
+                  connected ? 'Secure private connection active' : 'Pair Home Brain to use your own computer.',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: EchoColors.textGhost),
                 ),
               ],
             ),
@@ -397,12 +350,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
           if (_testing)
             Container(
               color: EchoColors.bg.withValues(alpha: 0.72),
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: EchoColors.amber,
-                ),
-              ),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: EchoColors.amber)),
             ),
         ],
       ),
@@ -422,11 +370,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
         children: [
           Text(
             'Have a pairing link?',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: EchoColors.textMuted,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: EchoColors.textMuted),
           ),
           const SizedBox(height: 8),
           Row(
@@ -434,27 +378,15 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               Expanded(
                 child: TextField(
                   controller: _pasteCtrl,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5,
-                    color: EchoColors.textPrimary,
-                  ),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Paste link or pairing code',
-                    hintStyle: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5,
-                      color: EchoColors.textGhost,
-                    ),
+                    hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textGhost),
                     isDense: true,
                     filled: true,
                     fillColor: EchoColors.bgInput,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 11,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                   ),
                   onSubmitted: (_) => _connect(_pasteCtrl.text),
                 ),
@@ -463,19 +395,10 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               IconButton(
                 onPressed: _testing ? null : () => _connect(_pasteCtrl.text),
                 icon: _testing
-                    ? SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.7,
-                          color: EchoColors.amber,
-                        ),
-                      )
+                    ? SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 1.7, color: EchoColors.amber))
                     : const Icon(Icons.arrow_forward_rounded),
                 color: EchoColors.amber,
-                style: IconButton.styleFrom(
-                  backgroundColor: EchoColors.amber.withValues(alpha: 0.1),
-                ),
+                style: IconButton.styleFrom(backgroundColor: EchoColors.amber.withValues(alpha: 0.1)),
               ),
             ],
           ),
@@ -484,11 +407,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
     );
   }
 
-  Widget _primaryButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
+  Widget _primaryButton({required IconData icon, required String label, required VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Opacity(
@@ -496,9 +415,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 13),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFB46A28), Color(0xFFE0A850)],
-            ),
+            gradient: const LinearGradient(colors: [Color(0xFFB46A28), Color(0xFFE0A850)]),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -508,11 +425,7 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: EchoColors.bg,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: EchoColors.bg),
               ),
             ],
           ),
@@ -537,24 +450,13 @@ class _PairComputerScreenState extends State<PairComputerScreen> {
             child: Center(
               child: Text(
                 num,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: EchoColors.amberText,
-                ),
+                style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w900, color: EchoColors.amberText),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12.5,
-                color: EchoColors.textMuted,
-                height: 1.4,
-              ),
-            ),
+            child: Text(text, style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: EchoColors.textMuted, height: 1.4)),
           ),
         ],
       ),

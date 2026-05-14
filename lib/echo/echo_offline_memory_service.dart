@@ -52,10 +52,7 @@ class EchoOfflineMemoryService {
       }
 
       final resp = await http
-          .get(
-            Uri.parse('${AuthService().baseUrl}/v1/offline/export'),
-            headers: AuthService().authHeaders,
-          )
+          .get(Uri.parse('${AuthService().baseUrl}/v1/offline/export'), headers: AuthService().authHeaders)
           .timeout(const Duration(seconds: 25));
       if (resp.statusCode != 200) {
         _log.warning('offline export HTTP ${resp.statusCode}');

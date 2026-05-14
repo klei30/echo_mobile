@@ -13,8 +13,7 @@ class VoiceSessionScreen extends StatefulWidget {
   State<VoiceSessionScreen> createState() => _VoiceSessionScreenState();
 }
 
-class _VoiceSessionScreenState extends State<VoiceSessionScreen>
-    with TickerProviderStateMixin {
+class _VoiceSessionScreenState extends State<VoiceSessionScreen> with TickerProviderStateMixin {
   late final AnimationController _orbPulse;
   late final AnimationController _ripple;
   late final StreamSubscription<VoiceState> _stateSub;
@@ -31,15 +30,9 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
   void initState() {
     super.initState();
 
-    _orbPulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
+    _orbPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat(reverse: true);
 
-    _ripple = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat();
+    _ripple = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat();
 
     _stateSub = VoiceService().stateStream.listen((s) {
       if (!mounted) return;
@@ -90,9 +83,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       _agentJoinTimeout = Timer(const Duration(seconds: 35), () {
         if (!mounted) return;
         final state = VoiceService().state;
-        if (_echoTranscript.isEmpty &&
-            state != VoiceState.speaking &&
-            state != VoiceState.idle) {
+        if (_echoTranscript.isEmpty && state != VoiceState.speaking && state != VoiceState.idle) {
           setState(() => _error = 'Voice agent not responding.\nMake sure the voice agent is running on the server.');
         }
       });
@@ -130,27 +121,14 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
                   GestureDetector(
                     onTap: _endSession,
                     child: Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.06),
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: Colors.white.withValues(alpha: 0.40),
-                      ),
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.06)),
+                      child: Icon(Icons.close_rounded, size: 16, color: Colors.white.withValues(alpha: 0.40)),
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    'Voice',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      fontSize: 12,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  Text('Voice', style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.25), fontSize: 12, letterSpacing: 0.5)),
                   const Spacer(),
                   const SizedBox(width: 32), // balance
                 ],
@@ -175,10 +153,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
             const Spacer(),
 
             // End session button
-            Padding(
-              padding: const EdgeInsets.only(bottom: 40),
-              child: _buildEndButton(),
-            ),
+            Padding(padding: const EdgeInsets.only(bottom: 40), child: _buildEndButton()),
           ],
         ),
       ),
@@ -198,21 +173,22 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
         final glowAlpha = isSpeaking
             ? 0.22 + t * 0.18
             : isListening
-                ? 0.10 + t * 0.10
-                : 0.04 + t * 0.04;
+            ? 0.10 + t * 0.10
+            : 0.04 + t * 0.04;
         final glowBlur = isSpeaking ? 70.0 + t * 30 : 50.0 + t * 20;
         final coreAlpha = isSpeaking
             ? 0.18 + t * 0.12
             : isListening
-                ? 0.08 + t * 0.08
-                : 0.04 + t * 0.04;
+            ? 0.08 + t * 0.08
+            : 0.04 + t * 0.04;
 
         // Ripple rings — only when active
         final showRipple = isListening || isSpeaking;
         final rippleColor = isSpeaking ? const Color(0xFF4A9EDB) : EchoColors.amber;
 
         return SizedBox(
-          width: 220, height: 220,
+          width: 220,
+          height: 220,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -225,17 +201,15 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
                     height: 160 + r * 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: rippleColor.withValues(alpha: 0.25 * (1 - r)),
-                        width: 1.0,
-                      ),
+                      border: Border.all(color: rippleColor.withValues(alpha: 0.25 * (1 - r)), width: 1.0),
                     ),
                   ),
                 ),
 
               // Outer glow ring
               Container(
-                width: 160, height: 160,
+                width: 160,
+                height: 160,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -250,21 +224,19 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
 
               // Mid ring
               Container(
-                width: 120, height: 120,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: EchoColors.amber.withValues(alpha: coreAlpha * 0.5),
-                  border: Border.all(
-                    color: EchoColors.amber.withValues(
-                        alpha: isListening || isSpeaking ? 0.18 + t * 0.10 : 0.06),
-                    width: 1.0,
-                  ),
+                  border: Border.all(color: EchoColors.amber.withValues(alpha: isListening || isSpeaking ? 0.18 + t * 0.10 : 0.06), width: 1.0),
                 ),
               ),
 
               // Core
               Container(
-                width: 72, height: 72,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: EchoColors.amber.withValues(alpha: coreAlpha),
@@ -278,12 +250,8 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
                 child: isSpeaking
                     ? _buildSpeakingWave(t)
                     : isListening
-                        ? Icon(Icons.hearing_rounded,
-                            size: 26,
-                            color: Colors.black.withValues(alpha: 0.55))
-                        : Icon(Icons.mic_none_rounded,
-                            size: 26,
-                            color: Colors.black.withValues(alpha: 0.35)),
+                    ? Icon(Icons.hearing_rounded, size: 26, color: Colors.black.withValues(alpha: 0.55))
+                    : Icon(Icons.mic_none_rounded, size: 26, color: Colors.black.withValues(alpha: 0.35)),
               ),
             ],
           ),
@@ -293,9 +261,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
   }
 
   Widget _buildSpeakingWave(double t) {
-    return CustomPaint(
-      painter: _WavePainter(t),
-    );
+    return CustomPaint(painter: _WavePainter(t));
   }
 
   Widget _buildStatusLabel() {
@@ -303,19 +269,16 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       return Text(
         _error!,
         textAlign: TextAlign.center,
-        style: GoogleFonts.plusJakartaSans(
-          color: Colors.red.withValues(alpha: 0.70),
-          fontSize: 13,
-        ),
+        style: GoogleFonts.plusJakartaSans(color: Colors.red.withValues(alpha: 0.70), fontSize: 13),
       );
     }
 
     final label = switch (_voiceState) {
-      VoiceState.connecting    => 'Connecting...',
-      VoiceState.listening     => 'Listening',
-      VoiceState.speaking      => 'Echo is speaking',
+      VoiceState.connecting => 'Connecting...',
+      VoiceState.listening => 'Listening',
+      VoiceState.speaking => 'Echo is speaking',
       VoiceState.disconnecting => 'Ending session...',
-      _                        => _connecting ? 'Connecting...' : '',
+      _ => _connecting ? 'Connecting...' : '',
     };
 
     final color = switch (_voiceState) {
@@ -329,12 +292,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
       child: Text(
         label,
         key: ValueKey(label),
-        style: GoogleFonts.plusJakartaSans(
-          color: color,
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.3,
-        ),
+        style: GoogleFonts.plusJakartaSans(color: color, fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.3),
       ),
     );
   }
@@ -342,14 +300,8 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
   Widget _buildTranscript() {
     if (_userTranscript.isEmpty && _echoTranscript.isEmpty) {
       return Text(
-        _voiceState == VoiceState.listening
-            ? 'Go ahead and speak...'
-            : '',
-        style: GoogleFonts.plusJakartaSans(
-          color: Colors.white.withValues(alpha: 0.15),
-          fontSize: 13,
-          fontStyle: FontStyle.italic,
-        ),
+        _voiceState == VoiceState.listening ? 'Go ahead and speak...' : '',
+        style: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.15), fontSize: 13, fontStyle: FontStyle.italic),
       );
     }
 
@@ -369,12 +321,7 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
               child: Text(
                 '"$_userTranscript"',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.lora(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  height: 1.5,
-                ),
+                style: GoogleFonts.lora(color: Colors.white.withValues(alpha: 0.55), fontSize: 14, fontStyle: FontStyle.italic, height: 1.5),
               ),
             ),
           if (_echoTranscript.isNotEmpty) ...[
@@ -385,17 +332,12 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF4A9EDB).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: const Color(0xFF4A9EDB).withValues(alpha: 0.15)),
+                border: Border.all(color: const Color(0xFF4A9EDB).withValues(alpha: 0.15)),
               ),
               child: Text(
                 _echoTranscript,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  color: const Color(0xFF4A9EDB).withValues(alpha: 0.80),
-                  fontSize: 13,
-                  height: 1.5,
-                ),
+                style: GoogleFonts.plusJakartaSans(color: const Color(0xFF4A9EDB).withValues(alpha: 0.80), fontSize: 13, height: 1.5),
               ),
             ),
           ],
@@ -408,17 +350,14 @@ class _VoiceSessionScreenState extends State<VoiceSessionScreen>
     return GestureDetector(
       onTap: _endSession,
       child: Container(
-        width: 64, height: 64,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.red.withValues(alpha: 0.12),
           border: Border.all(color: Colors.red.withValues(alpha: 0.35)),
         ),
-        child: Icon(
-          Icons.call_end_rounded,
-          size: 24,
-          color: Colors.red.withValues(alpha: 0.75),
-        ),
+        child: Icon(Icons.call_end_rounded, size: 24, color: Colors.red.withValues(alpha: 0.75)),
       ),
     );
   }
@@ -447,11 +386,7 @@ class _WavePainter extends CustomPainter {
       final phase = (i / bars) * math.pi * 2;
       final amp = 8.0 * math.sin(t * math.pi * 2 + phase).abs().clamp(0.15, 1.0);
       final x = startX + i * spacing;
-      canvas.drawLine(
-        Offset(x, cy - amp),
-        Offset(x, cy + amp),
-        paint,
-      );
+      canvas.drawLine(Offset(x, cy - amp), Offset(x, cy + amp), paint);
     }
   }
 

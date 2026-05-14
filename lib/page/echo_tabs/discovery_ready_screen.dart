@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 class DiscoveryReadyScreen extends StatefulWidget {
   final VoidCallback? onTap;
   const DiscoveryReadyScreen({super.key, this.onTap});
@@ -24,13 +25,16 @@ class _DiscoveryReadyScreenState extends State<DiscoveryReadyScreen> with Ticker
     _medRing = AnimationController(vsync: this, duration: const Duration(seconds: 44))..repeat(reverse: true);
     _fastRing = AnimationController(vsync: this, duration: const Duration(seconds: 26))..repeat();
     final rng = Random(42);
-    _particles = List.generate(5, (i) => _Particle(
-      left: 0.10 + rng.nextDouble() * 0.80,
-      top: 0.25 + rng.nextDouble() * 0.50,
-      dur: 3.9 + rng.nextDouble() * 2.4,
-      delay: rng.nextDouble() * 3.2,
-      gold: i >= 3,
-    ));
+    _particles = List.generate(
+      5,
+      (i) => _Particle(
+        left: 0.10 + rng.nextDouble() * 0.80,
+        top: 0.25 + rng.nextDouble() * 0.50,
+        dur: 3.9 + rng.nextDouble() * 2.4,
+        delay: rng.nextDouble() * 3.2,
+        gold: i >= 3,
+      ),
+    );
   }
 
   @override
@@ -119,10 +123,7 @@ class _DiscoveryReadyScreenState extends State<DiscoveryReadyScreen> with Ticker
                           Container(
                             width: 9,
                             height: 9,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xB3C59A34),
-                            ),
+                            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xB3C59A34)),
                           ),
                         ],
                       ),
@@ -130,23 +131,13 @@ class _DiscoveryReadyScreenState extends State<DiscoveryReadyScreen> with Ticker
                     const SizedBox(height: 22),
                     Text(
                       'D I S C O V E R Y',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 9,
-                        letterSpacing: 4,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0x99C59A34),
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 4, fontWeight: FontWeight.w800, color: const Color(0x99C59A34)),
                     ),
                     const SizedBox(height: 18),
                     Text(
                       'Echo found a pattern\nwith evidence.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w300,
-                        color: const Color(0xA6C3DCD7),
-                        height: 1.55,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w300, color: const Color(0xA6C3DCD7), height: 1.55),
                     ),
                     const SizedBox(height: 22),
                     Container(
@@ -157,11 +148,7 @@ class _DiscoveryReadyScreenState extends State<DiscoveryReadyScreen> with Ticker
                       ),
                       child: Text(
                         'Tap to read',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          letterSpacing: 0.5,
-                          color: const Color(0x8CC59A34),
-                        ),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, letterSpacing: 0.5, color: const Color(0x8CC59A34)),
                       ),
                     ),
                   ],
@@ -198,7 +185,10 @@ class _ParticleWidgetState extends State<_ParticleWidget> with SingleTickerProvi
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: (widget.particle.dur * 1000).round()));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: (widget.particle.dur * 1000).round()),
+    );
     Future.delayed(Duration(milliseconds: (widget.particle.delay * 1000).round()), () {
       if (mounted) _ctrl.repeat();
     });
@@ -212,32 +202,35 @@ class _ParticleWidgetState extends State<_ParticleWidget> with SingleTickerProvi
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final x = widget.particle.left * constraints.maxWidth;
-      final y = widget.particle.top * constraints.maxHeight;
-      return AnimatedBuilder(
-        animation: _ctrl,
-        builder: (_, __) {
-          final t = _ctrl.value;
-          final opacity = t < 0.25 ? t / 0.25 * 0.55 : t > 0.85 ? (1 - t) / 0.15 * 0.55 : 0.55;
-          return Positioned(
-            left: x,
-            top: y - t * 52,
-            child: Opacity(
-              opacity: opacity.clamp(0.0, 1.0),
-              child: Container(
-                width: 2,
-                height: 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.particle.gold ? const Color(0xB3C59A34) : const Color(0xA683BDF2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final x = widget.particle.left * constraints.maxWidth;
+        final y = widget.particle.top * constraints.maxHeight;
+        return AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, __) {
+            final t = _ctrl.value;
+            final opacity = t < 0.25
+                ? t / 0.25 * 0.55
+                : t > 0.85
+                ? (1 - t) / 0.15 * 0.55
+                : 0.55;
+            return Positioned(
+              left: x,
+              top: y - t * 52,
+              child: Opacity(
+                opacity: opacity.clamp(0.0, 1.0),
+                child: Container(
+                  width: 2,
+                  height: 2,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: widget.particle.gold ? const Color(0xB3C59A34) : const Color(0xA683BDF2)),
                 ),
               ),
-            ),
-          );
-        },
-      );
-    });
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -264,13 +257,7 @@ class _DashedCirclePainter extends CustomPainter {
 
     for (int i = 0; i < dashCount.floor(); i++) {
       final startAngle = i * (dashAngle + gapAngle);
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        dashAngle,
-        false,
-        paint,
-      );
+      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, dashAngle, false, paint);
     }
   }
 

@@ -9,19 +9,17 @@ class ReadinessScoreScreen extends StatelessWidget {
   final String? why;
   final List<Map<String, dynamic>> parts;
 
-  const ReadinessScoreScreen({
-    super.key,
-    required this.opportunityTitle,
-    required this.score,
-    this.why,
-    this.parts = const [],
-  });
+  const ReadinessScoreScreen({super.key, required this.opportunityTitle, required this.score, this.why, this.parts = const []});
 
   @override
   Widget build(BuildContext context) {
     final doneCount = parts.where((p) => p['done'] == true).length;
     final missingCount = parts.where((p) => p['done'] != true).length;
-    final scoreColor = score >= 70 ? EchoColors.opportunity : score >= 40 ? EchoColors.amber : EchoColors.textGhost;
+    final scoreColor = score >= 70
+        ? EchoColors.opportunity
+        : score >= 40
+        ? EchoColors.amber
+        : EchoColors.textGhost;
 
     return Scaffold(
       backgroundColor: EchoColors.bg,
@@ -36,10 +34,7 @@ class ReadinessScoreScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        opportunityTitle,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost, letterSpacing: 0.5),
-                      ),
+                      Text(opportunityTitle, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost, letterSpacing: 0.5)),
                       Text(
                         '$score% ready',
                         style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w900, color: scoreColor, height: 1.1),
@@ -73,10 +68,7 @@ class ReadinessScoreScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    EchoColors.opportunity.withValues(alpha: 0.14),
-                    EchoColors.bgSurface,
-                  ],
+                  colors: [EchoColors.opportunity.withValues(alpha: 0.14), EchoColors.bgSurface],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: EchoColors.opportunity.withValues(alpha: 0.28)),
@@ -86,7 +78,12 @@ class ReadinessScoreScreen extends StatelessWidget {
                 children: [
                   Text(
                     'WHY THIS SCORE?',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: EchoColors.opportunity.withValues(alpha: 0.70)),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 9,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w800,
+                      color: EchoColors.opportunity.withValues(alpha: 0.70),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -115,11 +112,7 @@ class ReadinessScoreScreen extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   widthFactor: (score / 100).clamp(0.0, 1.0),
                   child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [EchoColors.practice, EchoColors.opportunity],
-                      ),
-                    ),
+                    decoration: BoxDecoration(gradient: LinearGradient(colors: [EchoColors.practice, EchoColors.opportunity])),
                   ),
                 ),
               ),
@@ -148,26 +141,18 @@ class ReadinessScoreScreen extends StatelessWidget {
                 final tag = done ? 'done' : 'gap';
                 final color = done ? EchoColors.practice : EchoColors.risk;
                 final icon = done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _defaultPart(context, done, icon, color, label, sub, tag),
-                );
+                return Padding(padding: const EdgeInsets.only(bottom: 8), child: _defaultPart(context, done, icon, color, label, sub, tag));
               }),
 
             const SizedBox(height: 24),
 
             // Primary action
             GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProofBuilderScreen()),
-              ),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProofBuilderScreen())),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: EchoColors.proof,
-                  borderRadius: BorderRadius.circular(13),
-                ),
+                decoration: BoxDecoration(color: EchoColors.proof, borderRadius: BorderRadius.circular(13)),
                 child: Text(
                   'Build missing proof',
                   textAlign: TextAlign.center,
@@ -187,7 +172,11 @@ class ReadinessScoreScreen extends StatelessWidget {
         : tag == 'gap'
         ? EchoColors.risk.withValues(alpha: 0.11)
         : EchoColors.bgSurface;
-    final tagFg = tag == 'done' ? EchoColors.practice : tag == 'gap' ? EchoColors.risk : EchoColors.textGhost;
+    final tagFg = tag == 'done'
+        ? EchoColors.practice
+        : tag == 'gap'
+        ? EchoColors.risk
+        : EchoColors.textGhost;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -201,10 +190,7 @@ class ReadinessScoreScreen extends StatelessWidget {
           Container(
             width: 30,
             height: 30,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, size: 15, color: color),
           ),
           const SizedBox(width: 10),
@@ -212,9 +198,11 @@ class ReadinessScoreScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary)),
-                if (sub.isNotEmpty)
-                  Text(sub, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
+                Text(
+                  label,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: EchoColors.textPrimary),
+                ),
+                if (sub.isNotEmpty) Text(sub, style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: EchoColors.textGhost)),
               ],
             ),
           ),

@@ -67,8 +67,7 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
   String generatePrompt({required List<Map<String, dynamic>> tools}) {
     final settingsPrompt = ProviderManager.settingsProvider.generalSetting.systemPrompt;
     final language = ProviderManager.settingsProvider.generalSetting.locale;
-    final isEchoProvider =
-        ProviderManager.chatModelProvider.currentModel.providerId == 'echo';
+    final isEchoProvider = ProviderManager.chatModelProvider.currentModel.providerId == 'echo';
 
     // Use Echo's mentor persona when talking to the Echo backend; fall back to
     // the user's custom settings prompt or the generic default otherwise.
@@ -95,5 +94,4 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
 
     return prompt;
   }
-
 }

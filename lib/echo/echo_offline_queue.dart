@@ -27,14 +27,16 @@ class EchoOfflineQueue {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_keyPairs) ?? <String>[];
-    raw.add(jsonEncode({
-      'type': 'chat_pair',
-      'created_at': DateTime.now().toIso8601String(),
-      'user_message': userMessage,
-      'assistant_message': assistantMessage,
-      'model_used': modelUsed,
-      'engagement_signal': engagementSignal,
-    }));
+    raw.add(
+      jsonEncode({
+        'type': 'chat_pair',
+        'created_at': DateTime.now().toIso8601String(),
+        'user_message': userMessage,
+        'assistant_message': assistantMessage,
+        'model_used': modelUsed,
+        'engagement_signal': engagementSignal,
+      }),
+    );
     await prefs.setStringList(_keyPairs, raw);
   }
 
@@ -52,10 +54,7 @@ class EchoOfflineQueue {
     if (userId == null || userId.isEmpty) return 0;
 
     final baseUrl = AuthService().baseUrl;
-    final headers = {
-      ...AuthService().authHeaders,
-      'Content-Type': 'application/json',
-    };
+    final headers = {...AuthService().authHeaders, 'Content-Type': 'application/json'};
 
     final remaining = <String>[];
     int uploaded = 0;
@@ -75,9 +74,7 @@ class EchoOfflineQueue {
           'engagement_signal': pair['engagement_signal'] as String? ?? 'continue',
         });
 
-        final resp = await http
-            .post(Uri.parse('$baseUrl/save'), headers: headers, body: body)
-            .timeout(const Duration(seconds: 12));
+        final resp = await http.post(Uri.parse('$baseUrl/save'), headers: headers, body: body).timeout(const Duration(seconds: 12));
 
         if (resp.statusCode == 200) {
           uploaded++;

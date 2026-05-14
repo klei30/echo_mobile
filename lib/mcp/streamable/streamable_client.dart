@@ -118,10 +118,7 @@ class StreamableClient implements McpClient {
     });
 
     // Add OAuth Bearer token if available and valid
-    if (serverConfig.oauth != null && 
-        serverConfig.oauth!.enabled && 
-        serverConfig.oauth!.accessToken != null &&
-        serverConfig.oauth!.isTokenValid) {
+    if (serverConfig.oauth != null && serverConfig.oauth!.enabled && serverConfig.oauth!.accessToken != null && serverConfig.oauth!.isTokenValid) {
       headers['Authorization'] = 'Bearer ${serverConfig.oauth!.accessToken}';
     }
 

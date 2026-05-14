@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:chatmcp/echo/echo_api_client.dart';
@@ -10,17 +10,9 @@ class MemoryConsentSheet extends StatefulWidget {
   final String proposedMemory;
   final String sourceType;
 
-  const MemoryConsentSheet({
-    super.key,
-    required this.proposedMemory,
-    this.sourceType = 'talk',
-  });
+  const MemoryConsentSheet({super.key, required this.proposedMemory, this.sourceType = 'talk'});
 
-  static Future<bool?> show(
-    BuildContext context, {
-    required String proposedMemory,
-    String sourceType = 'talk',
-  }) {
+  static Future<bool?> show(BuildContext context, {required String proposedMemory, String sourceType = 'talk'}) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -116,9 +108,18 @@ class _MemoryConsentSheetState extends State<MemoryConsentSheet> {
                   hintText: 'Write the lesson Echo should remember.',
                   filled: true,
                   fillColor: EchoColors.bgInput,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: EchoColors.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: EchoColors.border)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: EchoColors.memory)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: EchoColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: EchoColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: EchoColors.memory),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),

@@ -10,12 +10,7 @@ class DiscoveryInsightScreen extends StatefulWidget {
   final String body;
   final String? patternId;
 
-  const DiscoveryInsightScreen({
-    super.key,
-    required this.title,
-    required this.body,
-    this.patternId,
-  });
+  const DiscoveryInsightScreen({super.key, required this.title, required this.body, this.patternId});
 
   @override
   State<DiscoveryInsightScreen> createState() => _DiscoveryInsightScreenState();
@@ -130,10 +125,7 @@ class _DiscoveryInsightScreenState extends State<DiscoveryInsightScreen> with Ti
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        EchoColors.opportunity.withValues(alpha: 0.18),
-                        EchoColors.proof.withValues(alpha: 0.10),
-                      ],
+                      colors: [EchoColors.opportunity.withValues(alpha: 0.18), EchoColors.proof.withValues(alpha: 0.10)],
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: EchoColors.opportunity.withValues(alpha: 0.30)),
@@ -152,10 +144,7 @@ class _DiscoveryInsightScreenState extends State<DiscoveryInsightScreen> with Ti
                             child: AnimatedBuilder(
                               animation: Listenable.merge([_slowRing, _medRing]),
                               builder: (_, __) => CustomPaint(
-                                painter: _MiniOrbPainter(
-                                  slowAngle: _slowRing.value * 2 * pi,
-                                  medAngle: -_medRing.value * 2 * pi,
-                                ),
+                                painter: _MiniOrbPainter(slowAngle: _slowRing.value * 2 * pi, medAngle: -_medRing.value * 2 * pi),
                               ),
                             ),
                           ),
@@ -179,22 +168,10 @@ class _DiscoveryInsightScreenState extends State<DiscoveryInsightScreen> with Ti
                           const SizedBox(height: 12),
                           Text(
                             widget.title,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: EchoColors.textPrimary,
-                              height: 1.3,
-                            ),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: EchoColors.textPrimary, height: 1.3),
                           ),
                           const SizedBox(height: 10),
-                          Text(
-                            widget.body,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              color: EchoColors.textMuted,
-                              height: 1.5,
-                            ),
-                          ),
+                          Text(widget.body, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: EchoColors.textMuted, height: 1.5)),
                         ],
                       ),
                     ],
@@ -213,9 +190,7 @@ class _DiscoveryInsightScreenState extends State<DiscoveryInsightScreen> with Ti
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [EchoColors.primaryAi, EchoColors.primaryAi.withValues(alpha: 0.80)],
-                          ),
+                          gradient: LinearGradient(colors: [EchoColors.primaryAi, EchoColors.primaryAi.withValues(alpha: 0.80)]),
                           borderRadius: BorderRadius.circular(13),
                         ),
                         child: Text(
@@ -285,10 +260,14 @@ class _MiniOrbPainter extends CustomPainter {
 
     // Core dot
     canvas.drawCircle(center, 6, Paint()..color = const Color(0x2EC59A34));
-    canvas.drawCircle(center, 6, Paint()
-      ..color = const Color(0x80C59A34)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke);
+    canvas.drawCircle(
+      center,
+      6,
+      Paint()
+        ..color = const Color(0x80C59A34)
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   @override

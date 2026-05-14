@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chatmcp/echo/echo_theme.dart';
 import 'package:chatmcp/echo/echo_orb.dart';
@@ -408,11 +408,7 @@ class _MirrorScreenState extends State<MirrorScreen> with SingleTickerProviderSt
               width: 2,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(1),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [EchoColors.amber, Colors.transparent],
-                ),
+                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [EchoColors.amber, Colors.transparent]),
               ),
             ),
             const SizedBox(width: 10),

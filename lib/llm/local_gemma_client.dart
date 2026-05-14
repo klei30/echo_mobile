@@ -21,11 +21,7 @@ class LocalGemmaClient extends BaseLLMClient {
     final maxTokens = requestedMaxTokens.clamp(96, 384).toInt();
     final temperature = request.modelSetting?.temperature ?? 0.7;
 
-    await for (final token in LocalGemmaService().generate(
-      prompt: prompt,
-      maxTokens: maxTokens,
-      temperature: temperature,
-    )) {
+    await for (final token in LocalGemmaService().generate(prompt: prompt, maxTokens: maxTokens, temperature: temperature)) {
       yield LLMResponse(content: token);
     }
   }
@@ -68,8 +64,8 @@ class LocalGemmaClient extends BaseLLMClient {
     final tailStart = lastUserMarker >= 0
         ? lastUserMarker
         : assistantMarker >= 0
-            ? assistantMarker
-            : (prompt.length - maxChars).clamp(0, prompt.length).toInt();
+        ? assistantMarker
+        : (prompt.length - maxChars).clamp(0, prompt.length).toInt();
     final tail = prompt.substring(tailStart).trimLeft();
     final systemBudget = systemHead.isEmpty ? 0 : 1200;
     final clippedSystem = systemHead.length <= systemBudget ? systemHead : systemHead.substring(0, systemBudget).trimRight();
@@ -77,10 +73,6 @@ class LocalGemmaClient extends BaseLLMClient {
     final tailBudget = maxChars - clippedSystem.length - notice.length - 4;
     final clippedTail = tail.length <= tailBudget ? tail : tail.substring(tail.length - tailBudget).trimLeft();
 
-    return [
-      if (clippedSystem.isNotEmpty) clippedSystem,
-      notice,
-      clippedTail,
-    ].join('\n\n');
+    return [if (clippedSystem.isNotEmpty) clippedSystem, notice, clippedTail].join('\n\n');
   }
 }

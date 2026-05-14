@@ -19,10 +19,7 @@ class OpenAIClient extends BaseLLMClient {
 
   // Matches localhost Echo, Android emulator alias, and Cloudflare quick tunnels
   bool get _isEchoEndpoint =>
-      baseUrl.contains('8002') ||
-      baseUrl.contains('10.0.2.2') ||
-      baseUrl.contains('trycloudflare.com') ||
-      baseUrl.contains('cfargotunnel.com');
+      baseUrl.contains('8002') || baseUrl.contains('10.0.2.2') || baseUrl.contains('trycloudflare.com') || baseUrl.contains('cfargotunnel.com');
 
   String? _echoModelLane(String model) {
     final normalized = model.toLowerCase().replaceAll('-', '_');
@@ -170,7 +167,8 @@ class OpenAIClient extends BaseLLMClient {
       // Auto-clear a dead tunnel URL so subsequent calls fall back to local
       final errStr = e.toString();
       if (_isEchoEndpoint && EchoHostService().hasTunnel) {
-        final isDnsError = errStr.contains('host lookup') ||
+        final isDnsError =
+            errStr.contains('host lookup') ||
             errStr.contains('errno = 7') ||
             errStr.contains('errno = 11001') ||
             errStr.contains('No address associated') ||

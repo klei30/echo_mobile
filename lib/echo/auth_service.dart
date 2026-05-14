@@ -38,16 +38,9 @@ class AuthService {
   String? get userId => _userId;
   String? get username => _username;
 
-  Map<String, String> get authHeaders => {
-        'Content-Type': 'application/json',
-        if (_token != null) 'Authorization': 'Bearer $_token',
-      };
+  Map<String, String> get authHeaders => {'Content-Type': 'application/json', if (_token != null) 'Authorization': 'Bearer $_token'};
 
-  Future<String?> register({
-    required String email,
-    required String username,
-    required String password,
-  }) async {
+  Future<String?> register({required String email, required String username, required String password}) async {
     try {
       final resp = await http
           .post(
@@ -69,10 +62,7 @@ class AuthService {
     }
   }
 
-  Future<String?> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<String?> login({required String email, required String password}) async {
     try {
       final resp = await http
           .post(

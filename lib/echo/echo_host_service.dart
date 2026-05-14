@@ -7,7 +7,7 @@ class EchoHostService {
   factory EchoHostService() => _instance;
   EchoHostService._internal();
 
-  static const _keyMode = 'echo_host_mode';      // 'auto' | 'tunnel'
+  static const _keyMode = 'echo_host_mode'; // 'auto' | 'tunnel'
   static const _keyTunnelUrl = 'echo_tunnel_url';
   static const _keyConfigured = 'echo_brain_configured';
 
@@ -62,9 +62,7 @@ class EchoHostService {
     if (!hasTunnel) return;
     if (_tunnelUrl.contains('10.0.2.2')) return; // local emulator — never auto-clear
     try {
-      final resp = await http
-          .get(Uri.parse('$_tunnelUrl/health'))
-          .timeout(const Duration(seconds: 5));
+      final resp = await http.get(Uri.parse('$_tunnelUrl/health')).timeout(const Duration(seconds: 5));
       if (resp.statusCode != 200) await clearTunnel();
     } catch (_) {
       await clearTunnel();
