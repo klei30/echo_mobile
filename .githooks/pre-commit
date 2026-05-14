@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Running Dart formatting..."
+
+# Resolve Dart binary robustly (works even if PATH is minimal in GUI/IDE)
+DART_BIN=""
+
+if command -v dart >/dev/null 2>&1; then
+  DART_BIN="$(command -v dart)"
+else
+  if command -v flutter >/dev/null 2>&1; then
+    FLUTTER_BIN="$(command -v flutter)"
+    FLUTTER_DIR="$(dirname "$FLUTTER_BIN")"
+    # Common locations when using Flutter-bundled Dart (Linux/macOS/Windows)
+    CANDIDATES=(
+      "$FLUTTER_DIR/dart"
+      "$FLUTTER_DIR/dart.bat"
+      "$FLUTTER_DIR/dart.exe"
+      "$FLUTTER_DIR/cache/dart-sdk/bin/dart"
+      "$FLUTTER_DIR/cache/dart-sdk/bin/dart.exe"
+    )
+    for c in "${CANDIDATES[@]}"; do
+      if [ -x "$c" ]; then
+        DART_BIN="$c"
+        break
+      fi
+    done
+  fi
+  # FVM-managed Flutter SDK (project-local)
+  if [ -z "$DART_BIN" ]; then
+    if [ -x ".fvm/flutter_sdk/bin/dart" ]; then
+      DART_BIN=".fvm/flutter_sdk/bin/dart"
+    elif [ -x ".fvm/flutter_sdk/bin/dart.exe" ]; then
+      DART_BIN=".fvm/flutter_sdk/bin/dart.exe"
+    elif [ -x ".fvm/flutter_sdk/bin/cache/dart-sdk/bin/dart" ]; then
+      DART_BIN=".fvm/flutter_sdk/bin/cache/dart-sdk/bin/dart"
+    elif [ -x ".fvm/flutter_sdk/bin/cache/dart-sdk/bin/dart.exe" ]; then
+      DART_BIN=".fvm/flutter_sdk/bin/cache/dart-sdk/bin/dart.exe"
+    fi
+  fi
+fi
+
+if [ -z "$DART_BIN" ] || ! "$DART_BIN" --version >/dev/null 2>&1; then
+  echo "[pre-commit] ERROR: Dart SDK not found. Please ensure either: " >&2
+  echo "  - 'dart' is on PATH, or" >&2
+  echo "  - 'flutter' is on PATH (it bundles Dart), e.g.:" >&2
+  echo "      export PATH=\$PATH:\$HOME/flutter/bin" >&2
+  exit 127
+fi
+
+# Format the entire repository (as requested)
+"$DART_BIN" format .
+
+# Re-add files in case formatter changed them
+git add -A
+
+echo "[pre-commit] Formatting done."
+
+# Enforce Dart formatting before commit (no changes needed)
+echo "[pre-commit] Checking Dart formatting..."
+if ! "$DART_BIN" format --output=none --set-exit-if-changed .; then
+  echo "\n[pre-commit] Formatting issues detected. Please run:"
+  echo "    $DART_BIN format ."
+  echo "and re-commit."
+  exit 1
+fi
+
+echo "[pre-commit] Formatting OK."
+exit 0
+

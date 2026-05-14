@@ -1,0 +1,90 @@
+# Fastforge Config
+# Reference: https://github.com/fastforgedev/fastforge
+# Usage: fastforge release --name=dev
+
+output: dist/
+releases:
+  - name: linux 
+    jobs:
+      # Linux DEB Package Build (Debian/Ubuntu)
+      - name: release-linux-deb
+        package:
+          platform: linux
+          target: deb
+          build_args:
+            dart-define:
+              APP_ENV: production
+      
+      # Linux RPM Package Build (Red Hat/CentOS/Fedora)
+      - name: release-linux-rpm
+        package:
+          platform: linux
+          target: rpm
+          build_args:
+            dart-define:
+              APP_ENV: production
+      
+      # Linux AppImage Package Build (Portable)
+      - name: release-linux-appimage
+        package:
+          platform: linux
+          target: appimage
+          build_args:
+            dart-define:
+              APP_ENV: production
+      
+  - name: android
+    jobs:
+      # Android APK Build
+      - name: release-android-apk
+        package:
+          platform: android
+          target: apk
+          build_args:
+            target-platform: android-arm,android-arm64
+            dart-define:
+              APP_ENV: production
+              
+  - name: windows
+    jobs:
+      # Windows ZIP Package Build
+      - name: release-windows-zip
+        package:
+          platform: windows
+          target: zip
+          build_args:
+            dart-define:
+              APP_ENV: production
+          # Add extra file configuration
+          extra_files:
+            - source: "windows/sqlite3.dll"
+              destination: "sqlite3.dll"
+      - name: release-windows-msix
+        package:
+          platform: windows
+          target: msix
+          build_args:
+            dart-define:
+              APP_ENV: production
+              
+  - name: macos
+    jobs:
+      # macOS DMG Build
+      - name: release-macos-dmg
+        package:
+          platform: macos
+          target: dmg
+          build_args:
+            dart-define:
+              APP_ENV: production
+  
+  - name: web
+    jobs:
+      # Web Build
+      - name: release-web-tarball
+        package:
+          platform: web
+          target: tar.gz
+          build_args:
+            dart-define:
+              APP_ENV: production

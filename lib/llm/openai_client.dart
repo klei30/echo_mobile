@@ -1,0 +1,266 @@
+import 'package:chatmcp/utils/toast.dart';
+import 'package:http/http.dart' as http;
+import 'base_llm_client.dart';
+import 'dart:convert';
+import 'model.dart';
+import 'package:logging/logging.dart';
+import 'package:chatmcp/utils/file_content.dart';
+import 'package:chatmcp/echo/auth_service.dart';
+import 'package:chatmcp/echo/echo_host_service.dart';
+
+class OpenAIClient extends BaseLLMClient {
+  final String apiKey;
+  final String baseUrl;
+  final Map<String, String> _headers;
+
+  OpenAIClient({required this.apiKey, String? baseUrl})
+    : baseUrl = (baseUrl == null || baseUrl.isEmpty) ? 'https://api.openai.com/v1' : baseUrl,
+      _headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer $apiKey'};
+
+  // Matches localhost Echo, Android emulator alias, and Cloudflare quick tunnels
+  bool get _isEchoEndpoint =>
+      baseUrl.contains('8002') ||
+      baseUrl.contains('10.0.2.2') ||
+      baseUrl.contains('trycloudflare.com') ||
+      baseUrl.contains('cfargotunnel.com');
+
+  String? _echoModelLane(String model) {
+    final normalized = model.toLowerCase().replaceAll('-', '_');
+    if (normalized == 'gemma4_e2b' || normalized == 'gemma_4_e2b' || normalized == 'shadow_gemma') {
+      return 'gemma4_e2b';
+    }
+    return null;
+  }
+
+  @override
+  Future<LLMResponse> chatCompletion(CompletionRequest request) async {
+    final httpClient = BaseLLMClient.createHttpClient();
+
+    final body = {'model': request.model, 'messages': chatMessageToOpenAIMessage(request.messages)};
+    final echoModelLane = _echoModelLane(request.model);
+    if (_isEchoEndpoint && echoModelLane != null) body['echo_model_lane'] = echoModelLane;
+
+    addModelSettingsToBody(body, request.modelSetting);
+
+    if (request.tools != null && request.tools!.isNotEmpty) {
+      body['tools'] = request.tools!;
+      body['tool_choice'] = 'auto';
+    }
+    if (request.userId != null) body['user'] = request.userId!;
+
+    final bodyStr = jsonEncode(body);
+    Logger.root.fine('OpenAI request: $bodyStr');
+
+    final endpoint = getEndpoint(baseUrl, "/chat/completions");
+    // Attach Echo JWT when calling local Echo server
+    final echoToken = AuthService().token;
+    final headers = (_isEchoEndpoint && echoToken != null)
+        ? {..._headers, 'Authorization': 'Bearer $echoToken'}
+        : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
+
+    try {
+      final response = await httpClient.post(Uri.parse(endpoint), headers: headers, body: bodyStr);
+
+      final responseBody = utf8.decode(response.bodyBytes);
+      Logger.root.fine('OpenAI response: $responseBody');
+
+      if (response.statusCode >= 400) {
+        throw Exception('HTTP ${response.statusCode}: $responseBody');
+      }
+
+      final jsonData = jsonDecode(responseBody);
+
+      final message = jsonData['choices'][0]['message'];
+
+      // Parse tool calls
+      final toolCalls = message['tool_calls']
+          ?.map<ToolCall>(
+            (t) => ToolCall(
+              id: t['id'],
+              type: t['type'],
+              function: FunctionCall(name: t['function']['name'], arguments: t['function']['arguments']),
+            ),
+          )
+          ?.toList();
+      TokenUsage? tokenUsage;
+      if (jsonData['usage'] != null) {
+        tokenUsage = TokenUsage.fromOpenAI(jsonData['usage'], modelName: jsonData['model']);
+      }
+      return LLMResponse(content: message['content'], toolCalls: toolCalls, tokenUsage: tokenUsage);
+    } catch (e) {
+      throw await handleError(e, 'OpenAI', endpoint, bodyStr);
+    } finally {
+      httpClient.close();
+    }
+  }
+
+  @override
+  Stream<LLMResponse> chatStreamCompletion(CompletionRequest request) async* {
+    final httpClient = BaseLLMClient.createHttpClient();
+
+    final body = {'model': request.model, 'messages': chatMessageToOpenAIMessage(request.messages), 'stream': true};
+    final echoModelLane = _echoModelLane(request.model);
+    if (_isEchoEndpoint && echoModelLane != null) body['echo_model_lane'] = echoModelLane;
+
+    addModelSettingsToBody(body, request.modelSetting);
+    if (request.userId != null) body['user'] = request.userId!;
+
+    Logger.root.fine("debug log:openai stream body: ${jsonEncode(body)}");
+
+    final endpoint = getEndpoint(baseUrl, "/chat/completions");
+    final echoToken = AuthService().token;
+    final headers = (_isEchoEndpoint && echoToken != null)
+        ? {..._headers, 'Authorization': 'Bearer $echoToken'}
+        : (request.userId != null ? {..._headers, 'x-echo-user-id': request.userId!} : _headers);
+
+    try {
+      final httpRequest = http.Request('POST', Uri.parse(endpoint));
+      httpRequest.headers.addAll(headers);
+      httpRequest.body = jsonEncode(body);
+
+      final response = await httpClient.send(httpRequest);
+
+      if (response.statusCode >= 400) {
+        final responseBody = await response.stream.bytesToString();
+        Logger.root.fine('OpenAI response: $responseBody');
+
+        throw Exception('HTTP ${response.statusCode}: $responseBody');
+      }
+
+      final stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
+
+      await for (final line in stream) {
+        if (!line.startsWith('data: ')) continue;
+        final data = line.substring(6);
+        if (data.isEmpty || data == '[DONE]') continue;
+
+        try {
+          final json = jsonDecode(data);
+
+          if (json['choices'] == null || json['choices'].isEmpty) {
+            continue;
+          }
+
+          final delta = json['choices'][0]['delta'];
+          if (delta == null) continue;
+
+          final toolCalls = delta['tool_calls']
+              ?.map<ToolCall>(
+                (t) => ToolCall(
+                  id: t['id'] ?? '',
+                  type: t['type'] ?? '',
+                  function: FunctionCall(name: t['function']?['name'] ?? '', arguments: t['function']?['arguments'] ?? '{}'),
+                ),
+              )
+              ?.toList();
+
+          if (delta['content'] != null || toolCalls != null) {
+            yield LLMResponse(content: delta['content'], toolCalls: toolCalls);
+          }
+
+          if (json['usage'] != null) {
+            yield LLMResponse(tokenUsage: TokenUsage.fromOpenAI(json['usage'], modelName: json['model']));
+          }
+        } catch (e) {
+          Logger.root.severe('Failed to parse event data: $data $e');
+          continue;
+        }
+      }
+    } catch (e) {
+      // Auto-clear a dead tunnel URL so subsequent calls fall back to local
+      final errStr = e.toString();
+      if (_isEchoEndpoint && EchoHostService().hasTunnel) {
+        final isDnsError = errStr.contains('host lookup') ||
+            errStr.contains('errno = 7') ||
+            errStr.contains('errno = 11001') ||
+            errStr.contains('No address associated') ||
+            errStr.contains('Failed host lookup');
+        if (isDnsError) {
+          Logger.root.warning('OpenAI: tunnel DNS error — clearing dead tunnel URL');
+          EchoHostService().clearTunnel();
+        }
+      }
+      throw await handleError(e, 'OpenAI', endpoint, jsonEncode(body));
+    } finally {
+      httpClient.close();
+    }
+  }
+
+  @override
+  Future<List<String>> models() async {
+    if (apiKey.isEmpty) {
+      ToastUtils.error('API key not set, skipping model list fetch');
+      return [];
+    }
+
+    final httpClient = BaseLLMClient.createHttpClient();
+
+    try {
+      final response = await httpClient.get(Uri.parse(getEndpoint(baseUrl, "/models")), headers: _headers);
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+
+      final data = jsonDecode(response.body);
+      final models = (data['data'] as List).map((m) => m['id'].toString()).toList();
+
+      return models;
+    } catch (e, trace) {
+      Logger.root.severe('Failed to get model list: $e, trace: $trace');
+      throw LLMException(name: 'OpenAI', endpoint: getEndpoint(baseUrl, "/models"), requestBody: '', originalError: e);
+    } finally {
+      httpClient.close();
+    }
+  }
+}
+
+List<Map<String, dynamic>> chatMessageToOpenAIMessage(List<ChatMessage> messages) {
+  return messages.map((message) {
+    final json = <String, dynamic>{'role': message.role.value};
+
+    // If there is both text content and files, use array format
+    if (message.content != null || message.files != null) {
+      final List<Map<String, dynamic>> contentParts = [];
+
+      // Add file content
+      if (message.files != null) {
+        for (final file in message.files!) {
+          if (isImageFile(file.fileType)) {
+            contentParts.add({
+              'type': 'image_url',
+              'image_url': {"url": "data:${file.fileType};base64,${file.fileContent}"},
+            });
+          }
+          if (isTextFile(file.fileType)) {
+            contentParts.add({'type': 'text', 'text': file.fileContent});
+          }
+        }
+      }
+
+      // Add text content
+      if (message.content != null) {
+        contentParts.add({'type': 'text', 'text': message.content});
+      }
+
+      // If there is only one text content and no files, use simple string format
+      if (contentParts.length == 1 && message.files == null) {
+        json['content'] = message.content;
+      } else {
+        json['content'] = contentParts;
+      }
+    }
+
+    // Add tool call related fields
+    if (message.role == MessageRole.tool && message.name != null && message.toolCallId != null) {
+      json['name'] = message.name!;
+      json['tool_call_id'] = message.toolCallId!;
+    }
+
+    if (message.toolCalls != null) {
+      json['tool_calls'] = message.toolCalls;
+    }
+
+    return json;
+  }).toList();
+}

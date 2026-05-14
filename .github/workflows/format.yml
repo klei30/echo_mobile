@@ -1,0 +1,34 @@
+name: check-format
+
+on:
+  pull_request:
+    branches: [ "**" ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  dart-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting (dry-run, excluding generated)
+        run: |
+          set -e
+          FILES=$(git ls-files '*.dart' ':!lib/generated/**')
+          if [ -z "$FILES" ]; then
+            echo "No Dart files to check."
+            exit 0
+          fi
+          dart --version
+          dart format --output=none --set-exit-if-changed $FILES
+
